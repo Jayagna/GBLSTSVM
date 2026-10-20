@@ -58,6 +58,11 @@ def singleton_weight(bs, w):
     return np.where(bs["counts"] >= 2, 1.0, float(w))
 
 
+def via_balls(ball_membership):
+    """Sample-level membership: each training sample takes the membership of its granular ball."""
+    return lambda bs, p: ball_membership(bs["gb_all"], p)[bs["ball_index"]]
+
+
 def singleton_entropy(bs, p):
     w, k_nn = p
     return singleton_weight(bs, w) * member("entropy")(bs, k_nn)
@@ -68,6 +73,8 @@ def singleton_entropy(bs, p):
 #              "gb_noR"  same balls with radii set to 0 (ablation)
 #              "gb_all"  granular balls without deleting single-point balls
 #              "samples" every training sample is a ball of radius 0 (LSTSVM)
+#              "samples_gb" samples as in LSTSVM, plus the granular balls of the same
+#                           training set, used only to give each sample a membership
 METHODS = [
     ("GBLSTSVM", "gb", member("none"), [None]),
     ("T1-centre", "gb", member("centre"), [None]),
@@ -80,8 +87,12 @@ METHODS = [
     ("T6+T2", "gb_all", singleton_entropy, [(w, k) for w in (0.2, 0.5, 1.0) for k in (5, 10)]),
     ("T6+T4", "gb_all", member("overlap"), [0.5, 1.0, 2.0, 4.0]),
     ("LSTSVM", "samples", member("none"), [None]),
+    ("GBF-size", "samples_gb", via_balls(singleton_weight), [0.05, 0.2, 0.5]),
+    ("GBF-overlap", "samples_gb", via_balls(member("overlap")), [0.5, 1.0, 2.0, 4.0]),
+    ("GBF-entropy", "samples_gb", via_balls(member("entropy")), [5, 10]),
 ]
 METHOD_INDEX = {m[0]: m for m in METHODS}
+ACTIVE_METHODS = METHODS
 C_GRID = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
 IMB_GRID = [False, True]
 
@@ -125,7 +136,11 @@ def build_ball_sets(train, k):
     keep = gb_all["counts"] >= 2
     gb = {key: val[keep] for key, val in gb_all.items()}
     gb_noR = dict(gb, radii=np.zeros(int(np.sum(keep))))
-    sets = {"gb": gb, "gb_noR": gb_noR, "gb_all": gb_all}
+    ball_index = np.empty(len(train), dtype=int)
+    for b, ball in enumerate(balls):
+        ball_index[ball["indices"]] = b
+    samples_gb = dict(ball_set_from_samples(train), gb_all=gb_all, ball_index=ball_index)
+    sets = {"gb": gb, "gb_noR": gb_noR, "gb_all": gb_all, "samples_gb": samples_gb}
     return {name: (bs if has_both_classes(bs) else None) for name, bs in sets.items()}
 
 
@@ -183,7 +198,7 @@ def method_configs(param_grid):
 
 def score_ball_sets(sets, X_val, y_val, k, scores_out):
     """Add the validation balanced accuracy of every (method, config) on one fold and one k."""
-    for name, set_name, fn, grid in METHODS:
+    for name, set_name, fn, grid in ACTIVE_METHODS:
         bs = sets.get(set_name)
         if bs is None:
             continue
@@ -212,7 +227,9 @@ def select_best(config_scores, n_folds):
 # One dataset at one noise level
 # ---------------------------------------------------------------------------
 def run_one(task):
-    path, noise, repeats, n_folds, k_values, out_dir = task
+    global ACTIVE_METHODS
+    path, noise, repeats, n_folds, k_values, out_dir, method_names = task
+    ACTIVE_METHODS = [METHOD_INDEX[m] for m in method_names]
     path = Path(path)
     out_file = Path(out_dir) / f"{path.stem}__noise{noise:g}.json"
     if out_file.exists():
@@ -244,7 +261,7 @@ def run_one(task):
         rep = {"repeat": r, "cv_folds": folds, "methods": {}}
         ball_cache = {}
         X_te, y_te = test[:, :-1], test[:, -1]
-        for name, set_name, fn, _ in METHODS:
+        for name, set_name, fn, _ in ACTIVE_METHODS:
             if name not in cv_scores:
                 continue
             cfg, cv_best = select_best(cv_scores[name], folds)
@@ -285,6 +302,7 @@ def main():
     ap.add_argument("--k-values", nargs="+", type=int, default=[2, 3, 4, 5, 6])
     ap.add_argument("--out", default=str(ROOT / "results" / "fuzzy_cv"))
     ap.add_argument("--jobs", type=int, default=os.cpu_count() or 1)
+    ap.add_argument("--methods", nargs="+", default=[m[0] for m in METHODS], choices=[m[0] for m in METHODS])
     args = ap.parse_args()
 
     files = discover_datasets(args.data_dir)
@@ -293,7 +311,8 @@ def main():
         exact = [p for p in files if p.stem.lower() == name.lower()]
         selected += exact if exact else select_datasets(files, [name])
     selected = list(dict.fromkeys(selected))
-    tasks = [(str(p), nz, args.repeats, args.folds, args.k_values, args.out) for nz in args.noise for p in selected]
+    tasks = [(str(p), nz, args.repeats, args.folds, args.k_values, args.out, args.methods)
+             for nz in args.noise for p in selected]
     print(f"{len(tasks)} tasks ({len(selected)} datasets x {len(args.noise)} noise levels), {args.jobs} workers", flush=True)
     with Pool(args.jobs) as pool:
         for out, msg in pool.imap_unordered(run_one, tasks):

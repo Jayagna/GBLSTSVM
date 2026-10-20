@@ -187,7 +187,8 @@ def generate_ball_data(data, pur=0.985, delbals=2, k_clusters=2, return_details=
                 'num': int(ball.num),
                 'purity': float(ball.purity),
                 'pos_count': int(ball.pos_count),
-                'neg_count': int(ball.neg_count)
+                'neg_count': int(ball.neg_count),
+                'indices': ball.data[:, -1].astype(int).tolist()
             })
         else:
             balldata.append([ball.center.tolist(), float(ball.r), lbl, int(ball.num)])
