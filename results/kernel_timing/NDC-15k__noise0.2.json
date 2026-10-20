@@ -1,0 +1,82 @@
+{
+ "dataset": "NDC-15k",
+ "samples": 15000,
+ "train": 10500,
+ "features": 10,
+ "noise": 0.2,
+ "k": 4,
+ "c": 1.0,
+ "gamma": 0.1,
+ "seed": 0,
+ "models": {
+  "K-GBLSTSVM": {
+   "train_time": 5.347357988357544,
+   "prep_time": 4.87393593788147,
+   "solve_time": 0.4734220504760742,
+   "predict_time": 0.11760282516479492,
+   "rows": 1512,
+   "columns": 1512,
+   "matrix_mb": 34.92994689941406,
+   "bal_acc": 0.9582344714526198,
+   "accuracy": 0.9593333333333334,
+   "gen_time": 4.873901128768921
+  },
+  "K-GB-keep": {
+   "train_time": 31.293394804000854,
+   "prep_time": 4.873952150344849,
+   "solve_time": 26.419442653656006,
+   "predict_time": 0.49727916717529297,
+   "rows": 7215,
+   "columns": 7215,
+   "matrix_mb": 794.53515625,
+   "bal_acc": 0.8873699154819159,
+   "accuracy": 0.878,
+   "gen_time": 4.873901128768921
+  },
+  "K-keep-T7": {
+   "train_time": 32.798213958740234,
+   "prep_time": 5.009067535400391,
+   "solve_time": 27.789146423339844,
+   "predict_time": 0.4631321430206299,
+   "rows": 7215,
+   "columns": 7215,
+   "matrix_mb": 794.53515625,
+   "bal_acc": 0.9463930535220297,
+   "accuracy": 0.9411111111111111,
+   "gen_time": 4.873901128768921
+  },
+  "K-LSTSVM": {
+   "train_time": 57.720813512802124,
+   "prep_time": 0.0,
+   "solve_time": 57.720813512802124,
+   "predict_time": 0.8990223407745361,
+   "rows": 10500,
+   "columns": 10500,
+   "matrix_mb": 1682.6019439697266,
+   "bal_acc": 0.9349114416242221,
+   "accuracy": 0.932
+  },
+  "RK-LSTSVM": {
+   "train_time": 15.744627952575684,
+   "prep_time": 0.0,
+   "solve_time": 15.744627952575684,
+   "predict_time": 0.4999096393585205,
+   "rows": 10500,
+   "columns": 7215,
+   "matrix_mb": 794.53515625,
+   "bal_acc": 0.9396306517368271,
+   "accuracy": 0.936
+  },
+  "RK-FKNN": {
+   "train_time": 32.24258589744568,
+   "prep_time": 0.3158590793609619,
+   "solve_time": 31.926726818084717,
+   "predict_time": 0.4428741931915283,
+   "rows": 10500,
+   "columns": 7215,
+   "matrix_mb": 794.53515625,
+   "bal_acc": 0.9671594466004663,
+   "accuracy": 0.9644444444444444
+  }
+ }
+}

@@ -1,0 +1,61 @@
+{
+ "dataset": "NDC-80k",
+ "samples": 80000,
+ "train": 56000,
+ "features": 10,
+ "noise": 0.2,
+ "k": 4,
+ "c": 1.0,
+ "gamma": 0.1,
+ "seed": 0,
+ "models": {
+  "K-GBLSTSVM": {
+   "train_time": 62.72599387168884,
+   "prep_time": 24.688214778900146,
+   "solve_time": 38.037779092788696,
+   "predict_time": 3.4984164237976074,
+   "rows": 8110,
+   "columns": 8110,
+   "matrix_mb": 1003.8501129150391,
+   "bal_acc": 0.9908865443996614,
+   "accuracy": 0.9904166666666666,
+   "gen_time": 24.688159704208374
+  },
+  "K-GB-keep": {
+   "skipped": "37928 kernel columns: the (columns + 1)^2 matrices need 21.4 GB",
+   "columns": 37928,
+   "gen_time": 24.688159704208374
+  },
+  "K-keep-T7": {
+   "skipped": "37928 kernel columns: the (columns + 1)^2 matrices need 21.4 GB",
+   "columns": 37928,
+   "gen_time": 24.688159704208374
+  },
+  "K-LSTSVM": {
+   "skipped": "56000 kernel columns: the (columns + 1)^2 matrices need 46.7 GB",
+   "columns": 56000
+  },
+  "RK-LSTSVM": {
+   "train_time": 135.83707404136658,
+   "prep_time": 0.0,
+   "solve_time": 135.83707404136658,
+   "predict_time": 4.540497303009033,
+   "rows": 56000,
+   "columns": 11000,
+   "matrix_mb": 1846.649185180664,
+   "bal_acc": 0.9911178895918515,
+   "accuracy": 0.9905416666666667
+  },
+  "RK-FKNN": {
+   "train_time": 203.51882886886597,
+   "prep_time": 2.463597059249878,
+   "solve_time": 201.0552318096161,
+   "predict_time": 5.669609308242798,
+   "rows": 56000,
+   "columns": 11000,
+   "matrix_mb": 1846.649185180664,
+   "bal_acc": 0.9951159742520462,
+   "accuracy": 0.9946666666666667
+  }
+ }
+}

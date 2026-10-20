@@ -1,0 +1,75 @@
+{
+ "dataset": "NDC-20k",
+ "samples": 20000,
+ "train": 14000,
+ "features": 10,
+ "noise": 0.2,
+ "k": 4,
+ "c": 1.0,
+ "gamma": 0.1,
+ "seed": 0,
+ "models": {
+  "K-GBLSTSVM": {
+   "train_time": 6.517578363418579,
+   "prep_time": 5.779449701309204,
+   "solve_time": 0.738128662109375,
+   "predict_time": 0.17717957496643066,
+   "rows": 2012,
+   "columns": 2012,
+   "matrix_mb": 61.83119201660156,
+   "bal_acc": 0.9702501050861707,
+   "accuracy": 0.9685,
+   "gen_time": 5.779409170150757
+  },
+  "K-GB-keep": {
+   "train_time": 53.897072315216064,
+   "prep_time": 5.779449939727783,
+   "solve_time": 48.11762237548828,
+   "predict_time": 0.8486931324005127,
+   "rows": 9551,
+   "columns": 9551,
+   "matrix_mb": 1392.22265625,
+   "bal_acc": 0.903054504693849,
+   "accuracy": 0.8936666666666667,
+   "gen_time": 5.779409170150757
+  },
+  "K-keep-T7": {
+   "train_time": 60.90208959579468,
+   "prep_time": 5.988451957702637,
+   "solve_time": 54.91363763809204,
+   "predict_time": 0.849604606628418,
+   "rows": 9551,
+   "columns": 9551,
+   "matrix_mb": 1392.22265625,
+   "bal_acc": 0.9527882863948438,
+   "accuracy": 0.9476666666666667,
+   "gen_time": 5.779409170150757
+  },
+  "K-LSTSVM": {
+   "skipped": "14000 kernel columns: the (columns + 1)^2 matrices need 2.9 GB",
+   "columns": 14000
+  },
+  "RK-LSTSVM": {
+   "train_time": 45.50322341918945,
+   "prep_time": 0.0,
+   "solve_time": 45.50322341918945,
+   "predict_time": 0.8043210506439209,
+   "rows": 14000,
+   "columns": 9551,
+   "matrix_mb": 1392.22265625,
+   "bal_acc": 0.9532716827798795,
+   "accuracy": 0.9496666666666667
+  },
+  "RK-FKNN": {
+   "train_time": 65.32996201515198,
+   "prep_time": 0.3324272632598877,
+   "solve_time": 64.99753475189209,
+   "predict_time": 0.9305968284606934,
+   "rows": 14000,
+   "columns": 9551,
+   "matrix_mb": 1392.22265625,
+   "bal_acc": 0.9756165055345383,
+   "accuracy": 0.9731666666666666
+  }
+ }
+}

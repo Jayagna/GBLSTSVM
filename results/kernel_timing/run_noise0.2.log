@@ -1,0 +1,63 @@
+NDC-2.5k:
+  K-GBLSTSVM   rows=   249 cols=   249 train=    0.8s bal_acc=0.919
+  K-GB-keep    rows=  1230 cols=  1230 train=    1.0s bal_acc=0.806
+  K-keep-T7    rows=  1230 cols=  1230 train=    1.0s bal_acc=0.859
+  K-LSTSVM     rows=  1750 cols=  1750 train=    0.6s bal_acc=0.833
+  RK-LSTSVM    rows=  1750 cols=  1230 train=    0.1s bal_acc=0.846
+  RK-FKNN      rows=  1750 cols=  1230 train=    0.2s bal_acc=0.898
+NDC-5k:
+  K-GBLSTSVM   rows=   520 cols=   520 train=    1.3s bal_acc=0.942
+  K-GB-keep    rows=  2409 cols=  2409 train=    3.1s bal_acc=0.844
+  K-keep-T7    rows=  2409 cols=  2409 train=    3.0s bal_acc=0.900
+  K-LSTSVM     rows=  3500 cols=  3500 train=    5.0s bal_acc=0.882
+  RK-LSTSVM    rows=  3500 cols=  2409 train=    0.9s bal_acc=0.892
+  RK-FKNN      rows=  3500 cols=  2409 train=    2.2s bal_acc=0.947
+NDC-10k:
+  K-GBLSTSVM   rows=   988 cols=   988 train=    3.0s bal_acc=0.949
+  K-GB-keep    rows=  4845 cols=  4845 train=   11.9s bal_acc=0.878
+  K-keep-T7    rows=  4845 cols=  4845 train=   11.4s bal_acc=0.930
+  K-LSTSVM     rows=  7000 cols=  7000 train=   21.8s bal_acc=0.922
+  RK-LSTSVM    rows=  7000 cols=  4845 train=    5.8s bal_acc=0.927
+  RK-FKNN      rows=  7000 cols=  4845 train=   12.1s bal_acc=0.957
+NDC-15k:
+  K-GBLSTSVM   rows=  1512 cols=  1512 train=    5.3s bal_acc=0.958
+  K-GB-keep    rows=  7215 cols=  7215 train=   31.3s bal_acc=0.887
+  K-keep-T7    rows=  7215 cols=  7215 train=   32.8s bal_acc=0.946
+  K-LSTSVM     rows= 10500 cols= 10500 train=   57.7s bal_acc=0.935
+  RK-LSTSVM    rows= 10500 cols=  7215 train=   15.7s bal_acc=0.940
+  RK-FKNN      rows= 10500 cols=  7215 train=   32.2s bal_acc=0.967
+NDC-20k:
+  K-GBLSTSVM   rows=  2012 cols=  2012 train=    6.5s bal_acc=0.970
+  K-GB-keep    rows=  9551 cols=  9551 train=   53.9s bal_acc=0.903
+  K-keep-T7    rows=  9551 cols=  9551 train=   60.9s bal_acc=0.953
+  K-LSTSVM     skipped (14000 kernel columns: the (columns + 1)^2 matrices need 2.9 GB)
+  RK-LSTSVM    rows= 14000 cols=  9551 train=   45.5s bal_acc=0.953
+  RK-FKNN      rows= 14000 cols=  9551 train=   65.3s bal_acc=0.976
+NDC-40k:
+  K-GBLSTSVM   rows=  4021 cols=  4021 train=   15.4s bal_acc=0.966
+  K-GB-keep    skipped (19182 kernel columns: the (columns + 1)^2 matrices need 5.5 GB)
+  K-keep-T7    skipped (19182 kernel columns: the (columns + 1)^2 matrices need 5.5 GB)
+  K-LSTSVM     skipped (28000 kernel columns: the (columns + 1)^2 matrices need 11.7 GB)
+  RK-LSTSVM    rows= 28000 cols= 11000 train=   94.3s bal_acc=0.948
+  RK-FKNN      rows= 28000 cols= 11000 train=  118.4s bal_acc=0.967
+NDC-60k:
+  K-GBLSTSVM   rows=  6035 cols=  6035 train=   31.7s bal_acc=0.986
+  K-GB-keep    skipped (28548 kernel columns: the (columns + 1)^2 matrices need 12.1 GB)
+  K-keep-T7    skipped (28548 kernel columns: the (columns + 1)^2 matrices need 12.1 GB)
+  K-LSTSVM     skipped (42000 kernel columns: the (columns + 1)^2 matrices need 26.3 GB)
+  RK-LSTSVM    rows= 42000 cols= 11000 train=  117.0s bal_acc=0.984
+  RK-FKNN      rows= 42000 cols= 11000 train=  171.5s bal_acc=0.992
+NDC-80k:
+  K-GBLSTSVM   rows=  8110 cols=  8110 train=   62.7s bal_acc=0.991
+  K-GB-keep    skipped (37928 kernel columns: the (columns + 1)^2 matrices need 21.4 GB)
+  K-keep-T7    skipped (37928 kernel columns: the (columns + 1)^2 matrices need 21.4 GB)
+  K-LSTSVM     skipped (56000 kernel columns: the (columns + 1)^2 matrices need 46.7 GB)
+  RK-LSTSVM    rows= 56000 cols= 11000 train=  135.8s bal_acc=0.991
+  RK-FKNN      rows= 56000 cols= 11000 train=  203.5s bal_acc=0.995
+NDC-1m:
+  K-GBLSTSVM   rows= 10137 cols= 10137 train=   97.2s bal_acc=0.976
+  K-GB-keep    skipped (47779 kernel columns: the (columns + 1)^2 matrices need 34.0 GB)
+  K-keep-T7    skipped (47779 kernel columns: the (columns + 1)^2 matrices need 34.0 GB)
+  K-LSTSVM     skipped (70000 kernel columns: the (columns + 1)^2 matrices need 73.0 GB)
+  RK-LSTSVM    rows= 70000 cols= 11000 train=  166.3s bal_acc=0.975
+  RK-FKNN      rows= 70000 cols= 11000 train=  263.4s bal_acc=0.982

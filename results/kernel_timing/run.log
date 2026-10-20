@@ -1,0 +1,54 @@
+NDC-2.5k:
+  K-GBLSTSVM   rows=   183 cols=   183 train=    0.2s bal_acc=0.969
+  K-GB-keep    rows=   366 cols=   366 train=    0.2s bal_acc=0.972
+  K-keep-T7    rows=   366 cols=   366 train=    0.2s bal_acc=0.973
+  K-LSTSVM     rows=  1750 cols=  1750 train=    1.2s bal_acc=0.987
+  RK-LSTSVM    rows=  1750 cols=   366 train=    0.0s bal_acc=0.984
+NDC-5k:
+  K-GBLSTSVM   rows=   300 cols=   300 train=    0.3s bal_acc=0.961
+  K-GB-keep    rows=   553 cols=   553 train=    0.3s bal_acc=0.968
+  K-keep-T7    rows=   553 cols=   553 train=    0.4s bal_acc=0.971
+  K-LSTSVM     rows=  3500 cols=  3500 train=    4.6s bal_acc=0.988
+  RK-LSTSVM    rows=  3500 cols=   553 train=    0.1s bal_acc=0.992
+NDC-10k:
+  K-GBLSTSVM   rows=   519 cols=   519 train=    0.6s bal_acc=0.973
+  K-GB-keep    rows=   923 cols=   923 train=    0.6s bal_acc=0.971
+  K-keep-T7    rows=   923 cols=   923 train=    0.7s bal_acc=0.974
+  K-LSTSVM     rows=  7000 cols=  7000 train=   24.6s bal_acc=0.991
+  RK-LSTSVM    rows=  7000 cols=   923 train=    0.3s bal_acc=0.988
+NDC-15k:
+  K-GBLSTSVM   rows=   650 cols=   650 train=    0.9s bal_acc=0.983
+  K-GB-keep    rows=  1078 cols=  1078 train=    1.0s bal_acc=0.983
+  K-keep-T7    rows=  1078 cols=  1078 train=    1.1s bal_acc=0.985
+  K-LSTSVM     rows= 10500 cols= 10500 train=   60.4s bal_acc=0.995
+  RK-LSTSVM    rows= 10500 cols=  1078 train=    0.4s bal_acc=0.993
+NDC-20k:
+  K-GBLSTSVM   rows=   817 cols=   817 train=    1.0s bal_acc=0.984
+  K-GB-keep    rows=  1456 cols=  1456 train=    1.1s bal_acc=0.986
+  K-keep-T7    rows=  1456 cols=  1456 train=    1.1s bal_acc=0.988
+  K-LSTSVM     skipped (n x n matrices for 14000 samples need 2.9 GB)
+  RK-LSTSVM    rows= 14000 cols=  1456 train=    0.9s bal_acc=0.993
+NDC-40k:
+  K-GBLSTSVM   rows=   926 cols=   926 train=    1.3s bal_acc=0.981
+  K-GB-keep    rows=  1606 cols=  1606 train=    1.5s bal_acc=0.980
+  K-keep-T7    rows=  1606 cols=  1606 train=    1.6s bal_acc=0.981
+  K-LSTSVM     skipped (n x n matrices for 28000 samples need 11.7 GB)
+  RK-LSTSVM    rows= 28000 cols=  1606 train=    1.9s bal_acc=0.993
+NDC-60k:
+  K-GBLSTSVM   rows=  1031 cols=  1031 train=    1.3s bal_acc=0.985
+  K-GB-keep    rows=  1671 cols=  1671 train=    1.6s bal_acc=0.986
+  K-keep-T7    rows=  1671 cols=  1671 train=    1.7s bal_acc=0.987
+  K-LSTSVM     skipped (n x n matrices for 42000 samples need 26.3 GB)
+  RK-LSTSVM    rows= 42000 cols=  1671 train=    2.9s bal_acc=0.995
+NDC-80k:
+  K-GBLSTSVM   rows=  1078 cols=  1078 train=    1.5s bal_acc=0.985
+  K-GB-keep    rows=  1566 cols=  1566 train=    1.6s bal_acc=0.989
+  K-keep-T7    rows=  1566 cols=  1566 train=    1.6s bal_acc=0.990
+  K-LSTSVM     skipped (n x n matrices for 56000 samples need 46.7 GB)
+  RK-LSTSVM    rows= 56000 cols=  1566 train=    3.5s bal_acc=0.998
+NDC-1m:
+  K-GBLSTSVM   rows=  2555 cols=  2555 train=    5.4s bal_acc=0.983
+  K-GB-keep    rows=  4523 cols=  4523 train=    9.5s bal_acc=0.984
+  K-keep-T7    rows=  4523 cols=  4523 train=   12.5s bal_acc=0.984
+  K-LSTSVM     skipped (n x n matrices for 70000 samples need 73.0 GB)
+  RK-LSTSVM    rows= 70000 cols=  4523 train=   35.6s bal_acc=0.991
