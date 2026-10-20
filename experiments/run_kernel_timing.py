@@ -12,10 +12,12 @@ Models
   K-keep-T7     K-GB-keep with the neighbour-agreement (T7) membership
   K-LSTSVM      kernel LSTSVM on every sample (one row and column per sample);
                 skipped above --full-limit training samples, where its n x n
-                matrices no longer fit in memory
+                matrices no longer fit in memory (the same limit applies to the
+                number of balls of the ball models)
   RK-LSTSVM     reduced-kernel LSTSVM: every sample is a row, but the kernel
                 columns are a random subset of the training samples as large as
-                the K-GB-keep ball set, so it has the same number of unknowns
+                the K-GB-keep ball set (at most --full-limit), so it has the same
+                number of unknowns
   RK-FKNN       RK-LSTSVM with the fuzzy-kNN membership on samples (T7 with every
                 sample as its own ball), neighbours from a k-d tree
 
@@ -93,6 +95,11 @@ def run_dataset(path, noise, k, full_limit, c, seed):
     rows = {}
 
     def fit_and_score(name, X_rows, bs, memb, basis, prep_time):
+        if len(basis) > full_limit:
+            rows[name] = {"skipped": f"{len(basis)} kernel columns: the (columns + 1)^2 matrices need "
+                                     f"{2 * (len(basis) + 1) ** 2 * 8 / 2 ** 30:.1f} GB", "columns": int(len(basis))}
+            print(f"  {name:12s} skipped ({rows[name]['skipped']})", flush=True)
+            return
         t0 = time.time()
         p1, p2 = planes_blockwise(X_rows, bs, memb, basis, gamma, True, c, c)
         fit = time.time() - t0
@@ -118,13 +125,8 @@ def run_dataset(path, noise, k, full_limit, c, seed):
 
     samples = ball_set_from_samples(train)
     ones = np.ones(len(X_tr))
-    if len(X_tr) <= full_limit:
-        fit_and_score("K-LSTSVM", X_tr, samples, ones, X_tr, 0.0)
-    else:
-        rows["K-LSTSVM"] = {"skipped": f"n x n matrices for {len(X_tr)} samples need "
-                                       f"{2 * (len(X_tr) + 1) ** 2 * 8 / 2 ** 30:.1f} GB"}
-        print(f"  K-LSTSVM     skipped ({rows['K-LSTSVM']['skipped']})", flush=True)
-    m = len(sets["gb_all"]["radii"])
+    fit_and_score("K-LSTSVM", X_tr, samples, ones, X_tr, 0.0)
+    m = min(len(sets["gb_all"]["radii"]), full_limit)
     basis = X_tr[np.random.default_rng(seed).choice(len(X_tr), size=m, replace=False)]
     fit_and_score("RK-LSTSVM", X_tr, samples, ones, basis, 0.0)
     t0 = time.time()
@@ -141,7 +143,7 @@ def main():
     ap.add_argument("--noise", type=float, default=0.0)
     ap.add_argument("--k", type=int, default=4, help="k-means k for ball splitting")
     ap.add_argument("--c", type=float, default=1.0)
-    ap.add_argument("--full-limit", type=int, default=11000, help="largest training set for full K-LSTSVM")
+    ap.add_argument("--full-limit", type=int, default=11000, help="most kernel columns (samples or balls) a model may use")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", default=str(ROOT / "results" / "kernel_timing"))
     args = ap.parse_args()
