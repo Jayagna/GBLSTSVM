@@ -96,4 +96,6 @@ python experiments/summarize_fuzzy.py results/kernel_cv_v1 --baseline K-GBLSTSVM
 python experiments/run_kernel_timing.py --out results/kernel_timing
 ```
 
+`experiments/paper_tables.py` turns these runs into paper-format tables (CSV and LaTeX, mean ± std per dataset, average ranks, Wilcoxon tests with Holm correction) and critical-difference diagrams (Friedman + Nemenyi) in `results/paper`. Both runners take `--first-repeat`, so more splits can be added to an earlier run without recomputing it.
+
 Note: `main.py` still selects `c1`, `c2` and `k` on the test set, as in the original demo; use the experiment runner for reportable numbers.

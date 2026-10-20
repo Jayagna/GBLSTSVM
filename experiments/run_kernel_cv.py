@@ -136,7 +136,7 @@ def run_one(task):
               "minority": meta["positive_count"], "majority": meta["negative_count"], "kernel": "rbf",
               "repeats": []}
     t_start = time.time()
-    for r in range(repeats):
+    for r in repeats:
         train, test = stratified_train_test_split(data, test_size=0.30, random_state=r)
         train, test = standardize_train_test(train, test)
         if noise > 0:
@@ -196,6 +196,7 @@ def main():
     ap.add_argument("--datasets", nargs="+", default=DEFAULT_DATASETS, help="dataset stems; 'all' for every file")
     ap.add_argument("--noise", nargs="+", type=float, default=[0.0])
     ap.add_argument("--repeats", type=int, default=5)
+    ap.add_argument("--first-repeat", type=int, default=0, help="index of the first split, to add splits to an earlier run")
     ap.add_argument("--folds", type=int, default=5)
     ap.add_argument("--k-values", nargs="+", type=int, default=[2, 3, 4, 5, 6])
     ap.add_argument("--out", default=str(ROOT / "results" / "kernel_cv"))
@@ -209,7 +210,8 @@ def main():
         exact = [p for p in files if p.stem.lower() == name.lower()]
         selected += exact if exact else select_datasets(files, [name])
     selected = list(dict.fromkeys(selected))
-    tasks = [(str(p), nz, args.repeats, args.folds, args.k_values, args.out, args.methods)
+    repeats = list(range(args.first_repeat, args.first_repeat + args.repeats))
+    tasks = [(str(p), nz, repeats, args.folds, args.k_values, args.out, args.methods)
              for nz in args.noise for p in selected]
     print(f"{len(tasks)} tasks ({len(selected)} datasets x {len(args.noise)} noise levels), {args.jobs} workers", flush=True)
     with Pool(args.jobs) as pool:
