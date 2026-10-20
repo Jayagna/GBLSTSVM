@@ -1,5 +1,5 @@
 """
-Summarize results written by run_fuzzy_cv.py.
+Summarize results written by run_fuzzy_cv.py or run_kernel_cv.py.
 
 Writes, for each noise level and metric:
   * summary_<metric>.csv       mean and std per dataset and method
@@ -8,6 +8,7 @@ Writes, for each noise level and metric:
 
 Example:
   python experiments/summarize_fuzzy.py results/fuzzy_cv_v1
+  python experiments/summarize_fuzzy.py results/kernel_cv_v1 --baseline K-GBLSTSVM
 """
 import argparse
 import json
@@ -36,7 +37,8 @@ def load(results_dir):
 
 
 def method_order(df):
-    preferred = ["GBLSTSVM", "T1-centre", "T2-entropy", "T4-overlap", "T5-density", "LSTSVM"]
+    preferred = ["GBLSTSVM", "T1-centre", "T2-entropy", "T4-overlap", "T5-density", "LSTSVM",
+                 "K-GBLSTSVM", "K-GB-keep", "K-keep-T7", "K-LSTSVM", "K-FKNN-LSTSVM"]
     present = list(df["method"].unique())
     return [m for m in preferred if m in present] + sorted(m for m in present if m not in preferred)
 
@@ -70,7 +72,9 @@ def stats_block(mean_table, higher_is_better=True):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("results_dir")
+    ap.add_argument("--baseline", default=BASELINE, help="method the Wilcoxon tests compare against")
     args = ap.parse_args()
+    globals()["BASELINE"] = args.baseline
     out = Path(args.results_dir)
     df = load(out)
     if df.empty:

@@ -88,4 +88,12 @@ python experiments/run_fuzzy_cv.py --noise 0 0.1 0.2 --repeats 5 --out results/f
 python experiments/summarize_fuzzy.py results/fuzzy_cv_v1
 ```
 
+`experiments/run_kernel_cv.py` runs the same protocol with an RBF kernel (features `K(x, C)` with `C` the ball centres, or every training sample for LSTSVM; the width is tuned too). `experiments/run_kernel_timing.py` measures training time and memory of the kernel models on the NDC files (2.5k to 100k samples), against full kernel LSTSVM and a reduced-kernel LSTSVM with as many random basis samples as there are balls.
+
+```bash
+python experiments/run_kernel_cv.py --noise 0 0.2 0.3 --repeats 5 --out results/kernel_cv_v1
+python experiments/summarize_fuzzy.py results/kernel_cv_v1 --baseline K-GBLSTSVM
+python experiments/run_kernel_timing.py --out results/kernel_timing
+```
+
 Note: `main.py` still selects `c1`, `c2` and `k` on the test set, as in the original demo; use the experiment runner for reportable numbers.

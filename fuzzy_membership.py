@@ -22,6 +22,7 @@ Candidates (topic ids follow the progress deck):
 import numpy as np
 
 EPS = 1e-12
+DENSE_LIMIT = 5000  # above this many balls, neighbours come from a k-d tree
 
 
 def _as_arrays(centers, radii, labels, counts):
@@ -36,6 +37,17 @@ def _pairwise_distances(centers):
     sq = np.sum(centers ** 2, axis=1)
     d2 = sq[:, None] + sq[None, :] - 2.0 * centers @ centers.T
     return np.sqrt(np.maximum(d2, 0.0))
+
+
+def _tree_neighbours(centers, k_nn):
+    """Indices of the k_nn nearest other rows, by a k-d tree (no n x n matrix)."""
+    from scipy.spatial import cKDTree
+    _, idx = cKDTree(centers).query(centers, k=k_nn + 1)
+    rows = np.arange(len(centers))[:, None]
+    not_self = idx != rows
+    # drop the row itself; with duplicate points it may not come first
+    keep = not_self & (np.cumsum(not_self, axis=1) <= k_nn)
+    return idx[keep].reshape(len(centers), k_nn)
 
 
 def membership_none(centers, radii, labels, counts, param=None):
@@ -120,10 +132,13 @@ def membership_agreement(centers, radii, labels, counts, param=(10, 1.0), floor=
     n = len(radii)
     if n < 2:
         return np.ones(n, dtype=np.float64)
-    dist = _pairwise_distances(centers)
-    np.fill_diagonal(dist, np.inf)
     k_nn = min(int(k_nn), n - 1)
-    nn = np.argpartition(dist, k_nn - 1, axis=1)[:, :k_nn]
+    if n > DENSE_LIMIT:
+        nn = _tree_neighbours(centers, k_nn)
+    else:
+        dist = _pairwise_distances(centers)
+        np.fill_diagonal(dist, np.inf)
+        nn = np.argpartition(dist, k_nn - 1, axis=1)[:, :k_nn]
     w = counts[nn]
     agree = np.sum(w * (labels[nn] == labels[:, None]), axis=1) / (np.sum(w, axis=1) + EPS)
     return np.clip(agree ** float(gamma), floor, 1.0)
