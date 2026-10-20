@@ -2,8 +2,8 @@
 GBTWSVM and GBFTSVM: twin SVMs on granular balls, solved through their duals.
 
 Python implementation of
-    Zhao, L., Ding, S., Miao, D., Lang, G. (2024). Granular-ball fuzzy twin support
-    vector machine. arXiv:2408.00699.
+    Zhao, L., Ding, W., Miao, D., Lang, G. (2024). Granular-balls based fuzzy twin
+    support vector machine for classification. arXiv:2408.00699.
 following its equations (29)-(45):
 
   * Plane 1 (close to the +1 balls) solves
