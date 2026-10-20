@@ -37,6 +37,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from addNoisy import recreat_data  # noqa: E402
+from adpgbg import adpgbg_gen_balls  # noqa: E402
 from dataset_utils import (  # noqa: E402
     discover_datasets,
     load_binary_dataset,
@@ -77,6 +78,8 @@ AGREE_GRID = [(k, g) for k in (5, 10) for g in (1.0, 3.0)]
 #              "samples" every training sample is a ball of radius 0 (LSTSVM)
 #              "samples_gb" samples as in LSTSVM, plus the granular balls of the same
 #                           training set, used only to give each sample a membership
+#              "adp"     balls from adaptive shortest-heterogeneous-distance generation
+#                        (ADPGBG, Liao et al. 2025; adpgbg.py), outliers dropped
 METHODS = [
     ("GBLSTSVM", "gb", member("none"), [None]),
     ("T1-centre", "gb", member("centre"), [None]),
@@ -96,6 +99,9 @@ METHODS = [
     ("T7-agree", "gb_all", member("agreement"), AGREE_GRID),
     ("GBF-agree", "samples_gb", via_balls(member("agreement")), AGREE_GRID),
     ("FKNN-LSTSVM", "samples", member("agreement"), AGREE_GRID),
+    ("GB-adp", "adp", member("none"), [None]),
+    ("T4-adp", "adp", member("overlap"), [0.5, 1.0, 2.0, 4.0]),
+    ("T7-adp", "adp", member("agreement"), AGREE_GRID),
 ]
 METHOD_INDEX = {m[0]: m for m in METHODS}
 ACTIVE_METHODS = METHODS
@@ -133,6 +139,15 @@ def ball_set_from_samples(data):
 
 def has_both_classes(bs):
     return bool(np.any(bs["labels"] == 1) and np.any(bs["labels"] == -1))
+
+
+KFREE_SETS = ("samples", "adp")
+
+
+def build_kfree_sets(train):
+    """Ball sets that do not depend on k: raw samples (LSTSVM) and ADPGBG balls."""
+    sets = {"samples": ball_set_from_samples(train), "adp": ball_set_from_balls(adpgbg_gen_balls(train))}
+    return {name: (bs if has_both_classes(bs) else None) for name, bs in sets.items()}
 
 
 def build_ball_sets(train, k):
@@ -262,7 +277,7 @@ def run_one(task):
             X_va, y_va = fold_va[:, :-1], fold_va[:, -1]
             for k in k_values:
                 score_ball_sets(build_ball_sets(fold_tr, k), X_va, y_va, k, cv_scores)
-            score_ball_sets({"samples": ball_set_from_samples(fold_tr)}, X_va, y_va, 0, cv_scores)
+            score_ball_sets(build_kfree_sets(fold_tr), X_va, y_va, 0, cv_scores)
 
         rep = {"repeat": r, "cv_folds": folds, "methods": {}}
         ball_cache = {}
@@ -273,14 +288,11 @@ def run_one(task):
             cfg, cv_best = select_best(cv_scores[name], folds)
             k, imb, p, c1, c2 = cfg
             t0 = time.time()
-            if set_name == "samples":
-                bs = ball_set_from_samples(train)
-            else:
-                if k not in ball_cache:
-                    ball_cache[k] = build_ball_sets(train, k)
-                bs = ball_cache[k][set_name]
-                if bs is None:
-                    continue
+            if k not in ball_cache:
+                ball_cache[k] = build_kfree_sets(train) if set_name in KFREE_SETS else build_ball_sets(train, k)
+            bs = ball_cache[k][set_name]
+            if bs is None:
+                continue
             memb = fn(bs, p)
             w1, b1, w2, b2 = fit_planes(bs, memb, c1, c2, imb)
             fit_time = time.time() - t0

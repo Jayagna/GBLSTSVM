@@ -79,9 +79,9 @@ The file `Data/LSTSVM_benchmarks/dataset_manifest.csv` contains the number of sa
 
 ## Fuzzy membership experiments
 
-`fuzzy_membership.py` adds ball-level fuzzy membership functions (T1 centre-distance, T2 neighbour entropy, T4 ball overlap, T5 density). `LSTWGBSVM(..., membership=s)` multiplies each ball's slack weight by its membership `s_i`; `membership_on="both"` also applies it to the proximity term. `LSTWGBSVM` now also returns the true `roc_auc` of the plane-distance score (the old `auc` key is balanced accuracy).
+`fuzzy_membership.py` adds ball-level fuzzy membership functions (T1 centre-distance, T2 neighbour entropy, T4 ball overlap, T5 density, T7 neighbour label agreement). `LSTWGBSVM(..., membership=s)` multiplies each ball's slack weight by its membership `s_i`; `membership_on="both"` also applies it to the proximity term. `LSTWGBSVM` now also returns the true `roc_auc` of the plane-distance score (the old `auc` key is balanced accuracy).
 
-`experiments/run_fuzzy_cv.py` compares the memberships without test-set tuning: repeated stratified 70/30 splits, optional label noise on the training part, and `k`, `c1`, `c2`, class weighting and the membership parameter chosen by stratified 5-fold CV on the training part. It also runs LSTSVM on raw samples (every sample a ball of radius 0) as a reference.
+`experiments/run_fuzzy_cv.py` compares the memberships without test-set tuning: repeated stratified 70/30 splits, optional label noise on the training part, and `k`, `c1`, `c2`, class weighting and the membership parameter chosen by stratified 5-fold CV on the training part. It also runs LSTSVM on raw samples (every sample a ball of radius 0) as a reference. `adpgbg.py` is a Python port of the ADPGBG ball generator (Liao et al., 2025), available to the runner as the `adp` ball set (methods `GB-adp`, `T4-adp`, `T7-adp`).
 
 ```bash
 python experiments/run_fuzzy_cv.py --noise 0 0.1 0.2 --repeats 5 --out results/fuzzy_cv_v1
