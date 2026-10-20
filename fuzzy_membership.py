@@ -17,6 +17,7 @@ Candidates (topic ids follow the progress deck):
     T2 entropy  : class entropy among the nearest neighbouring balls
     T4 overlap  : how deeply the ball overlaps balls of the other class
     T5 density  : samples per unit radius, relative to the class
+    T7 agreement: share of the ball's own class among its nearest balls
 """
 import numpy as np
 
@@ -109,12 +110,32 @@ def membership_density(centers, radii, labels, counts, param=0.5, eps=1e-6):
     return np.clip(s, 1e-3, 1.0)
 
 
+def membership_agreement(centers, radii, labels, counts, param=(10, 1.0), floor=1e-3):
+    """T7: a_i = count-weighted share of ball i's own class among its k nearest
+    balls; s_i = a_i ** gamma with param = (k, gamma). A ball surrounded by the
+    other class (a likely mislabelled point) gets a low membership. With every
+    sample as its own ball this is the classic kNN fuzzy membership."""
+    centers, radii, labels, counts = _as_arrays(centers, radii, labels, counts)
+    k_nn, gamma = param
+    n = len(radii)
+    if n < 2:
+        return np.ones(n, dtype=np.float64)
+    dist = _pairwise_distances(centers)
+    np.fill_diagonal(dist, np.inf)
+    k_nn = min(int(k_nn), n - 1)
+    nn = np.argpartition(dist, k_nn - 1, axis=1)[:, :k_nn]
+    w = counts[nn]
+    agree = np.sum(w * (labels[nn] == labels[:, None]), axis=1) / (np.sum(w, axis=1) + EPS)
+    return np.clip(agree ** float(gamma), floor, 1.0)
+
+
 MEMBERSHIPS = {
     "none": membership_none,
     "centre": membership_centre,
     "entropy": membership_entropy,
     "overlap": membership_overlap,
     "density": membership_density,
+    "agreement": membership_agreement,
 }
 
 

@@ -68,6 +68,8 @@ def singleton_entropy(bs, p):
     return singleton_weight(bs, w) * member("entropy")(bs, k_nn)
 
 
+AGREE_GRID = [(k, g) for k in (5, 10) for g in (1.0, 3.0)]
+
 # (method name, ball set, membership(ball set, param), parameter grid)
 #   ball sets: "gb"      granular balls as in GBLSTSVM (single-point balls deleted)
 #              "gb_noR"  same balls with radii set to 0 (ablation)
@@ -90,6 +92,10 @@ METHODS = [
     ("GBF-size", "samples_gb", via_balls(singleton_weight), [0.05, 0.2, 0.5]),
     ("GBF-overlap", "samples_gb", via_balls(member("overlap")), [0.5, 1.0, 2.0, 4.0]),
     ("GBF-entropy", "samples_gb", via_balls(member("entropy")), [5, 10]),
+    ("T7-agree-gb", "gb", member("agreement"), AGREE_GRID),
+    ("T7-agree", "gb_all", member("agreement"), AGREE_GRID),
+    ("GBF-agree", "samples_gb", via_balls(member("agreement")), AGREE_GRID),
+    ("FKNN-LSTSVM", "samples", member("agreement"), AGREE_GRID),
 ]
 METHOD_INDEX = {m[0]: m for m in METHODS}
 ACTIVE_METHODS = METHODS
