@@ -16,6 +16,8 @@ Models
   RK-LSTSVM     reduced-kernel LSTSVM: every sample is a row, but the kernel
                 columns are a random subset of the training samples as large as
                 the K-GB-keep ball set, so it has the same number of unknowns
+  RK-FKNN       RK-LSTSVM with the fuzzy-kNN membership on samples (T7 with every
+                sample as its own ball), neighbours from a k-d tree
 
 The systems are accumulated block by block, so no model holds more than one
 (columns + 1)^2 matrix per plane plus one block of kernel rows.
@@ -125,6 +127,9 @@ def run_dataset(path, noise, k, full_limit, c, seed):
     m = len(sets["gb_all"]["radii"])
     basis = X_tr[np.random.default_rng(seed).choice(len(X_tr), size=m, replace=False)]
     fit_and_score("RK-LSTSVM", X_tr, samples, ones, basis, 0.0)
+    t0 = time.time()
+    memb = member("agreement")(samples, T7_PARAM)
+    fit_and_score("RK-FKNN", X_tr, samples, memb, basis, time.time() - t0)
     return {"dataset": path.stem, "samples": meta["samples"], "train": int(len(X_tr)), "features": meta["features"],
             "noise": noise, "k": k, "c": c, "gamma": gamma, "seed": seed, "models": rows}
 
