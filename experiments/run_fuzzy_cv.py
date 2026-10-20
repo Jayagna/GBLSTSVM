@@ -48,15 +48,40 @@ from fuzzy_membership import compute_membership  # noqa: E402
 from GBLSTSVM import gb_decision_scores, solve_gb_planes  # noqa: E402
 from gen_ball import gen_balls  # noqa: E402
 
-# (method name, membership function, parameter grid)
+def member(name):
+    """Membership from fuzzy_membership.py as a function of (ball set, parameter)."""
+    return lambda bs, p: compute_membership(name, bs["centers"], bs["radii"], bs["labels"], bs["counts"], p)
+
+
+def singleton_weight(bs, w):
+    """T6: single-point balls (normally deleted) are kept with membership w."""
+    return np.where(bs["counts"] >= 2, 1.0, float(w))
+
+
+def singleton_entropy(bs, p):
+    w, k_nn = p
+    return singleton_weight(bs, w) * member("entropy")(bs, k_nn)
+
+
+# (method name, ball set, membership(ball set, param), parameter grid)
+#   ball sets: "gb"      granular balls as in GBLSTSVM (single-point balls deleted)
+#              "gb_noR"  same balls with radii set to 0 (ablation)
+#              "gb_all"  granular balls without deleting single-point balls
+#              "samples" every training sample is a ball of radius 0 (LSTSVM)
 METHODS = [
-    ("GBLSTSVM", "none", [None]),
-    ("T1-centre", "centre", [None]),
-    ("T2-entropy", "entropy", [5, 10]),
-    ("T4-overlap", "overlap", [0.5, 1.0, 2.0, 4.0]),
-    ("T5-density", "density", [0.25, 0.5, 1.0]),
+    ("GBLSTSVM", "gb", member("none"), [None]),
+    ("T1-centre", "gb", member("centre"), [None]),
+    ("T2-entropy", "gb", member("entropy"), [5, 10]),
+    ("T4-overlap", "gb", member("overlap"), [0.5, 1.0, 2.0, 4.0]),
+    ("T5-density", "gb", member("density"), [0.25, 0.5, 1.0]),
+    ("GB-noR", "gb_noR", member("none"), [None]),
+    ("GB-keep", "gb_all", member("none"), [None]),
+    ("T6-keep", "gb_all", singleton_weight, [0.05, 0.2, 0.5]),
+    ("T6+T2", "gb_all", singleton_entropy, [(w, k) for w in (0.2, 0.5, 1.0) for k in (5, 10)]),
+    ("T6+T4", "gb_all", member("overlap"), [0.5, 1.0, 2.0, 4.0]),
+    ("LSTSVM", "samples", member("none"), [None]),
 ]
-SAMPLE_BASELINE = "LSTSVM"
+METHOD_INDEX = {m[0]: m for m in METHODS}
 C_GRID = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
 IMB_GRID = [False, True]
 
@@ -89,12 +114,19 @@ def ball_set_from_samples(data):
     }
 
 
-def build_ball_set(train, k):
-    balls = gen_balls(train, pur=0.985, delbals=2, k_clusters=k, return_details=True)
-    bs = ball_set_from_balls(balls)
-    if not (np.any(bs["labels"] == 1) and np.any(bs["labels"] == -1)):
-        return None
-    return bs
+def has_both_classes(bs):
+    return bool(np.any(bs["labels"] == 1) and np.any(bs["labels"] == -1))
+
+
+def build_ball_sets(train, k):
+    """All granular-ball variants for one training set and one k (one ball generation)."""
+    balls = gen_balls(train, pur=0.985, delbals=1, k_clusters=k, return_details=True)
+    gb_all = ball_set_from_balls(balls)
+    keep = gb_all["counts"] >= 2
+    gb = {key: val[keep] for key, val in gb_all.items()}
+    gb_noR = dict(gb, radii=np.zeros(int(np.sum(keep))))
+    sets = {"gb": gb, "gb_noR": gb_noR, "gb_all": gb_all}
+    return {name: (bs if has_both_classes(bs) else None) for name, bs in sets.items()}
 
 
 # ---------------------------------------------------------------------------
@@ -149,10 +181,13 @@ def method_configs(param_grid):
                     yield imb, p, c1, c2
 
 
-def score_ball_set(bs, X_val, y_val, k, scores_out):
-    """Add the validation balanced accuracy of every (method, config) on one ball set."""
-    for name, fn, grid in METHODS:
-        memberships = {p: compute_membership(fn, bs["centers"], bs["radii"], bs["labels"], bs["counts"], p) for p in grid}
+def score_ball_sets(sets, X_val, y_val, k, scores_out):
+    """Add the validation balanced accuracy of every (method, config) on one fold and one k."""
+    for name, set_name, fn, grid in METHODS:
+        bs = sets.get(set_name)
+        if bs is None:
+            continue
+        memberships = {p: fn(bs, p) for p in grid}
         for imb, p, c1, c2 in method_configs(grid):
             try:
                 w1, b1, w2, b2 = fit_planes(bs, memberships[p], c1, c2, imb)
@@ -161,19 +196,6 @@ def score_ball_set(bs, X_val, y_val, k, scores_out):
             except np.linalg.LinAlgError:
                 s = 0.0
             scores_out.setdefault(name, {}).setdefault((k, imb, p, c1, c2), []).append(s)
-
-
-def score_samples(train_fold, X_val, y_val, scores_out):
-    bs = ball_set_from_samples(train_fold)
-    ones = np.ones(len(bs["radii"]))
-    for imb, _, c1, c2 in method_configs([None]):
-        try:
-            w1, b1, w2, b2 = fit_planes(bs, ones, c1, c2, imb)
-            pred = np.where(gb_decision_scores(X_val, w1, b1, w2, b2) > 0, 1, -1)
-            s = balanced_accuracy(y_val, pred)
-        except np.linalg.LinAlgError:
-            s = 0.0
-        scores_out.setdefault(SAMPLE_BASELINE, {}).setdefault((0, imb, None, c1, c2), []).append(s)
 
 
 def select_best(config_scores, n_folds):
@@ -216,31 +238,27 @@ def run_one(task):
             fold_tr, fold_va = train[tr_idx], train[va_idx]
             X_va, y_va = fold_va[:, :-1], fold_va[:, -1]
             for k in k_values:
-                bs = build_ball_set(fold_tr, k)
-                if bs is not None:
-                    score_ball_set(bs, X_va, y_va, k, cv_scores)
-            score_samples(fold_tr, X_va, y_va, cv_scores)
+                score_ball_sets(build_ball_sets(fold_tr, k), X_va, y_va, k, cv_scores)
+            score_ball_sets({"samples": ball_set_from_samples(fold_tr)}, X_va, y_va, 0, cv_scores)
 
         rep = {"repeat": r, "cv_folds": folds, "methods": {}}
         ball_cache = {}
         X_te, y_te = test[:, :-1], test[:, -1]
-        for name in [m[0] for m in METHODS] + [SAMPLE_BASELINE]:
+        for name, set_name, fn, _ in METHODS:
             if name not in cv_scores:
                 continue
             cfg, cv_best = select_best(cv_scores[name], folds)
             k, imb, p, c1, c2 = cfg
             t0 = time.time()
-            if name == SAMPLE_BASELINE:
+            if set_name == "samples":
                 bs = ball_set_from_samples(train)
-                memb = np.ones(len(bs["radii"]))
             else:
                 if k not in ball_cache:
-                    ball_cache[k] = build_ball_set(train, k)
-                bs = ball_cache[k]
+                    ball_cache[k] = build_ball_sets(train, k)
+                bs = ball_cache[k][set_name]
                 if bs is None:
                     continue
-                fn = dict((m[0], m[1]) for m in METHODS)[name]
-                memb = compute_membership(fn, bs["centers"], bs["radii"], bs["labels"], bs["counts"], p)
+            memb = fn(bs, p)
             w1, b1, w2, b2 = fit_planes(bs, memb, c1, c2, imb)
             fit_time = time.time() - t0
             res = test_metrics(y_te, gb_decision_scores(X_te, w1, b1, w2, b2))
