@@ -76,3 +76,16 @@ python main.py --dataset all
 **Warning:** the NDC datasets and the full `c1/c2` grid can make `--dataset all` very expensive. Test individual datasets or a small set first.
 
 The file `Data/LSTSVM_benchmarks/dataset_manifest.csv` contains the number of samples, number of features, and original class counts for each imported dataset.
+
+## Fuzzy membership experiments
+
+`fuzzy_membership.py` adds ball-level fuzzy membership functions (T1 centre-distance, T2 neighbour entropy, T4 ball overlap, T5 density). `LSTWGBSVM(..., membership=s)` multiplies each ball's slack weight by its membership `s_i`; `membership_on="both"` also applies it to the proximity term. `LSTWGBSVM` now also returns the true `roc_auc` of the plane-distance score (the old `auc` key is balanced accuracy).
+
+`experiments/run_fuzzy_cv.py` compares the memberships without test-set tuning: repeated stratified 70/30 splits, optional label noise on the training part, and `k`, `c1`, `c2`, class weighting and the membership parameter chosen by stratified 5-fold CV on the training part. It also runs LSTSVM on raw samples (every sample a ball of radius 0) as a reference.
+
+```bash
+python experiments/run_fuzzy_cv.py --noise 0 0.1 0.2 --repeats 5 --out results/fuzzy_cv_v1
+python experiments/summarize_fuzzy.py results/fuzzy_cv_v1
+```
+
+Note: `main.py` still selects `c1`, `c2` and `k` on the test set, as in the original demo; use the experiment runner for reportable numbers.

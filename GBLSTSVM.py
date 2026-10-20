@@ -6,6 +6,53 @@ from sklearn.metrics import confusion_matrix, f1_score, roc_auc_score
 warnings.filterwarnings("ignore")
 
 
+def solve_gb_planes(A, R_pos, B, R_neg, c1, c2, prox_pos, slack_pos, prox_neg, slack_neg, reg_term=0.0001):
+    """
+    Solve the two GBLSTSVM hyperplanes with per-ball weight vectors.
+
+    Plane 1 (close to +1 balls): proximity term on +1 balls, slack term on -1 balls
+        (G^T Q2 G + (1/c1) H^T P1 H + reg I) z1 = - G^T Q2 (e2 + R^-)
+    Plane 2 (close to -1 balls): proximity term on -1 balls, slack term on +1 balls
+        (H^T Q1 H + (1/c2) G^T P2 G + reg I) z2 = H^T Q1 (e1 + R^+)
+    P = diag(prox_*), Q = diag(slack_*). With P = Q = class weights this is the
+    original CIL GBLSTSVM; a fuzzy membership multiplies Q only.
+
+    :return: (w1, b1, w2, b2)
+    """
+    A = np.asarray(A, dtype=np.float64)
+    B = np.asarray(B, dtype=np.float64)
+    R_pos = np.asarray(R_pos, dtype=np.float64).reshape(-1)
+    R_neg = np.asarray(R_neg, dtype=np.float64).reshape(-1)
+    H = np.column_stack((A, np.ones(len(A))))
+    G = np.column_stack((B, np.ones(len(B))))
+    reg_I = reg_term * np.identity(H.shape[1], dtype=np.float64)
+
+    G_Q2 = G.T * slack_neg
+    H_Q1 = H.T * slack_pos
+    lhs1 = G_Q2 @ G + (1.0 / c1) * ((H.T * prox_pos) @ H) + reg_I
+    z1 = -np.linalg.solve(lhs1, G_Q2 @ (1.0 + R_neg))
+    lhs2 = H_Q1 @ H + (1.0 / c2) * ((G.T * prox_neg) @ G) + reg_I
+    z2 = np.linalg.solve(lhs2, H_Q1 @ (1.0 + R_pos))
+    return z1[:-1].reshape(-1, 1), float(z1[-1]), z2[:-1].reshape(-1, 1), float(z2[-1])
+
+
+def gb_decision_scores(X, w1, b1, w2, b2):
+    """
+    Signed score d2(x) - d1(x): positive when x is closer to plane 1 (class +1).
+    Prediction is +1 when the score is > 0, matching the nearest-plane rule.
+    """
+    X = np.asarray(X, dtype=np.float64)
+    norm_w1 = float(np.linalg.norm(w1))
+    norm_w2 = float(np.linalg.norm(w2))
+    if norm_w1 < 1e-12:
+        norm_w1 = 1.0
+    if norm_w2 < 1e-12:
+        norm_w2 = 1.0
+    dist1 = np.abs(X @ w1 + b1).flatten() / norm_w1
+    dist2 = np.abs(X @ w2 + b2).flatten() / norm_w2
+    return dist2 - dist1
+
+
 def LSTWGBSVM(
     Data,
     TestX,
@@ -16,7 +63,9 @@ def LSTWGBSVM(
     balance_power=1.0,
     ball_weight_power=0.0,
     reg_term=0.0001,
-    return_details=False
+    return_details=False,
+    membership=None,
+    membership_on="slack"
 ):
     """
     Granular Ball Least Square Twin Support Vector Machine (GBLSTSVM)
@@ -34,7 +83,13 @@ def LSTWGBSVM(
     :param balance_power: Exponent for class imbalance ratio (default 1.0).
     :param ball_weight_power: Exponent for sample count weighting per granular ball (default 0.0).
     :param reg_term: Regularization term for matrix inversion stability.
-    :param return_details: If True, returns a dict with all metrics (acc, auc, sens, spec, gmean, f1, cm, time, preds).
+    :param membership: Optional fuzzy membership per ball (same row order as Data), values in (0, 1].
+                       See fuzzy_membership.py.
+    :param membership_on: "slack" (default) applies the membership to the slack term only;
+                          "both" also applies it to the proximity term.
+    :param return_details: If True, returns a dict with all metrics (acc, auc, roc_auc, sens, spec, gmean, f1, cm, time, preds).
+                           Note: 'auc' is balanced accuracy (sens + spec) / 2, kept for backwards
+                           compatibility; 'roc_auc' is the ROC-AUC of the plane-distance score.
                            If False, returns (accuracy, elapsed_time) for backwards compatibility.
     :return: (accuracy, elapsed_time) or metric dictionary.
     """
@@ -94,24 +149,11 @@ def LSTWGBSVM(
         R2 = np.asarray(C2_data[:, -2], dtype=np.float64)
         num2 = np.ones(k2, dtype=np.float64)
 
-    R_pos = R1.reshape(-1, 1)
-    R_neg = R2.reshape(-1, 1)
-
-    mat_e1 = np.ones((k1, 1), dtype=np.float64)
-    mat_e2 = np.ones((k2, 1), dtype=np.float64)
-
-    # Augmented matrices H = [A, e1], G = [B, e2]
-    mat_H = np.column_stack((A, mat_e1))
-    mat_G = np.column_stack((B, mat_e2))
-    mat_H_t = mat_H.T
-    mat_G_t = mat_G.T
-
     # Total sample estimates from granular balls or custom class_weight
     total_pos_samples = np.sum(num1)
     total_neg_samples = np.sum(num2)
-    total_samples = total_pos_samples + total_neg_samples
 
-    # Compute Class Imbalance Weight Matrices W1 (for class +1) and W2 (for class -1)
+    # Class imbalance weights for class +1 (w1_diag) and class -1 (w2_diag)
     if use_imbalance:
         if isinstance(class_weight, dict):
             w_pos = float(class_weight.get(1, 1.0))
@@ -137,63 +179,42 @@ def LSTWGBSVM(
         else:
             w1_diag = np.full(k1, w_pos, dtype=np.float64)
             w2_diag = np.full(k2, w_neg, dtype=np.float64)
-
-        W1 = np.diag(w1_diag)
-        W2 = np.diag(w2_diag)
     else:
-        W1 = np.identity(k1, dtype=np.float64)
-        W2 = np.identity(k2, dtype=np.float64)
+        w1_diag = np.ones(k1, dtype=np.float64)
+        w2_diag = np.ones(k2, dtype=np.float64)
+
+    # Fuzzy membership of each ball (1 = fully trusted)
+    if membership is not None:
+        membership = np.asarray(membership, dtype=np.float64).reshape(-1)
+        s_pos = membership[pos_mask]
+        s_neg = membership[neg_mask]
+    else:
+        s_pos = np.ones(k1, dtype=np.float64)
+        s_neg = np.ones(k2, dtype=np.float64)
+
+    slack_pos = w1_diag * s_pos
+    slack_neg = w2_diag * s_neg
+    if membership_on == "both":
+        prox_pos, prox_neg = slack_pos, slack_neg
+    else:
+        prox_pos, prox_neg = w1_diag, w2_diag
+
+    w1, b1, w2, b2 = solve_gb_planes(
+        A, R1, B, R2, c1, c2,
+        prox_pos=prox_pos, slack_pos=slack_pos,
+        prox_neg=prox_neg, slack_neg=slack_neg,
+        reg_term=reg_term,
+    )
 
     # -------------------------------------------------------------
-    # Hyperplane 1 (close to class +1, far from class -1):
-    # (G^T W2 G + (1/c1) * H^T W1 H + reg * I) [w1; b1] = - G^T W2 (e2 + R^-)
-    # -------------------------------------------------------------
-    reg_I = reg_term * np.identity(mat_H.shape[1], dtype=np.float64)
-    mat_G_W2_G = mat_G_t @ W2 @ mat_G
-    mat_H_W1_H = mat_H_t @ W1 @ mat_H
-
-    inv_p_1 = np.linalg.inv(mat_G_W2_G + (1.0 / c1) * mat_H_W1_H + reg_I)
-    e2_R_neg = mat_e2 + R_neg
-    H_rhs = mat_G_t @ W2 @ e2_R_neg
-    hyper_p_1 = -1.0 * (inv_p_1 @ H_rhs)
-
-    w1 = np.asarray(hyper_p_1[:-1, :], dtype=np.float64).reshape(-1, 1)
-    b1 = float(hyper_p_1[-1, 0])
-
-    # -------------------------------------------------------------
-    # Hyperplane 2 (close to class -1, far from class +1):
-    # (H^T W1 H + (1/c2) * G^T W2 G + reg * I) [w2; b2] = H^T W1 (e1 + R^+)
-    # -------------------------------------------------------------
-    inv_p_2 = np.linalg.inv(mat_H_W1_H + (1.0 / c2) * mat_G_W2_G + reg_I)
-    e1_R_pos = mat_e1 + R_pos
-    G_rhs = mat_H_t @ W1 @ e1_R_pos
-    hyper_p_2 = inv_p_2 @ G_rhs
-
-    w2 = np.asarray(hyper_p_2[:-1, :], dtype=np.float64).reshape(-1, 1)
-    b2 = float(hyper_p_2[-1, 0])
-
-    # -------------------------------------------------------------
-    # Prediction on Test Set
+    # Prediction on Test Set: point belongs to the class whose plane is closer
     # -------------------------------------------------------------
     test_X = np.asarray(TestX[:, :-1], dtype=np.float64)
     y_true = np.asarray(TestX[:, -1], dtype=np.int32).flatten()
     y_true[y_true == 0] = -1
 
-    norm_w1 = float(np.linalg.norm(w1))
-    norm_w2 = float(np.linalg.norm(w2))
-    if norm_w1 < 1e-12:
-        norm_w1 = 1.0
-    if norm_w2 < 1e-12:
-        norm_w2 = 1.0
-
-    # Perpendicular distance to hyperplanes:
-    # d1(x) = |w1^T x + b1| / ||w1||
-    # d2(x) = |w2^T x + b2| / ||w2||
-    dist1 = np.abs(np.dot(test_X, w1).flatten() + b1) / norm_w1
-    dist2 = np.abs(np.dot(test_X, w2).flatten() + b2) / norm_w2
-
-    # Point belongs to class whose hyperplane it is closer to
-    pred_y = np.where(dist1 < dist2, 1, -1)
+    scores = gb_decision_scores(test_X, w1, b1, w2, b2)
+    pred_y = np.where(scores > 0, 1, -1)
 
     # -------------------------------------------------------------
     # Performance Metrics
@@ -209,6 +230,7 @@ def LSTWGBSVM(
     auc = float((sens + spec) / 2.0)
     gmean = float(np.sqrt(sens * spec))
     f1 = float(f1_score(y_true, pred_y, pos_label=1, zero_division=0))
+    roc_auc = float(roc_auc_score(y_true, scores)) if len(np.unique(y_true)) == 2 else float("nan")
 
     elapsed_time = time.time() - st
 
@@ -216,6 +238,8 @@ def LSTWGBSVM(
         return {
             'accuracy': acc,
             'auc': auc,
+            'balanced_accuracy': auc,
+            'roc_auc': roc_auc,
             'sensitivity': sens,
             'specificity': spec,
             'gmean': gmean,
@@ -230,6 +254,7 @@ def LSTWGBSVM(
             'w2': w2,
             'b2': b2,
             'predictions': pred_y,
+            'scores': scores,
             'elapsed_time': elapsed_time
         }
 
