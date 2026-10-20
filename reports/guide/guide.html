@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fuzzy GBLSTSVM: a plain-language guide</title>
+<style>
+  @page { size: A4; margin: 18mm 18mm 20mm 18mm; }
+  :root {
+    --ink: #1b1b1a; --ink2: #52514e; --muted: #8a8984; --rule: #e4e3df;
+    --accent: #2a78d6; --accent-soft: #eef4fc; --warm-soft: #fdf1ea; --good-soft: #eaf7f1;
+  }
+  html { background: #ffffff; }
+  body { font-family: "Caladea", "Liberation Serif", serif; font-size: 11.2pt; line-height: 1.5; color: var(--ink); margin: 0; }
+  h1, h2, h3, h4, .sans, table, figcaption, .tag { font-family: "Inter", "Liberation Sans", sans-serif; }
+  h1 { font-size: 23pt; line-height: 1.15; margin: 0 0 6pt; letter-spacing: -0.01em; }
+  h2 { font-size: 15pt; margin: 22pt 0 6pt; padding-top: 6pt; border-top: 1.5pt solid var(--ink); break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 14pt 0 4pt; break-after: avoid; }
+  h4 { font-size: 10pt; margin: 10pt 0 2pt; color: var(--ink2); text-transform: uppercase; letter-spacing: 0.04em; break-after: avoid; }
+  p { margin: 0 0 7pt; }
+  ul, ol { margin: 0 0 8pt; padding-left: 18pt; }
+  li { margin-bottom: 3pt; }
+  .subtitle { font-family: "Inter", sans-serif; color: var(--ink2); font-size: 10.5pt; margin-bottom: 14pt; }
+  .box { background: #f5f5f3; border-radius: 6pt; padding: 10pt 13pt; margin: 8pt 0 12pt; break-inside: avoid; }
+  .box.blue { background: var(--accent-soft); }
+  .box.warm { background: var(--warm-soft); }
+  .box.green { background: var(--good-soft); }
+  .box h3 { margin-top: 0; }
+  .box p:last-child, .box ul:last-child, .box ol:last-child { margin-bottom: 0; }
+  figure { margin: 10pt 0 14pt; break-inside: avoid; }
+  figure img { width: 100%; display: block; }
+  figcaption { font-size: 8.8pt; color: var(--ink2); margin-top: 4pt; line-height: 1.4; }
+  table { border-collapse: collapse; width: 100%; font-size: 8.8pt; margin: 6pt 0 12pt; break-inside: avoid; }
+  th { text-align: left; font-weight: 600; border-bottom: 1pt solid var(--ink); padding: 4pt 6pt 3pt 0; vertical-align: bottom; }
+  td { border-bottom: 0.5pt solid var(--rule); padding: 4pt 6pt 4pt 0; vertical-align: top; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .round { break-inside: avoid-page; }
+  .qa { display: grid; grid-template-columns: 72pt 1fr; column-gap: 8pt; row-gap: 3pt; margin: 4pt 0 8pt; }
+  .qa .k { font-family: "Inter", sans-serif; font-size: 8.5pt; font-weight: 600; color: var(--ink2); text-transform: uppercase; letter-spacing: 0.04em; padding-top: 2pt; }
+  .qa .v { }
+  .tag { display: inline-block; font-size: 7.5pt; font-weight: 600; padding: 1pt 5pt; border-radius: 3pt; vertical-align: 1pt; }
+  .tag.drop { background: #fbe4e2; color: #a12d2b; }
+  .tag.keep { background: #dff3ea; color: #1d6b4b; }
+  .tag.run { background: #fdf0d5; color: #8a5a00; }
+  code { font-family: "JetBrains Mono", monospace; font-size: 8.8pt; background: #f2f2ef; padding: 0 2pt; border-radius: 2pt; }
+  .small { font-size: 9.5pt; color: var(--ink2); }
+  .pagebreak { break-before: page; }
+  dl { margin: 0; column-count: 2; column-gap: 18pt; }
+  dl > div { break-inside: avoid; }
+  dt { font-family: "Inter", sans-serif; font-weight: 600; font-size: 9.5pt; margin-top: 6pt; }
+  dd { margin: 0 0 0 0; font-size: 10pt; line-height: 1.4; }
+table.timing { font-size: 8.6pt; page-break-inside: avoid; }
+table.timing td.num { white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<h1>Fuzzy GBLSTSVM: what we have done, and what it means</h1>
+<div class="subtitle">A plain-language guide for Jayagna &middot; 20 October 2026, after round 7 (the GBFTSVM comparison) and the midsem deck &middot; written for your understanding, not for publication</div>
+
+<div class="box blue">
+<h3>The short version</h3>
+<ul>
+  <li><b>The goal</b> is a new fuzzy membership function that makes GBLSTSVM clearly better, strong enough for a paper.</li>
+  <li><b>We built a fair test bench first.</b> 21 datasets, 5 random splits each, every setting tuned on training data only, and 0 to 30% of training labels deliberately flipped to test robustness.</li>
+  <li><b>The first four fuzzy functions (T1, T2, T4, T5) change GBLSTSVM by less than 1 point.</b> That is too small for a paper.</li>
+  <li><b>The cause is not the fuzzy function.</b> GBLSTSVM deletes every granular ball that holds a single point. That throws away 35 to 40% of the training data, mostly near the class boundary, and costs it 4 to 7 points against plain LSTSVM, which keeps every point.</li>
+  <li><b>Most fuzzy functions cannot tell a mislabelled point from a correct one.</b> The entropy-based one is worse than a coin toss. A function that asks <i>&ldquo;do my neighbours share my label?&rdquo;</i> (T7) finds about 90% of them.</li>
+  <li><b>In round 4, T7 lifted the ball model above GBLSTSVM at every noise level</b>, and at 30% noise it nearly caught plain LSTSVM. The same idea on raw points (classic fuzzy-kNN LSTSVM, an already-known method) was the best of everything under noise.</li>
+  <li><b>GBLSTSVM&rsquo;s robustness to noise comes from deleting points.</b> At 20% noise it deletes 86% of the flipped labels, but also 53% of the correct points.</li>
+  <li><b>The MATLAB suite on your Desktop</b> already contains overlap- and neighbour-based weights (OBRU, CBCM, Topo), so our T4 is not new even within your group. It suggested a better ball builder (ADPGBG); in round 5 that did no better than simply keeping the single points.</li>
+  <li><b>Where this leaves us:</b> in the linear model, training on balls always costs 1 to 4 points against training on every point, whichever builder or weight we use. Within the ball family, keeping single points plus T7 beats GBLSTSVM clearly: +4.1 points on clean data and +3.4 at 30% noise.</li>
+  <li><b>Round 6 tested the kernel (curved-boundary) version, where balls were supposed to pay off.</b> There, keep + T7 is only 0.1 to 0.9 points above kernel GBLSTSVM, not significant. Ball models do help at 30% noise and train in seconds on 70,000 points, where kernel LSTSVM runs out of memory. But a standard shortcut that needs no balls (reduced-kernel LSTSVM) is about as fast and 0.5 to 3 points more accurate.</li>
+  <li><b>Round 7 added GBFTSVM, the closest published model</b> (fuzzy weights on granular balls in a twin SVM). Under fair tuning it is no better than GBLSTSVM, its fuzzy scores change almost nothing, and keep + T7 beats it by 3.7 to 5.6 points at every noise level. Its paper reports much higher numbers because it tunes on the test set; doing the same in our runs adds 9 to 15 points.</li>
+  <li><b>You chose the analysis paper</b> (option C in section 5): where granular balls help twin SVMs and where they do not, with keep + T7 as its proposed fix. Section 6 has the final numbers it will use, now averaged over 10 splits instead of 5.</li>
+</ul>
+</div>
+
+<h2>1. The background in plain words</h2>
+
+<h3>1.1 What LSTSVM does</h3>
+<p>A normal support vector machine (SVM) looks for one straight line (in many dimensions, a <i>hyperplane</i>) that separates two classes. A <b>twin SVM</b> looks for two lines instead. Line 1 runs as close as possible to the points of class +1 while staying at least a distance of 1 away from the points of class &minus;1. Line 2 does the opposite. A new point is given the class whose line it lies closer to.</p>
+<p>The <b>least squares</b> version (LSTSVM) replaces the hard &ldquo;stay at least 1 away&rdquo; rules with squared penalties. Training then becomes solving two small systems of linear equations (one row and column per feature, plus one), so it is very fast and has an exact answer. Two numbers, <code>c1</code> and <code>c2</code>, set how hard each line is pushed away from the other class.</p>
+
+<h3>1.2 What GBLSTSVM adds: granular balls</h3>
+<p>GBLSTSVM (Tanveer, Sharma, Quadir and Sajid, <i>Pattern Recognition</i> 2025) first compresses the training data into <b>granular balls</b>. It starts with all points in one ball and splits it with k-means into <code>k</code> smaller balls. Any ball in which fewer than 98.5% of the points share one label is split again, and so on. Each final ball is summarised by three things: its <b>centre</b>, its <b>radius</b> (the average distance of its points from the centre) and its <b>label</b> (the majority label).</p>
+<p>The twin lines are then trained on the ball centres instead of the points, with the radius added to the margin (&ldquo;stay 1 + r away&rdquo;). The paper claims two benefits: far fewer items to train on, so it is faster, and robustness to wrong labels, because a single wrong label inside a big ball is outvoted by its neighbours.</p>
+<p>One detail turns out to matter a lot: <b>balls that contain only one point are deleted before training</b> (<code>delbals=2</code> in <code>gen_ball.py</code>).</p>
+
+<figure>
+  <img src="fig/fig1_balls.png" alt="Left: two classes of points. Right: the granular balls built from them, the deleted single-point balls marked with crosses near the class boundary, and the two GBLSTSVM lines.">
+  <figcaption><b>Figure 1.</b> A toy example run through the real code. Left: 170 training points. Right: the 19 balls GBLSTSVM keeps and the two lines it learns from them. The grey crosses are the 24 points that ended up alone in a ball and were deleted. Notice where they are: almost all of them sit in the overlap between the two classes, which is exactly the region that decides where the lines should go.</figcaption>
+</figure>
+
+<h3>1.3 What a fuzzy membership is</h3>
+<p>A <b>fuzzy membership</b> is a number between 0 and 1 attached to each training item, saying how much we trust it. An item with membership 1 counts fully; an item with 0.1 counts only one tenth when the model pays a penalty for having it on the wrong side. The idea comes from the fuzzy SVM of Lin and Wang (2002): give outliers and mislabelled points low memberships so the lines do not bend towards them.</p>
+<p>Our project puts such a number on each <b>ball</b>. In the code it is one multiplication: the penalty weight of each ball (the &ldquo;slack&rdquo; weight) becomes <code>class weight &times; membership</code>. Everything else in GBLSTSVM stays the same, so any improvement can be credited to the membership function.</p>
+
+<h2>2. How we test, and why it is stricter than the original code</h2>
+<p>The original <code>main.py</code> tested each dataset on one random split and picked <code>c1</code>, <code>c2</code> and <code>k</code> by the best accuracy <i>on the test set</i>. Picking the best of many tries on the test data itself makes every method look better than it is and makes small differences look real. A reviewer would reject a paper built on that. So before testing any idea, we built a stricter test bench (<code>experiments/run_fuzzy_cv.py</code>):</p>
+<ul>
+  <li><b>21 datasets</b> from your <code>Data/LSTSVM_benchmarks</code> folder, with 194 to 1,484 samples and 3 to 60 features. Nine are strongly imbalanced: the smaller class is between 5.7% (abalone9-18) and 16% (new-thyroid1) of the data.</li>
+  <li><b>5 random 70/30 train/test splits</b> per dataset, each keeping the same class mix in both parts.</li>
+  <li><b>All settings chosen by 5-fold cross-validation on the 70% training part only</b>: <code>c1</code> and <code>c2</code> from 0.001 to 1000, <code>k</code> from 2 to 6, class weighting on or off, and the fuzzy function&rsquo;s own parameter. The 30% test part is touched once, at the very end.</li>
+  <li><b>Label noise</b>: before training, 10%, 20% (from round 4 on, 30%) of the training labels are flipped at random. The test labels stay correct. This tests the paper&rsquo;s robustness claim directly, and robustness is where fuzzy memberships are supposed to help.</li>
+  <li><b>Main score: balanced accuracy</b>, the average of the accuracy on class +1 and the accuracy on class &minus;1. On a dataset that is 95% class &minus;1, a model that always answers &minus;1 scores 95% accuracy but only 50% balanced accuracy, so plain accuracy would hide failures on the small class. We also record accuracy, G-mean, F1 and ROC-AUC.</li>
+  <li><b>Statistics</b>: the Friedman test asks whether the methods differ at all across the 21 datasets. The Wilcoxon signed-rank test asks, for each method against GBLSTSVM, whether it wins consistently across datasets rather than only on average. A p-value under 0.05 means a pattern that consistent would rarely appear by chance.</li>
+</ul>
+
+<h2>3. What we tried, round by round</h2>
+<p>Each idea has a topic number (T1 to T7), the same numbers used in the progress deck.</p>
+<table>
+  <tr><th>Topic</th><th>Idea in one line</th><th>Status</th></tr>
+  <tr><td>T1 centre distance</td><td>Balls far from the centre of their own class get less trust. The classic fuzzy SVM rule.</td><td><span class="tag drop">Dropped</span> already published for balls (GBFSVM); no gain</td></tr>
+  <tr><td>T2 neighbour entropy</td><td>Balls whose neighbourhood mixes both classes get less trust.</td><td><span class="tag drop">Dropped</span> measures the wrong thing (see the diagnostic)</td></tr>
+  <tr><td>T3 intuitionistic</td><td>Separate membership and non-membership degrees per ball.</td><td><span class="tag drop">Tested as GBFTSVM</span> already published; no gain over GBLSTSVM (round 7)</td></tr>
+  <tr><td>T4 ball overlap</td><td>Balls that overlap balls of the other class get less trust.</td><td><span class="tag drop">Dropped</span> worse under noise; same idea as OBRU in your MATLAB suite</td></tr>
+  <tr><td>T5 ball density</td><td>Loose, sparse balls get less trust than tight, dense ones.</td><td><span class="tag drop">Dropped</span> worse under noise</td></tr>
+  <tr><td>T6 keep single points</td><td>Keep the single-point balls GBLSTSVM deletes, with a tunable lower weight.</td><td><span class="tag keep">Kept</span> +3.7 points</td></tr>
+  <tr><td>T7 neighbour agreement</td><td>A ball&rsquo;s trust is the share of its nearest balls that carry the same label.</td><td><span class="tag keep">Partly</span> finds noise; small gain on balls (round 4)</td></tr>
+  <tr><td>ADPGBG balls</td><td>Build balls up to the nearest point of the other class instead of by k-means.</td><td><span class="tag drop">No gain</span> no better than keeping single points (round 5)</td></tr>
+  <tr><td>Kernel version</td><td>The same models with a non-linear (RBF) kernel, plus a speed test on up to 100,000 points.</td><td><span class="tag drop">No edge</span> fix adds little; not faster than reduced-kernel LSTSVM (round 6)</td></tr>
+  <tr><td>GBFTSVM baseline</td><td>The published fuzzy granular-ball twin SVM, run on the same test bench.</td><td><span class="tag keep">Done</span> keep + T7 beats it by 3.7 to 5.6 points (round 7)</td></tr>
+</table>
+
+<figure>
+  <img src="fig/fig2_journey.png" alt="Bar chart of balanced accuracy at 0% noise: GBLSTSVM 73.4, T1 73.8, T2 74.2, T4 73.5, T5 73.6, keep single-point balls 77.1, T6 77.7, all samples with ball weights 80.5, LSTSVM 80.7.">
+  <figcaption><b>Figure 2.</b> Every variant from rounds 1 to 3 on clean labels. The dashed line is GBLSTSVM. Fuzzy weights on GBLSTSVM&rsquo;s balls (round 1) barely move it; keeping the deleted points (round 2) moves it a lot; training on all points (round 3, and LSTSVM) moves it most. &ldquo;All samples, ball weights&rdquo; shows the best of the three round 3 variants.</figcaption>
+</figure>
+
+<div class="round">
+<h3>Round 1: four fuzzy functions on GBLSTSVM&rsquo;s balls <span class="tag drop">no real gain</span></h3>
+<div class="qa">
+  <div class="k">Question</div><div class="v">Does a fuzzy weight on the balls improve GBLSTSVM?</div>
+  <div class="k">What we did</div><div class="v">Tested T1 centre distance, T2 neighbour entropy, T4 overlap and T5 density at 0, 10 and 20% label noise, with plain LSTSVM as a reference.</div>
+  <div class="k">Result</div><div class="v">All four stayed within 1 point of GBLSTSVM (73.4% balanced accuracy, versus 73.5 to 74.2%). Only T2 on clean data passed the significance test (p = 0.044), and it lost that edge under noise. T4 and T5 were significantly <i>worse</i> under noise (p = 0.010 and 0.049). Plain LSTSVM beat every ball-based model by 4 to 7 points.</div>
+  <div class="k">What it means</div><div class="v">The weights were not the bottleneck. Something in the ball step itself was costing accuracy, and no weight on top of it could win that back.</div>
+</div>
+</div>
+
+<div class="round">
+<h3>Round 2: why does the ball step cost so much? <span class="tag keep">found the cause</span></h3>
+<div class="qa">
+  <div class="k">Question</div><div class="v">What does GBLSTSVM lose when it turns points into balls?</div>
+  <div class="k">What we did</div><div class="v">Counted what is deleted, then tested: keeping single-point balls (GB-keep), keeping them with a tunable lower weight (T6), setting every radius to 0 (to see if the radius matters), and T2 and T4 on top of GB-keep.</div>
+  <div class="k">Result</div><div class="v">35 to 40% of training points end up alone in a ball and are deleted, mostly at the class boundary and in the small class (Figure 1). Keeping them raised balanced accuracy from 73.4 to 77.1% (p = 0.001), mostly by catching more of the small class. T6 weighting added another 0.6 points, not significant. Fuzzy weights on top added nothing. Setting all radii to 0 changed nothing, so the radius is not what makes GBLSTSVM work. LSTSVM was still about 3 points ahead.</div>
+  <div class="k">What it means</div><div class="v">The paper&rsquo;s &ldquo;delete single-point balls&rdquo; step is the main weakness of GBLSTSVM, bigger than anything a fuzzy function could fix on its own.</div>
+</div>
+</div>
+
+<figure>
+  <img src="fig/fig3_noise.png" alt="Line chart of balanced accuracy against label noise for LSTSVM, GBLSTSVM with single-point balls kept, and the original GBLSTSVM.">
+  <figcaption><b>Figure 3.</b> Balanced accuracy as more training labels are flipped. LSTSVM stays on top at every noise level. GBLSTSVM loses less as noise grows, which is the robustness the paper describes, but it starts so much lower that it never catches up. Keeping the single-point balls helps most on clean data.</figcaption>
+</figure>
+
+<div class="round">
+<h3>Round 3: balls only as a weighting tool <span class="tag drop">no gain</span></h3>
+<div class="qa">
+  <div class="k">Question</div><div class="v">If training on every point is best, can the balls still help by telling us how much to trust each point?</div>
+  <div class="k">What we did</div><div class="v">Trained on all points, like LSTSVM, but gave each point the weight of the ball it falls in, using three ball weights (size, overlap, entropy).</div>
+  <div class="k">Result</div><div class="v">Slightly below LSTSVM at every noise level (0.2 to 0.9 points), and never significantly different from it (all p &gt; 0.1).</div>
+  <div class="k">What it means</div><div class="v">These weights do almost nothing. That raised a sharper question: are they pointing at the noisy points at all?</div>
+</div>
+</div>
+
+<div class="round">
+<h3>Diagnostic: do the weights actually find the mislabelled points? <span class="tag keep">key insight</span></h3>
+<p>We flipped 10% and 20% of the training labels and checked whether the flipped points got lower weights than the correct ones. The score is ROC-AUC: 0.5 means the weight is no better than a coin toss at ranking flipped points below correct ones, and 1.0 means every flipped point gets a lower weight than every correct point.</p>
+</div>
+
+<figure>
+  <img src="fig/fig4_detect.png" alt="Bar chart of ROC-AUC for spotting flipped labels: entropy 0.33, overlap 0.48, single-point ball 0.75, classic kNN on samples 0.89, ball neighbour agreement 0.90.">
+  <figcaption><b>Figure 4.</b> How well each weight spots flipped labels at 10% noise (20% noise gives almost the same picture: 0.30, 0.48, 0.70, 0.88, 0.88). Entropy is worse than a coin toss and overlap is a coin toss, which explains why they could not help under noise. Neighbour agreement finds about 90% of the flipped labels.</figcaption>
+</figure>
+
+<p><b>Why does entropy fail so badly?</b> A flipped point usually sits deep inside the other class. All its neighbours share one label (just not its own), so its neighbourhood looks perfectly pure, entropy is zero, and it gets full trust. Meanwhile a correctly labelled point on the boundary has a mixed neighbourhood and is punished. Entropy measures <i>how mixed an area is</i>; finding wrong labels needs <i>whether the neighbours agree with this point&rsquo;s own label</i>. That is the idea behind T7.</p>
+
+<figure>
+  <img src="fig/fig5_entropy.png" alt="Two panels with the same points. Left: entropy gives a flipped point full trust and a correct border point low trust. Right: agreement gives the flipped point zero and the border point 0.6.">
+  <figcaption><b>Figure 5.</b> The same two highlighted points scored two ways (real values from this toy data, 5 nearest neighbours). Entropy trusts the flipped orange point fully and nearly ignores the correct blue point on the border. Agreement does the reverse.</figcaption>
+</figure>
+
+<div class="round">
+<h3>Round 4: T7 neighbour agreement <span class="tag keep">helps under heavy noise</span></h3>
+<div class="qa">
+  <div class="k">Question</div><div class="v">Does a weight that actually finds flipped labels (T7) make the ball models robust to noise?</div>
+  <div class="k">What we did</div><div class="v">T7 gives each ball the share of its <code>k</code> nearest balls (counted by points) that carry the same label, raised to a power &gamma;. Both <code>k</code> (5 or 10) and &gamma; (1 or 3) were chosen by cross-validation. We tried it on GBLSTSVM&rsquo;s balls, on all balls (single points kept), and on points (each point takes its ball&rsquo;s value), against classic fuzzy-kNN LSTSVM, which is the same idea on raw points and a known method (Keller et al., 1985). Noise: 0, 10, 20 and 30%.</div>
+</div>
+<table>
+  <tr><th>Balanced accuracy, % (best in bold)</th><th class="num">0% noise</th><th class="num">10%</th><th class="num">20%</th><th class="num">30%</th></tr>
+  <tr><td>GBLSTSVM (original)</td><td class="num">73.4</td><td class="num">73.2</td><td class="num">72.0</td><td class="num">65.2</td></tr>
+  <tr><td>T7 on GBLSTSVM&rsquo;s balls</td><td class="num">73.9</td><td class="num">73.8</td><td class="num">71.3</td><td class="num">65.4</td></tr>
+  <tr><td>Keep single-point balls</td><td class="num">77.1</td><td class="num">75.7</td><td class="num">73.0</td><td class="num">66.3</td></tr>
+  <tr><td>T7 on all balls</td><td class="num">77.5</td><td class="num">75.9</td><td class="num">73.8</td><td class="num">68.6</td></tr>
+  <tr><td>T7 on points, via their balls</td><td class="num">79.9</td><td class="num"><b>78.5</b></td><td class="num">75.9</td><td class="num"><b>71.3</b></td></tr>
+  <tr><td>LSTSVM (no balls)</td><td class="num"><b>80.7</b></td><td class="num">77.8</td><td class="num">76.2</td><td class="num">69.2</td></tr>
+  <tr><td>Classic fuzzy-kNN LSTSVM</td><td class="num">80.4</td><td class="num">78.4</td><td class="num"><b>77.3</b></td><td class="num">71.1</td></tr>
+</table>
+</div>
+
+<figure>
+  <img src="fig/fig6_round4.png" alt="Line chart of balanced accuracy against label noise for GBLSTSVM, T7 on all balls, LSTSVM and classic fuzzy-kNN LSTSVM.">
+  <figcaption><b>Figure 6.</b> Round 4, mean of 21 datasets. T7 lifts the ball model above GBLSTSVM at every noise level and nearly catches LSTSVM at 30% noise. The best method under noise is the classic fuzzy-kNN LSTSVM on raw points.</figcaption>
+</figure>
+
+<div class="qa">
+  <div class="k">What it means</div><div class="v">
+  <p><b>On GBLSTSVM&rsquo;s own balls, T7 does nothing, because GBLSTSVM already deletes most flipped labels.</b> I measured this on 12 datasets at 20% noise: 86% of the flipped points end up alone in a ball and are deleted, but so are 53% of the correct points. Deleting single-point balls is a crude noise filter. It explains why GBLSTSVM loses so little as noise grows, and also why it starts so low.</p>
+  <p><b>On all balls, T7 helps, and more as noise grows.</b> Over simply keeping the single points it adds 0.2 to 0.8 points up to 20% noise and 2.4 points at 30% (p = 0.029). The ball model still trails LSTSVM: by 2 to 3 points up to 20% noise, and by 0.6 points at 30%, which is no longer significant.</p>
+  <p><b>Neighbour agreement works best on points.</b> Classic fuzzy-kNN LSTSVM beats LSTSVM by 1.0 point at 20% noise (p = 0.019, better on 15 of 21 datasets) and by 1.9 points at 30% (p = 0.009). Because that method is already known, it is a baseline for us, not a contribution.</p>
+  <p><b>Point weights taken from balls do just as well.</b> Giving each point the T7 value of its ball beats LSTSVM by 2.1 points at 30% noise (p = 0.016, better on 16 of 21), level with the classic method. It searches for neighbours among balls instead of among all points, which could make it cheaper on large data (not measured yet). That is a possible angle, but a modest one on its own.</p>
+  <p><b>Bottom line:</b> squeezing points into k-means balls costs 2 to 3 points, more than any weight wins back. The ball builder has to get better before a ball-level fuzzy weight can be the paper&rsquo;s contribution. That is what round 5 (ADPGBG) tests.</p>
+  </div>
+</div>
+
+<div class="round">
+<h3>Round 5: ADPGBG balls <span class="tag drop">no better than keeping points</span></h3>
+<div class="qa">
+  <div class="k">Question</div><div class="v">Does a better ball builder close the gap to LSTSVM?</div>
+  <div class="k">What we did</div><div class="v">Built the balls with ADPGBG (ported from the MATLAB suite) instead of k-means, then trained on them plain, with T4 overlap and with T7 agreement. Same 21 datasets, splits and tuning, 0 to 30% noise. The baselines reproduced round 4 exactly, so the two rounds compare directly.</div>
+</div>
+<table>
+  <tr><th>Balanced accuracy, % (best in bold)</th><th class="num">0% noise</th><th class="num">10%</th><th class="num">20%</th><th class="num">30%</th></tr>
+  <tr><td>GBLSTSVM (original, k-means balls)</td><td class="num">73.4</td><td class="num">73.2</td><td class="num">72.0</td><td class="num">65.2</td></tr>
+  <tr><td>Keep single-point balls</td><td class="num">77.1</td><td class="num">75.7</td><td class="num">73.0</td><td class="num">66.3</td></tr>
+  <tr><td>T7 on all balls</td><td class="num">77.5</td><td class="num">75.9</td><td class="num">73.8</td><td class="num">68.6</td></tr>
+  <tr><td>ADPGBG balls</td><td class="num">76.6</td><td class="num">76.5</td><td class="num">72.3</td><td class="num">66.3</td></tr>
+  <tr><td>ADPGBG + T4 overlap</td><td class="num">76.6</td><td class="num">75.6</td><td class="num">71.7</td><td class="num">65.7</td></tr>
+  <tr><td>ADPGBG + T7</td><td class="num">76.0</td><td class="num">75.8</td><td class="num">73.4</td><td class="num">68.2</td></tr>
+  <tr><td>LSTSVM (no balls)</td><td class="num"><b>80.7</b></td><td class="num">77.8</td><td class="num">76.2</td><td class="num">69.2</td></tr>
+  <tr><td>Classic fuzzy-kNN LSTSVM</td><td class="num">80.4</td><td class="num"><b>78.4</b></td><td class="num"><b>77.3</b></td><td class="num"><b>71.1</b></td></tr>
+</table>
+<div class="qa">
+  <div class="k">What it means</div><div class="v">
+  <p><b>ADPGBG balls are about as good as simply keeping the single points.</b> They were the best ball model at 10% noise, still 1.3 points below LSTSVM (p = 0.079), and slightly worse elsewhere. T7 on top again adds about 2 points at 30% noise. The 95% versus 71% result in the MATLAB suite came from one synthetic dataset with fixed settings; it does not carry over to real benchmarks with fair tuning.</p>
+  <p><b>No ball builder or weight we tried closes the gap to training on every point.</b> In the linear model, the balls cost 1 to 4 points.</p>
+  <p><b>Balls do not make the fuzzy weights cheaper either, at these sizes.</b> On the large NDC datasets (5,000 to 20,000 points), building the balls took 0.3 to 0.9 seconds, while finding the 10 nearest neighbours of every point took 0.1 to 0.7 seconds (one split, a quick check).</p>
+  </div>
+</div>
+</div>
+
+<div class="round">
+<h3>Round 6: the kernel version <span class="tag drop">the fix adds little here</span></h3>
+<div class="qa">
+  <div class="k">Question</div><div class="v">Do the ball models catch up with LSTSVM, and does keep + T7 still help, when the boundary may curve?</div>
+  <div class="k">What we did</div><div class="v">
+  <p>So far every model drew <b>straight</b> lines. A <b>kernel</b> model can draw curved ones. It picks a set of reference points (the <i>kernel columns</i>) and describes every point by how similar it is to each reference point: close gives a similarity near 1, far gives near 0 (the RBF kernel). The twin lines are then drawn in that similarity space, which bends them in the original space. How fast the similarity falls with distance is one more setting, tuned by cross-validation like the others.</p>
+  <p>Kernel LSTSVM uses every training point as a reference point, so its equations have one row and column per point. Kernel GBLSTSVM uses the ball centres, so it has far fewer. We ran kernel GBLSTSVM, kernel keep (single-point balls kept), kernel keep + T7, kernel LSTSVM and kernel fuzzy-kNN LSTSVM through the same 21 datasets, splits and tuning, at 0, 20 and 30% noise.</p>
+  </div>
+</div>
+<table>
+  <tr><th>Balanced accuracy, % (best in bold)</th><th class="num">0% noise</th><th class="num">20%</th><th class="num">30%</th></tr>
+  <tr><td>Kernel GBLSTSVM (original)</td><td class="num">78.2</td><td class="num">70.8</td><td class="num">63.5</td></tr>
+  <tr><td>Kernel, keep single-point balls</td><td class="num">78.5</td><td class="num">68.9</td><td class="num">62.1</td></tr>
+  <tr><td>Kernel, keep + T7</td><td class="num">79.1</td><td class="num">70.9</td><td class="num">64.1</td></tr>
+  <tr><td>Kernel LSTSVM (no balls)</td><td class="num">80.9</td><td class="num">70.1</td><td class="num">61.9</td></tr>
+  <tr><td>Kernel fuzzy-kNN LSTSVM</td><td class="num"><b>81.3</b></td><td class="num"><b>73.6</b></td><td class="num"><b>66.2</b></td></tr>
+</table>
+</div>
+
+<figure>
+  <img src="fig/fig7_kernel.png" alt="Line chart of kernel-model balanced accuracy against label noise: fuzzy-kNN LSTSVM on top at every level; kernel LSTSVM second on clean data but last at 30% noise; the ball models in between.">
+  <figcaption><b>Figure 7.</b> Round 6, mean of 21 datasets. Without noise, kernel LSTSVM beats every ball model. As noise grows it falls below them, because it has no defence against flipped labels. The fuzzy-kNN version stays on top throughout.</figcaption>
+</figure>
+
+<div class="qa">
+  <div class="k">What it means</div><div class="v">
+  <p><b>The fix that worked in the linear model barely matters here.</b> Keep + T7 is 0.9, 0.1 and 0.6 points above kernel GBLSTSVM at 0, 20 and 30% noise, none of it significant (p &ge; 0.5). With a curved boundary, deleting the single-point balls costs much less than with a straight one.</p>
+  <p><b>Ball models are more robust to heavy noise than kernel LSTSVM.</b> At 30% noise, keep + T7 beats kernel LSTSVM by 2.3 points (p = 0.026, better on 15 of 21 datasets) and kernel GBLSTSVM by 1.6 (p = 0.08). On clean data they trail it by 1.7 to 2.6 points (p &le; 0.04).</p>
+  <p><b>But the known fuzzy-kNN weights do better still.</b> Kernel fuzzy-kNN LSTSVM beats keep + T7 by 2.0 to 2.7 points at every noise level (p &le; 0.022).</p>
+  <p><b>Under noise, kept balls are hardly a compression.</b> On clean data the kept balls number about 40% of the points; at 20 to 30% noise, 72 to 80%, because flipped labels split the balls into single points.</p>
+  </div>
+</div>
+
+<div class="round">
+<h3>Speed on large data <span class="tag drop">a simpler shortcut is as fast</span></h3>
+<div class="qa">
+  <div class="k">Question</div><div class="v">The case for balls in the kernel model is speed. How much time do they save on big data, and against what?</div>
+  <div class="k">What we did</div><div class="v">Timed training on the NDC files in your Data folder, from 2,500 to 100,000 points (the file called NDC-1m holds 100,000 points, not a million), with fixed settings and one 70/30 split each. Training time includes building the balls. Besides kernel LSTSVM on all points, we added <b>reduced-kernel LSTSVM</b>: it still trains on every point, but uses only a random subset of the points as reference points (Lee and Mangasarian, 2001). We gave it as many reference points as the kept-ball model has balls, so both solve equations of the same size.</div>
+</div>
+</div>
+
+<figure>
+  <img src="fig/fig8_timing.png" alt="Two line charts against training size. Left: training time on a log scale; kernel LSTSVM grows fastest and stops at 10,500 points; the ball models and reduced-kernel LSTSVM stay between 0.02 and 36 seconds. Right: balanced accuracy; reduced-kernel and kernel LSTSVM at 98.4 to 99.8%, ball models at 96.1 to 99.0%.">
+  <figcaption><b>Figure 8.</b> Clean NDC data. Kernel LSTSVM takes a minute at 10,500 points; I did not run it on more, because its equations need 2.9 GB of memory at 14,000 points and 73 GB at 70,000, and its time grows with the cube of the points. The ball models train in 0.2 to 12 seconds all the way. Reduced-kernel LSTSVM is faster up to 14,000 points, 1.2 to 2.4 times slower from 28,000 to 56,000, and 3 to 7 times slower at 70,000, and it is more accurate at every size.</figcaption>
+</figure>
+
+<p>With 20% of the training labels flipped, the picture changes again (time to train &middot; balanced accuracy; &ldquo;skipped&rdquo; means more than 11,000 reference points, the limit I set to keep memory and time manageable):</p>
+<table class="timing">
+  <tr><th>Training points</th><th class="num">Kernel GBLSTSVM</th><th class="num">Kernel, keep + T7</th><th class="num">Kernel LSTSVM</th><th class="num">Reduced-kernel LSTSVM</th><th class="num">Reduced-kernel fuzzy-kNN LSTSVM</th></tr>
+  <tr><td>1,750</td><td class="num">0.8 s &middot; 91.9%</td><td class="num">1.0 s &middot; 85.9%</td><td class="num">0.6 s &middot; 83.3%</td><td class="num">0.1 s &middot; 84.6%</td><td class="num">0.2 s &middot; 89.8%</td></tr>
+  <tr><td>3,500</td><td class="num">1.3 s &middot; 94.2%</td><td class="num">3.0 s &middot; 90.0%</td><td class="num">5.0 s &middot; 88.2%</td><td class="num">0.9 s &middot; 89.2%</td><td class="num">2.2 s &middot; 94.7%</td></tr>
+  <tr><td>7,000</td><td class="num">3.0 s &middot; 94.9%</td><td class="num">11 s &middot; 93.0%</td><td class="num">22 s &middot; 92.2%</td><td class="num">5.8 s &middot; 92.7%</td><td class="num">12 s &middot; 95.7%</td></tr>
+  <tr><td>10,500</td><td class="num">5.3 s &middot; 95.8%</td><td class="num">33 s &middot; 94.6%</td><td class="num">58 s &middot; 93.5%</td><td class="num">16 s &middot; 94.0%</td><td class="num">32 s &middot; 96.7%</td></tr>
+  <tr><td>14,000</td><td class="num">6.5 s &middot; 97.0%</td><td class="num">61 s &middot; 95.3%</td><td class="num">skipped</td><td class="num">46 s &middot; 95.3%</td><td class="num">65 s &middot; 97.6%</td></tr>
+  <tr><td>28,000</td><td class="num">15 s &middot; 96.6%</td><td class="num">skipped</td><td class="num">skipped</td><td class="num">94 s &middot; 94.8%</td><td class="num">118 s &middot; 96.7%</td></tr>
+  <tr><td>42,000</td><td class="num">32 s &middot; 98.6%</td><td class="num">skipped</td><td class="num">skipped</td><td class="num">117 s &middot; 98.4%</td><td class="num">171 s &middot; 99.2%</td></tr>
+  <tr><td>56,000</td><td class="num">63 s &middot; 99.1%</td><td class="num">skipped</td><td class="num">skipped</td><td class="num">136 s &middot; 99.1%</td><td class="num">204 s &middot; 99.5%</td></tr>
+  <tr><td>70,000</td><td class="num">97 s &middot; 97.6%</td><td class="num">skipped</td><td class="num">skipped</td><td class="num">166 s &middot; 97.5%</td><td class="num">263 s &middot; 98.2%</td></tr>
+</table>
+
+<div class="qa">
+  <div class="k">What it means</div><div class="v">
+  <p><b>Balls do make kernel training feasible on large data, but they are not the only way.</b> Reduced-kernel LSTSVM, a standard trick that needs no balls, is in the same speed range and is 0.5 to 3 points more accurate on clean data. A paper claiming speed for kernel GBLSTSVM would have to beat it, and on these data it does not.</p>
+  <p><b>Under noise, kept balls stop being small.</b> Flipped labels turn most points into single-point balls, so keep + T7 loses its speed edge. From 28,000 training points up they exceed the limit. GBLSTSVM&rsquo;s deletion keeps its ball count low (about 14% of the points) and acts as a noise filter: from 28,000 points up it is only 0.1 to 0.6 points below the best model, reduced-kernel fuzzy-kNN LSTSVM, while training 3 to 8 times faster (it also uses fewer reference points). This is the one place where the balls clearly earn their keep, and it comes from deleting points, not from a fuzzy weight.</p>
+  </div>
+</div>
+
+<div class="round">
+<h3>Round 7: GBFTSVM, the closest published model <span class="tag keep">keep + T7 beats it</span></h3>
+<div class="qa">
+  <div class="k">Question</div><div class="v">GBFTSVM (Zhao, Ding, Miao and Lang, arXiv 2408.00699) already puts a fuzzy weight on granular balls in a twin SVM. How does it do under our fair test, and does our fix beat it?</div>
+  <div class="k">What it is</div><div class="v">
+  <p>GBFTSVM differs from GBLSTSVM in two ways. First, its twin lines come from a classic <b>twin SVM</b> instead of the least squares version: a ball of the other class only costs something when it comes closer to a line than a set margin, whereas in GBLSTSVM every ball of the other class pulls on the line. That makes the model a little slower to train (it solves a small optimisation problem per line instead of one set of equations) but it is the more common design.</p>
+  <p>Second, each ball gets a score built from a <b>Pythagorean fuzzy set</b>: a membership &micro; (how close the ball&rsquo;s centre is to the centre of its class, exactly our T1) and a non-membership &nu; (which grows when the ball is impure, that is, contains points of the other class). The two are combined into one &ldquo;closeness&rdquo; score. The paper uses &micro; alone for pure balls and the combined score for impure ones, which it treats as boundary balls and trusts <i>more</i>.</p>
+  </div>
+  <div class="k">What we did</div><div class="v">
+  <p>I implemented GBFTSVM from the PDF you saved (<code>gbftsvm.py</code>) and ran it on the same 21 datasets, 10 splits and 0 to 30% noise, with the paper&rsquo;s grid for its two settings (2<sup>&minus;5</sup> to 2<sup>5</sup>) chosen by cross-validation, and the same choice of <code>k</code> and class weighting as GBLSTSVM. To see which of its parts matter, I also ran it without the fuzzy scores (GBTWSVM, the authors&rsquo; earlier model), with single-point balls kept, and on ADPGBG balls, which like the paper&rsquo;s own ball builder never overlap the other class.</p>
+  <p>Two technical points. The paper solves each line with a general-purpose optimiser (L-BFGS-B); on some of our datasets that optimiser stopped far from the true solution (on ger, lines 100% off), so I solve the same problem exactly with a dedicated SVM solver and checked it against a third, independent solver. And for every run I also recorded what tuning on the test set would have reported, to compare with the paper&rsquo;s own numbers.</p>
+  </div>
+</div>
+<table>
+  <tr><th>Balanced accuracy, %, 10 splits (best granular-ball model in bold)</th><th class="num">0% noise</th><th class="num">10%</th><th class="num">20%</th><th class="num">30%</th></tr>
+  <tr><td>GBLSTSVM (original)</td><td class="num">73.5</td><td class="num">73.3</td><td class="num">71.0</td><td class="num">64.0</td></tr>
+  <tr><td>GBTWSVM (twin SVM on balls, no fuzzy scores)</td><td class="num">71.6</td><td class="num">72.4</td><td class="num">69.5</td><td class="num">63.4</td></tr>
+  <tr><td>GBFTSVM (published fuzzy model)</td><td class="num">71.7</td><td class="num">72.2</td><td class="num">68.3</td><td class="num">64.2</td></tr>
+  <tr><td>GBFTSVM, single-point balls kept</td><td class="num">76.2</td><td class="num">75.5</td><td class="num">72.3</td><td class="num">66.0</td></tr>
+  <tr><td>GBFTSVM on ADPGBG balls</td><td class="num">74.4</td><td class="num">75.5</td><td class="num">71.9</td><td class="num">65.0</td></tr>
+  <tr><td>Keep + T7 (our fix)</td><td class="num"><b>76.8</b></td><td class="num"><b>75.9</b></td><td class="num"><b>73.9</b></td><td class="num"><b>68.9</b></td></tr>
+  <tr><td>LSTSVM (no balls), for reference</td><td class="num">80.8</td><td class="num">78.5</td><td class="num">75.7</td><td class="num">69.1</td></tr>
+</table>
+</div>
+
+<figure>
+  <img src="fig/fig10_gbftsvm.png" alt="Line chart of balanced accuracy against label noise for GBLSTSVM, GBFTSVM, keep + T7 and LSTSVM. LSTSVM is on top up to 20% noise; keep + T7 is second and ties LSTSVM at 30%; GBFTSVM is at or below GBLSTSVM throughout.">
+  <figcaption><b>Figure 10.</b> Round 7, mean of 21 datasets, 10 splits. GBFTSVM, the published fuzzy granular-ball model, does no better than GBLSTSVM. Our fix (keep + T7) is above both at every noise level.</figcaption>
+</figure>
+
+<div class="qa">
+  <div class="k">What it means</div><div class="v">
+  <p><b>Under fair tuning, GBFTSVM is no better than GBLSTSVM.</b> It is 1.8, 1.1 and 2.7 points behind it at 0, 10 and 20% noise and level with it at 30% (+0.1). Only the gap at 20% stays significant once corrected for multiple tests (Holm p = 0.01).</p>
+  <p><b>Its fuzzy scores add nothing.</b> GBFTSVM and the same model without scores (GBTWSVM) differ by +0.1, &minus;0.2, &minus;1.2 and +0.7 points at the four noise levels, never significantly after the Holm correction. The reason is simple: on a pure ball, the Pythagorean score is just the centre distance (our T1, which also did nothing in round 1), and with k-means balls over 99% of the balls are pure. The part that is supposed to be new almost never switches on.</p>
+  <p><b>Our main finding carries over to this model.</b> Keeping the single-point balls lifts GBFTSVM by 4.5, 3.3, 4.0 and 1.8 points at the four noise levels, the same kind of gain it gave GBLSTSVM. So the deletion step, not the choice of fuzzy weight, is what holds granular-ball twin SVMs back.</p>
+  <p><b>Keep + T7 beats GBFTSVM clearly:</b> by 5.1, 3.7, 5.6 and 4.7 points at 0, 10, 20 and 30% noise (Holm-corrected p &le; 0.005 at every level). This is the comparison a reviewer will ask for first, and it now exists.</p>
+  </div>
+</div>
+
+<p><b>Why the paper&rsquo;s numbers are so much higher.</b> The paper chooses its settings by the best result on the test data, as the original GBLSTSVM code does. When I do the same with our runs, the scores rise by 9 to 15 points of balanced accuracy, for GBLSTSVM and GBFTSVM alike, with no change to the models at all. On the six datasets both studies use, the paper reports 92.5% accuracy for GBFTSVM on average; our runs reach 81.4% even with that optimistic tuning and 74.0% with fair tuning. On sonar it reports 97%, while our test-tuned run reaches 77.9% and plain LSTSVM on all points about 70% (balanced accuracy). Part of the gap may come from its larger training sets (ten-fold CV trains on 90% of the data, ours on 70%) and its different ball builder, but in our runs tuning on the test set alone is worth 9 to 15 points. This belongs in the paper&rsquo;s point about protocol: published gains of fuzzy granular-ball models can be artefacts of tuning on the test set.</p>
+<table>
+  <tr><th>Mean over 21 datasets, balanced accuracy %</th><th class="num">0% noise</th><th class="num">10%</th><th class="num">20%</th><th class="num">30%</th></tr>
+  <tr><td>GBLSTSVM, fair tuning (cross-validation)</td><td class="num">73.5</td><td class="num">73.3</td><td class="num">71.0</td><td class="num">64.0</td></tr>
+  <tr><td>GBLSTSVM, tuned on the test set</td><td class="num">82.9</td><td class="num">82.9</td><td class="num">81.9</td><td class="num">78.8</td></tr>
+  <tr><td>GBFTSVM, fair tuning</td><td class="num">71.7</td><td class="num">72.2</td><td class="num">68.3</td><td class="num">64.2</td></tr>
+  <tr><td>GBFTSVM, tuned on the test set</td><td class="num">80.8</td><td class="num">82.3</td><td class="num">81.6</td><td class="num">78.7</td></tr>
+</table>
+
+<h2>4. What we found in the MATLAB suite on your Desktop</h2>
+<p>The <code>GBLSTSVM_MATLAB</code> folder (by Garv Jindal, a MATLAB port of the <code>Toast24/GBLSTSVM-Ex</code> repository) already contains five weighting variants and a template for testing new fuzzy functions:</p>
+<table>
+  <tr><th>Variant</th><th>What the weight measures</th><th>Relation to our topics</th></tr>
+  <tr><td>CW</td><td>Class balance only (rarer class weighted up)</td><td>Same as our &ldquo;imbalance on&rdquo; setting, tuned in every run</td></tr>
+  <tr><td>CR</td><td>Ball purity and radius</td><td>With our balls, purity is almost always exactly 1, so only the radius part can tell balls apart (we checked purity early on)</td></tr>
+  <tr><td>CBCM</td><td>&ldquo;Competition&rdquo; with the other class among neighbours &times; support from same-class neighbours</td><td>Different from T7; see below</td></tr>
+  <tr><td>Topo</td><td>Neighbourhood ambiguity &times; reciprocal links to the other class</td><td>Different from T7; see below</td></tr>
+  <tr><td>OBRU</td><td>Overlap with balls of the other class</td><td>Essentially our T4, with a slightly different formula</td></tr>
+</table>
+<p>What this means for us:</p>
+<ol>
+  <li><b>T4 is not new</b>, even inside your group, and our data says it hurts under noise anyway.</li>
+  <li><b>CBCM and Topo are not the same as T7.</b> Their competition and ambiguity terms peak when a ball&rsquo;s neighbours are split 50/50, so they give the most weight to boundary balls and low weight both to clean interior balls and to balls surrounded by the other class. T7 is one-directional: the more neighbours disagree with a ball&rsquo;s label, the lower its weight. That one-directional rule is what finds flipped labels in Figure 4.</li>
+  <li><b>Its benchmark cannot back a paper claim.</b> It uses one synthetic dataset (two moons), one split and fixed <code>c1 = 1</code>, <code>c2 = 0.1</code>. If you want those variants in the paper, we can run them through our 21-dataset test bench.</li>
+  <li><b>Its clearest result agrees with ours:</b> the ball generator matters more than the weights. With balls from the ADPGBG generator (Liao et al., 2025) its baseline reached 95% accuracy, against 71% with k-means balls. ADPGBG grows each ball outwards until it reaches the nearest point of the other class, so boundary points stay in, and it drops only points that have no same-class neighbour nearby (likely outliers).</li>
+</ol>
+<p>I ported ADPGBG to Python (<code>adpgbg.py</code>) and tested it on all 21 datasets in round 5 (section 3). With real benchmarks and fair tuning, it was no better than simply keeping the single points.</p>
+
+<h2>5. What it all means, and the decision for you</h2>
+<div class="box warm">
+<h3>The honest picture after six rounds</h3>
+<ul>
+  <li>In the linear model, training on balls costs 1 to 4 points of balanced accuracy against training on every point (LSTSVM), whichever ball builder or fuzzy weight we use.</li>
+  <li>In the linear model there is a clear, significant improvement over GBLSTSVM: keep the single-point balls and weight every ball by neighbour agreement (T7). That gains 4.1 points on clean data (p &lt; 0.001) and 3.4 points at 30% noise (p = 0.046), from 5 splits; section 6 has the final 10-split numbers. <b>In the kernel model the same fix gains under 1 point, not significant.</b></li>
+  <li>In the kernel model, ball models beat kernel LSTSVM under heavy noise (+2.3 points at 30%) but trail it on clean data, and the known fuzzy-kNN LSTSVM beats them at every noise level.</li>
+  <li>Balls make kernel training fast on large data, but reduced-kernel LSTSVM, which needs no balls, is about as fast and more accurate. So speed cannot be the paper&rsquo;s main claim.</li>
+  <li>Findings that hold whatever the framing: GBLSTSVM&rsquo;s robustness to noise comes from deleting points (86% of flipped labels, but also 53% of correct ones); entropy-style memberships measure the wrong thing for noise; and the original code&rsquo;s test-set tuning makes all of this hard to see.</li>
+</ul>
+</div>
+
+<h3>Three ways to frame the paper</h3>
+<table>
+  <tr><th style="width:20%">Option</th><th style="width:30%">What the paper says</th><th style="width:25%">Strength</th><th style="width:25%">Weakness</th></tr>
+  <tr><td><b>A. Improved GBLSTSVM</b></td><td>Two fixes to GBLSTSVM: keep single-point balls, and weight balls by neighbour label agreement (T7).</td><td>Significant gains over GBLSTSVM in the linear model; fits the original goal.</td><td>Round 6 removed its support: the gain vanishes in the kernel model, plain LSTSVM is more accurate, and the speed argument loses to reduced-kernel LSTSVM. A reviewer who asks &ldquo;why balls at all?&rdquo; has no good answer.</td></tr>
+  <tr><td><b>B. Fuzzy LSTSVM with agreement weights</b></td><td>Point-level noise weights, linear and kernel, with a reduced kernel for large data.</td><td>Best accuracy under noise in every test, linear and kernel.</td><td>Very close to the known fuzzy-kNN LSTSVM, so low novelty.</td></tr>
+  <tr><td><b>C. Analysis paper</b><br>(my recommendation now)</td><td>&ldquo;When do granular balls help twin SVMs?&rdquo;: deletion as a hidden noise filter, why entropy weights fail, what balls cost and save in linear and kernel models, and keep + T7 as the proposed fix.</td><td>Every result we have supports it, including round 6; the experiments are already done and rigorous.</td><td>Critical results are harder to place in a top journal; it needs careful writing. The GBFTSVM comparison it needed is now done (round 7).</td></tr>
+</table>
+<p><b>Why I now recommend C:</b> before round 6, option A rested on one open question, whether balls pay off in the kernel model. They do not, beyond what simpler methods give. Option C turns all six rounds into one consistent story and still contains a positive contribution (keep + T7 fixes GBLSTSVM&rsquo;s biggest weakness in the linear model).</p>
+<p><b>Your decision:</b> you chose option C, the analysis paper. Since it sets the paper&rsquo;s direction, it may be worth a word with your supervisor too.</p>
+
+<h2>6. The final numbers for the paper</h2>
+<p>A paper needs firmer numbers than the rounds above, so I repeated every comparison the paper will use on 5 more train/test splits (10 in total) and reran the noise check on all 21 datasets instead of 8. Some numbers moved by a point or so; the story did not change. These are the numbers the paper will quote.</p>
+<p><b>Two statistical details a reviewer will look for.</b> First, when one method is compared with several others, some comparisons look significant by luck alone. The <b>Holm correction</b> raises each p-value to allow for that, and the p-values below are corrected where marked. Second, a <b>critical-difference diagram</b> (Figure 9) shows all methods on one line by their average rank across the 21 datasets (1 = best). Methods joined by a thick bar are not significantly different from each other.</p>
+<table>
+  <tr><th>Keep + T7 compared with&hellip; (points, 10 splits)</th><th class="num">0% noise</th><th class="num">10%</th><th class="num">20%</th><th class="num">30%</th></tr>
+  <tr><td>GBLSTSVM, linear (Holm p)</td><td class="num">+3.3 (0.001)</td><td class="num">+2.6 (0.09)</td><td class="num">+2.8 (0.034)</td><td class="num">+4.9 (&lt;0.001)</td></tr>
+  <tr><td>LSTSVM, linear</td><td class="num">&minus;4.0</td><td class="num">&minus;2.6</td><td class="num">&minus;1.8</td><td class="num">&minus;0.2 (n.s.)</td></tr>
+  <tr><td>Fuzzy-kNN LSTSVM, linear</td><td class="num">&minus;3.4</td><td class="num">&minus;2.7</td><td class="num">&minus;3.0</td><td class="num">&minus;2.1</td></tr>
+  <tr><td>GBFTSVM, linear twin SVM (Holm p)</td><td class="num">+5.1 (0.005)</td><td class="num">+3.7 (0.003)</td><td class="num">+5.6 (0.001)</td><td class="num">+4.7 (0.004)</td></tr>
+  <tr><td>GBLSTSVM, kernel (Holm p)</td><td class="num">+2.1 (0.06)</td><td class="num">not run</td><td class="num">&minus;0.1 (n.s.)</td><td class="num">+1.1 (n.s.)</td></tr>
+  <tr><td>Kernel LSTSVM</td><td class="num">&minus;1.1 (n.s.)</td><td class="num">not run</td><td class="num">+0.6 (n.s.)</td><td class="num">+1.7 (p = 0.007)</td></tr>
+  <tr><td>Kernel fuzzy-kNN LSTSVM</td><td class="num">&minus;1.5 (p = 0.05)</td><td class="num">not run</td><td class="num">&minus;2.7</td><td class="num">&minus;1.8</td></tr>
+</table>
+<p class="small">Without a p-value, a difference is significant (p &lt; 0.05). n.s. means not significant.</p>
+
+<figure>
+  <img src="fig/fig9_cd_linear30.png" alt="Critical-difference diagram for linear models at 30% noise: fuzzy-kNN LSTSVM best (rank 1.6), then LSTSVM and keep + T7 (2.9 each), ADPGBG 4.2, GB-keep 4.5, GBLSTSVM 4.9; bars join groups that are not significantly different.">
+  <figcaption><b>Figure 9.</b> Critical-difference diagram, linear models at 30% label noise, 10 splits. Read it from left (best) to right. Keep + T7 ties LSTSVM here; GBLSTSVM is last. The CD bar at the top is how far apart two average ranks must be to differ significantly. Diagrams for every noise level are in <code>results/paper</code>.</figcaption>
+</figure>
+
+<p><b>The noise check on all 21 datasets</b> confirms the earlier picture from 8 datasets:</p>
+<table>
+  <tr><th>What GBLSTSVM&rsquo;s deletion step removes</th><th class="num">10% noise</th><th class="num">20%</th><th class="num">30%</th></tr>
+  <tr><td>Flipped (wrong) labels deleted</td><td class="num">88%</td><td class="num">85%</td><td class="num">82%</td></tr>
+  <tr><td>Correct points deleted</td><td class="num">41%</td><td class="num">52%</td><td class="num">60%</td></tr>
+  <tr><td>Correct points of the small class deleted</td><td class="num">61%</td><td class="num">65%</td><td class="num">69%</td></tr>
+  <tr><th>How well a weight spots flipped labels (ROC-AUC, 0.5 = coin toss)</th><th class="num"></th><th class="num"></th><th class="num"></th></tr>
+  <tr><td>T2 entropy</td><td class="num">0.29</td><td class="num">0.26</td><td class="num">0.25</td></tr>
+  <tr><td>T5 density</td><td class="num">0.26</td><td class="num">0.33</td><td class="num">0.39</td></tr>
+  <tr><td>T4 overlap</td><td class="num">0.49</td><td class="num">0.49</td><td class="num">0.49</td></tr>
+  <tr><td>T1 centre distance</td><td class="num">0.70</td><td class="num">0.65</td><td class="num">0.60</td></tr>
+  <tr><td>Single-point ball</td><td class="num">0.73</td><td class="num">0.67</td><td class="num">0.61</td></tr>
+  <tr><td>T7 agreement (balls)</td><td class="num">0.89</td><td class="num">0.87</td><td class="num">0.82</td></tr>
+  <tr><td>Classic kNN agreement (points)</td><td class="num">0.89</td><td class="num">0.87</td><td class="num">0.82</td></tr>
+</table>
+<p>One new detail: density (T5) is as misleading as entropy, and centre distance (T1) does flag flipped labels moderately well, yet it still hurt under noise in round 1, because it also distrusts correct points at the edge of a class.</p>
+
+<h2>7. What happens next</h2>
+<ol>
+  <li><b>Midsem presentation</b>: done. <code>Desktop\FUZZY\GBLSTSVM_Midsem_Presentation.pptx</code> tells the whole story for your professor, with code, charts, references and speaker notes.</li>
+  <li><b>Close two literature gaps</b>: read the ADPGBG paper in full to confirm our port matches it, and add GBTSVM (Tanveer&rsquo;s group) as one more baseline.</li>
+  <li><b>Two robustness checks a reviewer is likely to ask for</b>: label noise that targets the class border instead of random flips, and larger or multi-class data.</li>
+  <li><b>Paper figures</b>: paper-quality versions of the figures in this guide. The tables (CSV and LaTeX) and the critical-difference diagrams are already in <code>results/paper</code>.</li>
+  <li><b>Writing</b>: the draft outline (<code>paper/outline_draft.md</code> in our project files) lists the seven claims and where each number comes from.</li>
+</ol>
+<p>Every step keeps going into the progress deck on your Desktop and onto GitHub.</p>
+
+<h2>Glossary</h2>
+<dl>
+<div>  <dt>Balanced accuracy</dt><dd>Average of the accuracy on each class. Fair on imbalanced data, where plain accuracy rewards ignoring the small class.</dd></div>
+<div>  <dt>Cross-validation (5-fold)</dt><dd>Split the training data into 5 parts; train on 4 and score on the 5th, five times. Used to choose settings without touching the test set.</dd></div>
+<div>  <dt>Label noise</dt><dd>Training points whose class label is wrong. We create it on purpose by flipping a share of training labels.</dd></div>
+<div>  <dt>ROC-AUC</dt><dd>The chance that a randomly chosen positive case is ranked above a randomly chosen negative case. 0.5 is a coin toss, 1.0 is perfect.</dd></div>
+<div>  <dt>Wilcoxon signed-rank test</dt><dd>Checks whether one method beats another consistently across the 21 datasets, not just on average.</dd></div>
+<div>  <dt>Friedman test</dt><dd>Checks whether a group of methods differ at all across datasets, using their ranks.</dd></div>
+<div>  <dt>Granular ball</dt><dd>A group of nearby training points summarised by a centre, a radius and a majority label.</dd></div>
+<div>  <dt>Purity</dt><dd>The share of points in a ball that carry its majority label. GBLSTSVM splits until purity is at least 98.5%.</dd></div>
+<div>  <dt><code>k</code></dt><dd>How many pieces each k-means split creates when building balls.</dd></div>
+<div>  <dt><code>c1</code>, <code>c2</code></dt><dd>How strongly each of the two lines is pushed away from the other class.</dd></div>
+<div>  <dt>Slack weight</dt><dd>How much the model pays when an item of the other class sits too close to a line. The fuzzy membership multiplies this.</dd></div>
+<div>  <dt>Fuzzy membership</dt><dd>A trust score from 0 to 1 for each training item or ball.</dd></div>
+<div>  <dt>LSTSVM / GBLSTSVM</dt><dd>Least squares twin SVM on raw points / on granular balls.</dd></div>
+<div>  <dt>FKNN-LSTSVM</dt><dd>LSTSVM with the classic fuzzy k-nearest-neighbour membership on raw points. Our strongest point-level competitor.</dd></div>
+<div>  <dt>ADPGBG</dt><dd>An adaptive ball builder that grows each ball up to the nearest point of the other class and drops isolated points.</dd></div>
+<div>  <dt>Kernel (RBF)</dt><dd>Describes each point by its similarity to a set of reference points, so the twin lines can curve.</dd></div>
+<div>  <dt>Holm correction</dt><dd>Raises p-values when one method is tested against several others, so that luck across many tests is not mistaken for an effect.</dd></div>
+<div>  <dt>Critical-difference diagram</dt><dd>Methods placed by average rank; a bar joins methods that are not significantly different.</dd></div>
+<div>  <dt>GBFTSVM</dt><dd>Granular-ball fuzzy twin SVM (Zhao et al., 2024): a classic twin SVM on granular balls with a Pythagorean fuzzy score per ball. The closest published model to ours.</dd></div>
+<div>  <dt>Pythagorean fuzzy set</dt><dd>Gives each item a membership &micro; and a non-membership &nu; with &micro;&sup2; + &nu;&sup2; &le; 1, so doubt can be expressed as well as trust.</dd></div>
+<div>  <dt>Test-set tuning</dt><dd>Choosing settings by the best score on the test data. It makes every method look better than it is; we tune by cross-validation on training data instead.</dd></div>
+<div>  <dt>Reduced kernel</dt><dd>A kernel model that uses only a random subset of the training points as reference points, to save memory and time.</dd></div>
+</dl>
+
+<h2>Where everything is</h2>
+<ul class="small">
+  <li><b>Code</b>: GitHub <code>Jayagna/GBLSTSVM</code>, branch <code>claude/project-thread-bwmgim</code> (test bench in <code>experiments/</code>).</li>
+  <li><b>Results</b>: <code>results/fuzzy_cv_v1</code> (round 1) to <code>results/fuzzy_cv_v5</code> (round 5) and <code>results/kernel_cv_v1</code> (round 6), each with a <code>summary.md</code> of full tables and tests; extra splits in <code>fuzzy_cv_v6</code> and <code>kernel_cv_v2</code>; GBFTSVM (round 7) in <code>results/gbftsvm_cv</code>, which also stores the test-set-tuned scores; speed tests in <code>results/kernel_timing</code>; noise check in <code>results/noise_diagnostics</code>; paper tables and diagrams in <code>results/paper</code>.</li>
+  <li><b>Progress deck</b>: <code>Desktop\FUZZY\GBLSTSVM_Fuzzy_Progress.pptx</code>, one slide per experiment, including dead ends.</li>
+  <li><b>Midsem presentation</b>: <code>Desktop\FUZZY\GBLSTSVM_Midsem_Presentation.pptx</code>, 34 slides with speaker notes.</li>
+  <li><b>This guide</b>: <code>Desktop\FUZZY\GBLSTSVM_Fuzzy_Guide.pdf</code>.</li>
+</ul>
+
+</body>
+</html>
