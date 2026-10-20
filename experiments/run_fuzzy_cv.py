@@ -124,7 +124,8 @@ def ball_set_from_balls(balls):
     radii = np.array([b["r"] for b in balls], dtype=np.float64)
     labels = np.array([b["label"] for b in balls], dtype=np.float64)
     counts = np.array([b["num"] for b in balls], dtype=np.float64)
-    return {"centers": centers, "radii": radii, "labels": labels, "counts": counts}
+    purity = np.array([b.get("purity", 1.0) for b in balls], dtype=np.float64)
+    return {"centers": centers, "radii": radii, "labels": labels, "counts": counts, "purity": purity}
 
 
 def ball_set_from_samples(data):

@@ -100,4 +100,11 @@ python experiments/run_kernel_timing.py --out results/kernel_timing
 
 `experiments/noise_diagnostics.py` measures, on the same splits and label noise, how many flipped and clean training points GBLSTSVM deletes as single-point balls, and how well each membership flags flipped points (ROC-AUC).
 
+`gbftsvm.py` implements GBTWSVM and GBFTSVM (Zhao et al., arXiv 2408.00699): the twin SVM duals on granular balls, solved with L-BFGS-B, with the Pythagorean fuzzy ball scores for GBFTSVM. `experiments/run_gbftsvm_cv.py` runs them under the same protocol, with the paper's grid for C (2^-5 to 2^5), on GBLSTSVM's balls, on all balls (`GBFTSVM-keep`) and on ADPGBG balls (`GBFTSVM-adp`). Every result also stores the test-set-tuned score (the best test score over the whole grid), and `experiments/gbftsvm_report.py` compares that with the CV-tuned score and with the accuracies reported in the GBFTSVM paper.
+
+```bash
+python experiments/run_gbftsvm_cv.py --noise 0 0.1 0.2 0.3 --repeats 10 --out results/gbftsvm_cv
+python experiments/gbftsvm_report.py results/gbftsvm_cv
+```
+
 Note: `main.py` still selects `c1`, `c2` and `k` on the test set, as in the original demo; use the experiment runner for reportable numbers.

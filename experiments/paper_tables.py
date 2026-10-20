@@ -1,7 +1,8 @@
 """
 Paper-format tables and critical-difference diagrams from the CV results.
 
-For each comparison (linear: results/fuzzy_cv_v4 + v5, kernel: results/kernel_cv_v1)
+For each comparison (linear: results/fuzzy_cv_v4-v6 + gbftsvm_cv; twin: GBFTSVM and its
+parts, from gbftsvm_cv; kernel: results/kernel_cv_v1 + v2)
 and each noise level it writes, to --out:
   <name>_noise<N>.csv / .tex   balanced accuracy (mean ± std over splits) per dataset,
                                with mean, average rank and Wilcoxon-Holm vs the reference
@@ -29,9 +30,13 @@ Q05 = {2: 1.960, 3: 2.343, 4: 2.569, 5: 2.728, 6: 2.850, 7: 2.949, 8: 3.031, 9: 
 
 # name -> (result dirs, [(method key, display name)], reference method key)
 COMPARISONS = {
-    "linear": (["fuzzy_cv_v4", "fuzzy_cv_v5", "fuzzy_cv_v6"], [
+    "linear": (["fuzzy_cv_v4", "fuzzy_cv_v5", "fuzzy_cv_v6", "gbftsvm_cv"], [
         ("GBLSTSVM", "GBLSTSVM"), ("GB-keep", "GB-keep"), ("T7-agree", "Keep+T7"), ("GB-adp", "ADPGBG"),
-        ("LSTSVM", "LSTSVM"), ("FKNN-LSTSVM", "FKNN-LSTSVM")], "GBLSTSVM"),
+        ("GBFTSVM", "GBFTSVM"), ("LSTSVM", "LSTSVM"), ("FKNN-LSTSVM", "FKNN-LSTSVM")], "GBLSTSVM"),
+    # GBFTSVM's parts (twin SVM dual, fuzzy scores, ball builder) and keep + T7, against GBFTSVM
+    "twin": (["fuzzy_cv_v4", "fuzzy_cv_v6", "gbftsvm_cv"], [
+        ("GBLSTSVM", "GBLSTSVM"), ("GBTWSVM", "GBTWSVM"), ("GBFTSVM", "GBFTSVM"), ("GBFTSVM-keep", "GBFTSVM-keep"),
+        ("GBFTSVM-adp", "GBFTSVM-adp"), ("T7-agree", "Keep+T7")], "GBFTSVM"),
     "kernel": (["kernel_cv_v1", "kernel_cv_v2"], [
         ("K-GBLSTSVM", "GBLSTSVM"), ("K-GB-keep", "GB-keep"), ("K-keep-T7", "Keep+T7"),
         ("K-LSTSVM", "LSTSVM"), ("K-FKNN-LSTSVM", "FKNN-LSTSVM")], "K-GBLSTSVM"),
@@ -39,7 +44,8 @@ COMPARISONS = {
 
 
 def load_runs(dirs):
-    # splits 0-4 come from the first run of each comparison, splits 5-9 from fuzzy_cv_v6 / kernel_cv_v2
+    # splits 0-4 come from the first run of each comparison, splits 5-9 from fuzzy_cv_v6 / kernel_cv_v2;
+    # gbftsvm_cv holds all ten splits
     frames = [load(ROOT / "results" / d).assign(source=d) for d in dirs if (ROOT / "results" / d).is_dir()]
     df = pd.concat(frames, ignore_index=True)
     # a method present in several runs must agree exactly (same splits and seeds), then keep one copy
