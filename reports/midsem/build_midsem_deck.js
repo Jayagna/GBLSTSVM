@@ -815,6 +815,34 @@ takeaway(s, `Under 20% noise and from 28k points, kernel GBLSTSVM trains ${range
 s.addNotes("The other claim for balls is speed. On a synthetic dataset from 1,750 to 70,000 training points, the kernel ball models train in about a second up to 56k points. Full kernel LSTSVM is not feasible at that size: it needs the full kernel matrix, about 73 GB at 70k points. But the fair comparison is a reduced-kernel LSTSVM, which uses a random subset of columns; it is just as fast and more accurate on clean data. Under 20% label noise the picture changes: pruned kernel GBLSTSVM is within 0.6 points of the best model (reduced-kernel fuzzy kNN) and several times faster from 28k points up. So large and noisy data is where balls are worth it.");
 
 // =====================================================================================
+// 21b. Time trade-off of keep + T7
+// =====================================================================================
+s = content("Results", "Time trade-off: keep + T7 costs little in the linear model");
+// One split, full 5-fold CV tuning (25 ball builds shared by both models), measured with bench_cv.py / bench_kdtree.py
+const TUNE = { labels: ["pima, clean", "pima, 20%", "ger, 20%", "NDC-10k, clean", "NDC-10k, 20%"],
+  gb: [6.7, 7.9, 9.4, 14.3, 68.8], keep: [8.1, 9.4, 12.1, 17.8, 83.5] };
+caption(s, "Linear model: seconds to tune one split (5-fold CV, ball building included)", 0.6, 1.45, 7.0);
+barChart(s, [["GBLSTSVM", TUNE.gb], ["Keep + T7", TUNE.keep]], TUNE.labels, [COL.GBLSTSVM, COL.KEEPT7], {
+  x: 0.6, y: 1.75, w: 7.0, h: 3.05, valAxisMinVal: 0, valAxisMaxVal: 100, dataLabelFormatCode: "0.0",
+});
+s.addText(bullets([
+  [B("Training once "), "with the chosen settings: 1–5% slower. Building the balls takes most of the time and is the same step for both."],
+  [B("Prediction: "), "identical. Both models end as two hyperplanes, so a new point costs two dot products."],
+], { space: 6 }), tx({ x: 0.6, y: 4.9, w: 7.0, h: 1.2, fontSize: 14 }));
+const KT = D.timing["0.2"].filter(r => [3500, 7000, 10500, 14000].includes(r.train));
+s.addText("Kernel model, 20% label noise", tx({ x: 7.9, y: 1.5, w: 4.8, h: 0.4, fontSize: 17, bold: true, color: C.text2 }));
+table(s, [
+  [th("Points"), th("Kernel GBLSTSVM"), th("Kernel keep + T7")],
+  ...KT.map(r => [td((r.train / 1000) + "k"), td(`${f1(r["K-GBLSTSVM"].time)} s · ${f1(r["K-GBLSTSVM"].ba)}%`), td(`${f1(r["K-keep-T7"].time)} s · ${f1(r["K-keep-T7"].ba)}%`)]),
+], { x: 7.9, y: 1.95, w: 4.8, colW: [0.9, 1.95, 1.95], fontSize: 13, rowH: 0.42, align: "center" });
+s.addText(bullets([
+  "Here the system grows with the number of balls, and under noise keep holds about 5× as many, so it trains 2–9× slower.",
+  "On the 21 datasets its kernel gain is not significant (+2.1 clean, −0.1 and +1.1 at 20 and 30% noise), so we keep the deletion here.",
+], { space: 6 }), tx({ x: 7.9, y: 4.15, w: 4.8, h: 1.95, fontSize: 14 }));
+takeaway(s, "Deletion trades accuracy for speed: worth it in the kernel model, almost free to drop in the linear one.");
+s.addNotes("This slide answers the obvious question about our fix: keeping the single-point balls means more balls, so is it slower? In the linear model, hardly. Each hyperplane comes from a small system whose size is the number of features plus one, so more balls only lengthen one matrix product. Most of the time goes into building the balls, which both models share. The chart shows the full cross-validation tuning of one split: keep plus T7 adds about 1.5 seconds on pima and about 15 seconds on the noisy 10,000-point data, mostly because T7 has four extra settings to try and needs a neighbour search; we switched that search to a k-d tree, which gives identical memberships and cut that number from about 57 seconds. Trained once with known settings, keep plus T7 is 1 to 5 percent slower, and prediction costs exactly the same. The kernel model is different: there the system grows with the number of balls, so keeping them under noise is 2 to 9 times slower, and the accuracy gain there is not significant. So we recommend keep plus T7 for the linear model and keep deletion in the kernel model.");
+
+// =====================================================================================
 // 22. GBFTSVM model
 // =====================================================================================
 s = content("Published baseline", "The closest published model: GBFTSVM");

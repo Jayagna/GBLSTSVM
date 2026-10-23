@@ -139,6 +139,9 @@ const LOG = [
   ["20 Oct 2026", "Round 7: GBFTSVM, GBTWSVM, + keep, + ADPGBG; 21 datasets × 10 splits × noise 0–30%", "No better than GBLSTSVM; its fuzzy scores add nothing; keep + T7 beats it by 3.7–5.6 points (Holm p ≤ 0.005)", "Done"],
   ["20 Oct 2026", "Recorded test-set-tuned scores for every run", "Test-set tuning adds 9–15 points; paper reports 92.5% on 6 shared datasets, ours 81.4% test-tuned, 74.0% fair", "Done"],
   ["20 Oct 2026", "Midsem presentation for the professor", "Desktop › FUZZY › GBLSTSVM_Midsem_Presentation.pptx (34 slides, speaker notes)", "Done"],
+  ["23 Oct 2026", "Time trade-off of keep + T7 vs GBLSTSVM (linear and kernel)", "Linear: 1–5% slower to train, same prediction cost; kernel under noise 2–9× slower for no significant gain", "Done"],
+  ["23 Oct 2026", "T7 neighbour search: k-d tree above 1,000 balls (commit 7a6ceb8)", "Identical memberships; T7 tuning on NDC-10k at 20% noise 69 s → 15 s per split", "Done"],
+  ["23 Oct 2026", "Added a time trade-off slide to the midsem deck", "Now 35 slides", "Done"],
 ];
 const statusColor = { "Done": HEX.accent1, "Dead end": HEX.accent4, "Needs fix": HEX.accent2, "Proposed": HEX.accent6, "In progress": HEX.dk2 };
 const head = ["Date", "What was done", "Outcome", "Status"].map(t => ({ text: t, options: { bold: true, color: HEX.lt1, fill: { color: HEX.dk2 } } }));
@@ -513,6 +516,14 @@ EXPERIMENTS.push({
   setup: "Reimplemented from the PDF (gbftsvm.py), dual solved exactly with liblinear. 21 datasets, 10 splits, noise 0–30%, c and C from the paper's grid 2⁻⁵…2⁵ by 5-fold CV. Ablations: no fuzzy scores (GBTWSVM), keep single points, ADPGBG balls. results/gbftsvm_cv.",
   results: "GBFTSVM 71.7/72.2/68.3/64.2 vs GBLSTSVM 73.5/73.3/71.0/64.0 at 0/10/20/30%. Fuzzy scores vs none: −1.2 to +0.7, never significant (≥ 99% of balls pure, where the score equals T1). Keep lifts it 1.8–4.5. Keep + T7 beats it by 5.1/3.7/5.6/4.7 (Holm p ≤ 0.005).",
   verdict: "keep", verdictNote: "The baseline a reviewer asks for first; our fix wins, and the paper's high numbers come from test-set tuning (+9–15 points).",
+});
+
+EXPERIMENTS.push({
+  id: "E15", name: "Time trade-off of keep + T7", date: "23 Oct 2026",
+  idea: "Keep trains on 2–7× more balls than GBLSTSVM (about 5× under noise). Does that make it slow, and how often are the hyperplanes solved?",
+  setup: "One split, full 5-fold CV (5 k × 2 class weights × 49 c1, c2 = 2,450 plane solves; 9,800 for keep + T7), timed on pima, ger and NDC-10k; single fits on NDC up to 50k; kernel times from E12.",
+  results: "Each fit solves the two planes once, in closed form. Tuning one split, GBLSTSVM vs keep + T7: pima 6.7 vs 8.1 s, NDC-10k at 20% noise 68.8 vs 83.5 s. A single fit with known settings: 1–5% slower; prediction identical. Kernel at 20% noise: 2–9× slower (10.5k: 5.3 vs 32.8 s).",
+  verdict: "keep", verdictNote: "Use keep + T7 in the linear model; keep the deletion in the kernel model, where it buys speed.",
 });
 
 const KERNEL = { // mean balanced accuracy (%), 21 datasets × 5 splits, CV-tuned, RBF kernel
