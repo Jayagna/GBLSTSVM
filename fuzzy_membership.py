@@ -22,7 +22,7 @@ Candidates (topic ids follow the progress deck):
 import numpy as np
 
 EPS = 1e-12
-DENSE_LIMIT = 5000  # above this many balls, neighbours come from a k-d tree
+DENSE_LIMIT = 1000  # above this many balls, neighbours come from a k-d tree (same result, faster)
 
 
 def _as_arrays(centers, radii, labels, counts):
