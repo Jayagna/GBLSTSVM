@@ -183,3 +183,21 @@ The score is the detection AUC of "low weight" for flipped labels; 0.5 is chance
 - ACFSVM's SVDD affinity is geometric, so it should be flat on pure balls.
 
 **The pattern:** only weights that compare a ball's label with its neighbours' labels detect noise, and none beats T7. The deck `post_midsem.pptx` now has 21 slides; slides 14–20 cover this, the case against a new fuzzy formula, and the case for the evaluation paper.
+
+## 6. Update, 4 Nov: soft (GMM) ball splitting fails gate 1
+
+**The idea (user).** Split balls with a Gaussian mixture instead of k-means, so each point gets a soft membership (its posterior in the component that formed its ball), and use that as the fuzzy weight. Code: `gen_ball_gmm.py`, `experiments/gmm_membership_probe.py`; results in `results/gmm_probe/summary.md` (21 datasets, 5 splits, k = 2, 4, 6, single-point balls kept).
+
+| Detection AUC | 10% | 20% | 30% |
+|---|---|---|---|
+| T7 on k-means balls | 0.885 | 0.868 | 0.821 |
+| Soft GMM membership (ball mean, last split) | 0.329 | 0.391 | 0.435 |
+| Soft GMM membership (product along split chain) | 0.466 | 0.475 | 0.486 |
+| T7 on GMM balls | 0.884 | 0.866 | 0.821 |
+| One GMM per class, cross-fitted p(y given x) | 0.840 | 0.783 | 0.721 |
+
+- **The soft membership is worse than chance.** Flipped points are split off into tiny balls of their own, where their posterior is 1.
+- **GMM balls with T7** match T7 on k-means balls (ahead on 9–13 of 21 datasets): the balls change, the signal doesn't.
+- **A label-aware mixture (one per class)** detects noise, being a smoothed neighbour vote, but trails T7 at every level.
+- **Prior art.** G-GBC (J. Yang, Q. Liu, X. Cao, F. Li, X. Yang, Knowledge-Based Systems 341, 115754, 2026, DOI 10.1016/j.knosys.2026.115754) builds granular balls with Gaussian mixtures for noisy labels in CNNs. Abstract not readable from here; the title and keywords are all we have.
+- No fair-CV run: the weight fails gate 1.

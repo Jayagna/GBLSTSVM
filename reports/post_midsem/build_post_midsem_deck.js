@@ -56,9 +56,10 @@ const REFS = [
   ["ifsvm", "M. Ha, C. Wang, J. Chen. The support vector machine based on intuitionistic fuzzy number and kernel function. Soft Computing 17(4):635–641, 2013."],
   ["fris", "R. Jensen, C. Cornelis. Fuzzy-rough instance selection. Proc. IEEE Int. Conf. Fuzzy Systems (FUZZ-IEEE), 2010."],
   ["fsvmcil", "R. Batuwita, V. Palade. FSVM-CIL: fuzzy support vector machines for class imbalance learning. IEEE Trans. Fuzzy Systems 18(3):558–571, 2010."],
+  ["ggbc", "J. Yang, Q. Liu, X. Cao, F. Li, X. Yang. G-GBC: a Gaussian mixture-based granular ball computing method for robust CNN classification under noisy labels. Knowledge-Based Systems 341, 115754, 2026."],
   ["acfsvm", "X. Tao, Q. Li, C. Ren, W. Guo, Q. He, R. Liu, J. Zou. Affinity and class probability-based fuzzy support vector machine for imbalanced data sets. Neural Networks 122:289–307, 2020. (ACFSVM)"],
   ["hundreds", "M. Fernández-Delgado, E. Cernadas, S. Barro, D. Amorim. Do we need hundreds of classifiers to solve real world classification problems? J. Machine Learning Research 15:3133–3181, 2014."],
-  ["ours", "Jayagna/GBLSTSVM, branch claude/project-thread-bwmgim: experiments/run_lstsvm_test_tuning.py, run_gbftsvm_cv.py, noise_diagnostics.py and the residual, boundary and transplant probes; results/."],
+  ["ours", "Jayagna/GBLSTSVM, branch claude/project-thread-bwmgim: experiments/run_lstsvm_test_tuning.py, run_gbftsvm_cv.py, noise_diagnostics.py and the residual, boundary, transplant and GMM probes; results/."],
 ];
 const REF_NO = Object.fromEntries(REFS.map(([k], i) => [k, i + 1]));
 const R = (...keys) => "[" + keys.map(k => { if (!REF_NO[k]) throw new Error("unknown ref " + k); return REF_NO[k]; }).join(", ") + "]";
@@ -645,7 +646,37 @@ takeaway(s, "It can be named as our membership, but only as an equal to T7: same
 s.addNotes("You asked whether the boundary-aware weight, which looked almost as good as T7 at spotting flipped labels, could be used since it hasn't been used on granular balls. So I ran it through the full fair cross-validation, 21 datasets, 10 splits, 0 to 30% noise. The bars show how far it is from each model in balanced accuracy. Against keep plus T7, in teal, the bars are close to zero and none of the differences is significant. Against GBLSTSVM, in red, it is about three to four points better, significant at every noise level, just like keep plus T7. Against plain LSTSVM, in blue, it is still one and a half to three and a half points behind, though at 30% noise the gap is not significant. Both versions keep the single-point balls, so they use the same balls and take the same time; there is no speed gain. So it is a fair choice of membership for our model, but we can only say it matches T7, not that it improves on it. Before calling it new we should also search the noise-filtering literature for neighbour-of-neighbour weights.");
 
 // =====================================================================================
-// 16. The ladder: what detects noise
+// 16. Third idea: soft (GMM) ball splitting
+// =====================================================================================
+const GMM = (() => {
+  const rows = fs.readFileSync(path.join(__dirname, "data", "gmm_probe.csv"), "utf8").trim().split("\n");
+  const h = rows[0].split(",");
+  return rows.slice(1).map(l => Object.fromEntries(l.split(",").map((v, i) => [h[i], i ? Number(v) : v])));
+})();
+const gcol = key => GMM.map(r => r[key]);
+const g2 = key => gcol(key).map(v => v.toFixed(2)).join(" / ");
+s = content("Next step", "Third idea: soft (GMM) splitting doesn't spot wrong labels", "Detection check, 4 Nov");
+barChart(s, [
+  ["T7 (k-means balls)", gcol("auc_T7_mean").map(r2)],
+  ["Soft GMM membership", gcol("auc_ball_last_mean").map(r2)],
+  ["T7 on GMM balls", gcol("auc_T7_gmm_mean").map(r2)],
+  ["One GMM per class", gcol("auc_cpost_mean").map(r2)],
+], ["10%", "20%", "30%"], [HEX.accent1, HEX.accent2, HEX.accent3, HEX.accent5], {
+  x: 0.6, y: 1.6, w: 7.4, h: 4.45, valAxisMinVal: 0, valAxisMaxVal: 1, valAxisMajorUnit: 0.25, dataLabelFormatCode: "0.00", dataLabelFontSize: 10,
+  barGapWidthPct: 45, catAxisTitle: "Label noise", showCatAxisTitle: true, valAxisTitle: "Flipped-label detection AUC (0.5 = chance)", showValAxisTitle: true,
+});
+s.addText(bullets([
+  [B("The idea: "), "split each ball with a Gaussian mixture instead of k-means; a point's probability of belonging to its ball becomes its fuzzy weight."],
+  [B("Soft weight alone: "), `${g2("auc_ball_last_mean")}, worse than chance. Flipped points get split off into tiny balls of their own, where they belong with probability 1.`],
+  [B("GMM balls + T7: "), `${g2("auc_T7_gmm_mean")}, the same as T7 on k-means balls (ahead on ${Math.min(...gcol("auc_T7_gmm_wins"))}–${Math.max(...gcol("auc_T7_gmm_wins"))} of 21 datasets, a coin toss): the balls change, the signal doesn't.`],
+  [B("One mixture per class "), `(uses labels): ${g2("auc_cpost_mean")}, a smoothed neighbour vote that still trails T7.`],
+  [B("Prior art: "), `G-GBC ${R("ggbc")} already builds granular balls with Gaussian mixtures for noisy labels (in CNNs).`],
+], { space: 6 }), tx({ x: 8.35, y: 1.6, w: 4.35, h: 4.5, fontSize: 12.5 }));
+takeaway(s, "Gate 1 failed: a soft cluster membership measures shape, not wrong labels, so no fair-CV run.");
+s.addNotes("You suggested splitting the balls with a Gaussian mixture model instead of k-means. A Gaussian mixture is a soft clustering: every point gets a probability of belonging to each cluster, so after the split each point has a soft membership in its own ball, which could serve as its fuzzy weight. I built this splitter and ran the same detection check on 21 datasets. The red bars are that soft membership: it is worse than guessing at every noise level. The reason is that flipped points tend to be split off into tiny balls of their own, where they belong with probability one, so they get the highest weight instead of the lowest. Using the new balls with T7, in blue, gives exactly the same result as T7 on the usual k-means balls, so the mixture changes the balls but not the useful signal. A label-aware version, one mixture per class, in amber, does detect noise, because it is a smoothed form of asking the neighbours, but it still trails plain T7. Finally, a 2026 paper, G-GBC, already builds granular balls with Gaussian mixtures for noisy labels, so the splitting idea itself is not new either.");
+
+// =====================================================================================
+// 17. The ladder: what detects noise
 // =====================================================================================
 const TP = (() => {
   const f = path.join(__dirname, "data", "transplant_probe.csv");
@@ -664,6 +695,8 @@ const LADDER = [ // detection AUC at 20% noise; true = compares the ball's label
   ["Residual (cross-fitted)", at20(pcol("auc_res_0.1_mean")), false],
   ["T1 centre distance " + R("fsvm"), 0.646, false],
   ["Fuzzy-rough, nearest other-class ball " + R("fris"), at20(tcol("auc_FR_mean")), false],
+  ["One GMM per class (class posterior)", at20(gcol("auc_cpost_mean")), true],
+  ["Soft GMM split membership", at20(gcol("auc_ball_last_mean")), false],
   ["T4 overlap", 0.491, false],
   ["T5 density", 0.330, false],
   ["T2 kNN class entropy " + R("efsvm"), 0.264, false],
@@ -679,7 +712,7 @@ s.addChart(pres.charts.BAR, [
   valAxisTitle: "Flipped-label detection AUC at 20% noise (0.5 = chance)", showValAxisTitle: true, showLegend: true, legendPos: "b",
 }));
 s.addText(bullets([
-  [B("Two groups. "), `Every membership that compares a ball's label with its neighbours' labels scores ${Math.min(...LADDER.filter(l => l[2]).map(l => l[1])).toFixed(2)}–${Math.max(...LADDER.filter(l => l[2]).map(l => l[1])).toFixed(2)}. Every other signal (distance, density, overlap, entropy, residual, nearest enemy) scores ${Math.max(...LADDER.filter(l => !l[2]).map(l => l[1])).toFixed(2)} or less, several below chance.`],
+  [B("Two groups. "), `Every membership that compares a ball's label with its neighbours' labels scores ${Math.min(...LADDER.filter(l => l[2]).map(l => l[1])).toFixed(2)}–${Math.max(...LADDER.filter(l => l[2]).map(l => l[1])).toFixed(2)}. Every other signal (distance, density, overlap, entropy, residual, nearest enemy, soft GMM) scores ${Math.max(...LADDER.filter(l => !l[2]).map(l => l[1])).toFixed(2)} or less, several below chance.`],
   [B("The top group is published. "), "Fuzzy kNN (1985), IFTSVM (2019) and SDAP-GBRVFL (2026) all use this signal."],
   [B("T7 is the ceiling so far. "), `Two variants built on it (boundary-aware, class-balanced) land just below it. The borrowed intuitionistic score drops to ${at20(tcol("auc_IF_mean")).toFixed(2)} because it mixes in centre distance.`],
 ], { space: 9 }), tx({ x: 8.95, y: 1.6, w: 3.75, h: 4.5, fontSize: 13.5 }));
@@ -687,7 +720,7 @@ takeaway(s, "The useful signal for label noise is neighbour agreement, and it is
 s.addNotes("This chart puts every membership we measured on one scale: how well it gives low weight to the labels we flipped, at 20% noise, where 0.5 means guessing. The teal bars all compare a ball's label with the labels of its neighbours, and they all sit near the top, between about 0.8 and 0.87. The grey bars use some other signal, such as distance to the class centre, density, overlap, entropy, the classifier's residual or the distance to the nearest ball of the other class. None of them gets above about 0.67, and several are worse than guessing. So there is really one useful signal for label noise, neighbour agreement, and it was published long ago. Every attempt to improve on it lands at or below plain T7.");
 
 // =====================================================================================
-// 17. Why we can't promise a new fuzzy formula
+// 18. Why we can't promise a new fuzzy formula
 // =====================================================================================
 s = content("Why not a new fuzzy formula?", "Four reasons a new fuzzy formula is unlikely to hold up", "Why not a new fuzzy formula?");
 [
@@ -702,18 +735,18 @@ s = content("Why not a new fuzzy formula?", "Four reasons a new fuzzy formula is
   s.addText(h, tx({ x: x + 0.95, y: y + 0.22, w: 4.8, h: 0.55, fontSize: 16.5, bold: true, color: C.text2, valign: "middle" }));
   s.addText(t, tx({ x: x + 0.95, y: y + 0.82, w: 4.8, h: 1.2, fontSize: 13.5 }));
 });
-takeaway(s, "Four memberships tested today, new and borrowed, and all four failed the first gate.");
-s.addNotes("Here is the detailed case for not promising a new fuzzy formula. First, only one signal detects label noise, neighbour agreement, and every version of it is already published. Second, GBLSTSVM itself leaves almost nothing for a membership to do: once single-point balls are deleted, nearly every remaining ball is pure, most mislabelled points are already gone, and in round one every ball weight changed accuracy by less than a point. Third, even our best weight, keep plus T7, does not beat the strong baselines under fair testing: it only ties plain LSTSVM at 30% noise and stays behind fuzzy-kNN LSTSVM. Fourth, the published gains for new granular-ball fuzzy models shrink or disappear when tuned fairly, as we showed for GBFTSVM and GBLSTSVM, so a new formula would face the same test from any careful reviewer. Today we tried four memberships, two new and two borrowed, and all four failed the cheapest test.");
+takeaway(s, "Five memberships tested today, new and borrowed, and all five failed the first gate.");
+s.addNotes("Here is the detailed case for not promising a new fuzzy formula. First, only one signal detects label noise, neighbour agreement, and every version of it is already published. Second, GBLSTSVM itself leaves almost nothing for a membership to do: once single-point balls are deleted, nearly every remaining ball is pure, most mislabelled points are already gone, and in round one every ball weight changed accuracy by less than a point. Third, even our best weight, keep plus T7, does not beat the strong baselines under fair testing: it only ties plain LSTSVM at 30% noise and stays behind fuzzy-kNN LSTSVM. Fourth, the published gains for new granular-ball fuzzy models shrink or disappear when tuned fairly, as we showed for GBFTSVM and GBLSTSVM, so a new formula would face the same test from any careful reviewer. Today we tried five memberships, three new and two borrowed, including the Gaussian-mixture split, and all five failed the cheapest test.");
 
 // =====================================================================================
-// 18. Why an evaluation paper
+// 19. Why an evaluation paper
 // =====================================================================================
 s = content("The direction", "Why an evaluation paper is the right direction", "The direction");
 [
   ["The data already supports it", "7 rounds of experiments: 21 datasets × 10 splits, 0–30% label noise, Holm-corrected Wilcoxon tests, linear and kernel models, timing."],
   ["It fills a real gap", "No paper we found re-tests granular-ball classifiers under fair CV, and the field's headline gains depend on test-set tuning."],
   ["Evaluation papers are valued", `Benchmark and methodology studies are among the most cited in ML, e.g. Demšar ${R("demsar")} and "Do we need hundreds of classifiers?" ${R("hundreds")}.`],
-  ["Negative results become evidence", "The failed memberships (residual, boundary-aware, entropy, density, overlap) turn into a table that tells readers what not to try."],
+  ["Negative results become evidence", "The failed memberships (residual, soft GMM, boundary-aware, entropy, density, overlap) turn into a table that tells readers what not to try."],
   ["It is useful to the group", "A fair protocol and released code that the group's next GB models can be tested with, before reviewers do it for them."],
 ].forEach(([h, t], i) => {
   const y = 1.6 + i * 0.9;
@@ -724,7 +757,7 @@ takeaway(s, "Low risk, results in hand, and a contribution the field currently l
 s.addNotes("Why is an evaluation paper a good direction rather than a fallback? First, the experiments are already done and done carefully: 21 datasets, ten splits each, four noise levels, corrected significance tests, linear and kernel versions and timing. Second, it fills a real gap: we found no paper that re-tests granular-ball classifiers under fair cross-validation, even though the headline gains depend on test-set tuning. Third, evaluation papers are valued; two of the most cited papers in machine learning methodology are Demšar's paper on comparing classifiers and the study asking whether we need hundreds of classifiers. Fourth, all the ideas that failed become evidence instead of wasted work. Fifth, it gives the research group a fair test protocol and code for their own future granular-ball models.");
 
 // =====================================================================================
-// 19. Novel of sorts
+// 20. Novel of sorts
 // =====================================================================================
 s = content("The direction", "And it is novel of sorts: four contributions", "The direction");
 [
@@ -747,7 +780,7 @@ takeaway(s, "Working title: \"Where do granular balls help least squares twin SV
 s.addNotes("So what is new? Four things. One, the finding that deleting single-point balls acts as a hidden noise filter that also throws away good boundary and minority points. Two, a fair benchmark showing plain LSTSVM beats GBLSTSVM, and that the published ordering comes back only with test-set tuning. Three, a benchmark of memberships borrowed from the fuzzy SVM literature, all applied to GBLSTSVM and tested the same way, which shows that only neighbour agreement detects noise. Four, a new fuzzy GBLSTSVM model, keep plus T7, which keeps the single-point balls and down-weights them by neighbour agreement. The weight itself is known, but the model is new, which is the same level of novelty as GBFTSVM and SDAP-GBRVFL, and unlike those it comes with a measured explanation of why it works.");
 
 // =====================================================================================
-// 20. Borrowed memberships
+// 21. Borrowed memberships
 // =====================================================================================
 s = content("The direction", "Memberships from other models we could bring to GBLSTSVM", "Borrowed, not new: new only for GBLSTSVM");
 const TRow = (name, src, signal, status, color) => [td(name, { bold: true }), td(src), td(signal), td(status, { color: color || HEX.dk1, bold: !!color })];
@@ -768,11 +801,11 @@ takeaway(s, "Borrowed weights are fair game, but they act like T7 (neighbour-bas
 s.addNotes("You asked whether there are membership functions from other models that are not new in general but would be new for GBLSTSVM. Yes, and this table lists the main ones from the fuzzy SVM literature. The first four we have already put on GBLSTSVM: centre distance from the original fuzzy SVM, the entropy weight from EFSVM, fuzzy k-nearest-neighbour agreement, and GBFTSVM's Pythagorean score. Today I tested two more: the intuitionistic fuzzy score from IFSVM and IFTSVM, and a fuzzy-rough weight based on the distance to the nearest ball of the other class. Neither beat T7 at spotting flipped labels. Two others are not worth running: FSVM-CIL's weights reduce to centre distance plus class weighting, or to the residual idea that failed, and ACFSVM's weight is geometric and should be as flat as centre distance on pure balls. The pattern is clear: borrowed weights either behave like T7 or do nothing. That still makes them useful, as rows in the membership benchmark.");
 
 // =====================================================================================
-// 21. Plan
+// 22. Plan
 // =====================================================================================
 s = content("The direction", "Plan: no new weight beat T7, so the evaluation paper is next", "Decisions, 4 Nov");
 [
-  ["✓", "Residual weights", "Failed gate 1: AUC 0.60–0.66 vs T7's 0.82–0.88.", C.accent2],
+  ["✓", "Residual and soft GMM", `Failed gate 1: AUC 0.60–0.66 and ${Math.min(...gcol("auc_ball_last_mean")).toFixed(2)}–${Math.max(...gcol("auc_ball_last_mean")).toFixed(2)} vs T7's 0.82–0.88.`, C.accent2],
   ["✓", "Boundary-aware T7", "Slightly below T7 at spotting noise; ties keep + T7 on fair-CV accuracy.", C.accent5],
   ["✓", "Borrowed weights", `Intuitionistic (${tcol("auc_IF_mean")[1].toFixed(2)}) and fuzzy-rough (${tcol("auc_FR_mean")[1].toFixed(2)}) below T7 on every dataset.`, C.accent2],
   ["4", "Draft the paper", "C1–C4 with keep + T7 as the model; the failed weights go in the benchmark table.", C.accent1],
@@ -789,10 +822,10 @@ s.addText([{ text: "To decide with the professor: ", options: { bold: true, colo
   { text: "accept the evaluation framing with keep + T7 as the new fuzzy GBLSTSVM (keep + boundary-aware is an equal alternative), and pick a venue. If he wants more models, the same protocol can add GBTSVM and multi-class data." }],
   tx({ x: 0.85, y: 4.55, w: 11.6, h: 1.1, fontSize: 15, valign: "middle" }));
 takeaway(s, "Next: draft the evaluation paper around C1–C4.");
-s.addNotes("To sum up the plan. Three new membership ideas were checked today and none beat T7 at the first, cheapest test: the residual weights, the boundary-aware version of T7, and the borrowed intuitionistic and fuzzy-rough weights. The boundary-aware weight also went through the full fair cross-validation and tied keep plus T7 on accuracy, so it is an equal alternative but not an improvement. So the next step is to draft the evaluation paper around the four contributions, with keep plus T7 as the new fuzzy GBLSTSVM model and the failed weights reported in the benchmark table. What I need from the professor is agreement on that framing and a target venue. If he wants a broader study, the same protocol can add the granular-ball twin SVM and multi-class datasets.");
+s.addNotes("To sum up the plan. Four new membership ideas were checked today and none beat T7 at the first, cheapest test: the residual weights, the soft Gaussian-mixture split, the boundary-aware version of T7, and the borrowed intuitionistic and fuzzy-rough weights. The boundary-aware weight also went through the full fair cross-validation and tied keep plus T7 on accuracy, so it is an equal alternative but not an improvement. So the next step is to draft the evaluation paper around the four contributions, with keep plus T7 as the new fuzzy GBLSTSVM model and the failed weights reported in the benchmark table. What I need from the professor is agreement on that framing and a target venue. If he wants a broader study, the same protocol can add the granular-ball twin SVM and multi-class datasets.");
 
 // =====================================================================================
-// 22. References
+// 23. References
 // =====================================================================================
 s = content("The direction", "References");
 const half = Math.ceil(REFS.length / 2);
