@@ -300,7 +300,15 @@ const ACC = { lc: col("accuracy", "LSTSVM_cv"), gc: col("accuracy", "GBLSTSVM_cv
 const BA = { lc: col("balanced_accuracy", "LSTSVM_cv"), gc: col("balanced_accuracy", "GBLSTSVM_cv"), lt: col("balanced_accuracy", "LSTSVM_test_tuned"), gt: col("balanced_accuracy", "GBLSTSVM_test_tuned"),
   wins: col("balanced_accuracy", "gb_wins_test_tuned"), p: col("balanced_accuracy", "p_test_tuned") };
 const PAPER = { l: [86.67, 84.82, 83.79, null], g: [88.26, 87.47, 86.09, null] }; // GBLSTSVM paper, Table 1 (linear)
-const T7_AUC = [0.885, 0.868, 0.821]; // results/noise_diagnostics/summary.md, 10/20/30% noise
+// flipped-label detection AUCs, results/residual_probe (10/20/30% noise)
+const PROBE = (() => {
+  const rows = fs.readFileSync(path.join(__dirname, "data", "residual_probe.csv"), "utf8").trim().split("\n");
+  const h = rows[0].split(",");
+  return rows.slice(1).map(l => Object.fromEntries(l.split(",").map((v, i) => [h[i], i ? Number(v) : v])));
+})();
+const pcol = key => PROBE.map(r => r[key]);
+const r2 = v => Number(v.toFixed(2));
+const T7_AUC = pcol("auc_T7_mean");
 const pfmt = p => (p < 0.001 ? "< 0.001" : p < 0.1 ? p.toFixed(3) : p.toFixed(2));
 const sgn = v => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(1);
 
@@ -543,14 +551,36 @@ takeaway(s, "In this field, new methods usually put a known idea on balls; ours 
 s.addNotes("If we want a method contribution as well, any new membership has to pass two gates. The first is cheap: since we flip the labels ourselves, we know which points are wrong, so we can check whether the membership gives them low weight, and it has to do this better than T7. The second is the real test: it has to beat plain LSTSVM and fuzzy-kNN LSTSVM under fair cross-validation. The candidate is a residual membership: fit the planes without a ball, see whether that ball lands on the wrong side, and down-weight it if so. It uses the classifier's own view of each ball. On single points this is close to old classification filters and to confident learning, so it needs a proper prior-art search too.");
 
 // =====================================================================================
-// 13. Plan
+// 13. Result of the detection check
 // =====================================================================================
-s = content("Next step", "Plan: test the residual membership first, then write", "Decision, 4 Nov: \"Test it first\"");
+s = content("Next step", "Result: residual weights fail gate 1 by a wide margin", "Detection check, 4 Nov");
+barChart(s, [
+  ["T7 (neighbour agreement)", pcol("auc_T7_mean").map(r2)],
+  ["Residual on balls", pcol("auc_res_0.1_mean").map(r2)],
+  ["Residual on points", pcol("auc_res_point_1_mean").map(r2)],
+  ["T7 × residual", pcol("auc_T7xres_1_mean").map(r2)],
+], ["10%", "20%", "30%"], [HEX.accent1, HEX.accent2, HEX.accent3, HEX.accent5], {
+  x: 0.6, y: 1.6, w: 7.6, h: 4.45, valAxisMinVal: 0.4, valAxisMaxVal: 1, valAxisMajorUnit: 0.1, dataLabelFormatCode: "0.00", dataLabelFontSize: 10,
+  barGapWidthPct: 45, catAxisTitle: "Label noise", showCatAxisTitle: true, valAxisTitle: "Flipped-label detection AUC (0.5 = chance)", showValAxisTitle: true,
+});
+s.addText(bullets([
+  [B("Residual on balls "), `(best of the three C values) flags flipped labels far worse than T7: ${pcol("auc_res_0.1_mean").map(v => v.toFixed(2)).join(" / ")} against ${pcol("auc_T7_mean").map(v => v.toFixed(2)).join(" / ")}. It beats T7 on at most ${Math.max(...pcol("auc_res_0.1_wins"))} of 21 datasets.`],
+  [B("Worse than chance on imbalanced sets "), "(ecoli2, ecoli4, yeast, glass4): clean minority points sit on the wrong side of a linear plane, so they get flagged as noise."],
+  [B("Combining doesn't help: "), "T7 × residual is below T7 alone at every noise level."],
+  [B("Same on single points: "), "the classic classification filter loses to fuzzy kNN."],
+], { space: 9 }), tx({ x: 8.5, y: 1.65, w: 4.2, h: 4.4, fontSize: 14 }));
+takeaway(s, "Gate 1 failed, so the fair-CV run is skipped; the result joins the paper's \"memberships that don't help\" table.");
+s.addNotes("Here is the result of the detection check, on all 21 datasets, five splits and three noise levels. The bars show how well each weight singles out the points whose labels we flipped; 0.5 would be guessing. T7, in teal, scores between 0.82 and 0.89. The residual weights on balls, in red, score only 0.60 to 0.66, and they beat T7 on just two or three datasets. On the imbalanced datasets they are worse than guessing, because a straight-line classifier puts many correct minority points on the wrong side, so the residual mistakes them for noise. Multiplying T7 by the residual weight makes T7 worse, and the same idea on single points also loses to fuzzy kNN. So the idea fails the first gate, and we don't spend time on the full cross-validation. It still has value: it is one more membership that doesn't help, which supports the evaluation paper.");
+
+// =====================================================================================
+// 14. Plan
+// =====================================================================================
+s = content("Next step", "Plan: the residual idea is ruled out, so the evaluation paper is next", "Decision, 4 Nov: \"Test it first\"");
 [
-  ["1", "Detection check", "21 datasets, 5 splits, 10–30% noise, against T7. Restarts at 8:00 in a new session.", C.accent5],
-  ["2", "Fair CV comparison", "Only if gate 1 passes: against LSTSVM, fuzzy-kNN LSTSVM and keep + T7.", C.accent6],
-  ["3", "Prior-art search", "Residual or classifier-filter weights on granular balls.", C.accent6],
-  ["4", "Draft the paper", "The evaluation paper goes ahead either way; a passing method becomes its second contribution.", C.accent1],
+  ["✓", "Detection check", "Done 4 Nov: residual weights fail gate 1 (21 datasets, 5 splits, 10–30% noise).", C.accent2],
+  ["–", "Fair CV comparison", "Skipped: it only runs if gate 1 passes.", C.accent6],
+  ["–", "Prior-art search", "Not needed for a method claim; cite classification filters as related work.", C.accent6],
+  ["4", "Draft the paper", "Next: the evaluation paper, with keep + T7 as the fix and this test as a negative result.", C.accent1],
 ].forEach(([n, h, t, color], i) => {
   const x = 0.6 + i * 3.06, w = 2.94;
   card(s, x, 1.6, w, 2.6);
@@ -560,14 +590,14 @@ s = content("Next step", "Plan: test the residual membership first, then write",
   if (i < 3) s.addShape(pres.shapes.LINE, { x: x + w + 0.01, y: 2.9, w: 0.1, h: 0, line: { color: C.accent6, width: 1.5, endArrowType: "triangle" }, objectName: "arrow" });
 });
 card(s, 0.6, 4.55, 12.1, 1.1);
-s.addText([{ text: "First look (not conclusive): ", options: { bold: true, color: C.text2 } },
-  { text: "on 2 datasets (pima, sonar), 1 split and 20% noise, residual weights scored AUC 0.63 against T7's 0.78, and T7 × residual 0.75. Too small a sample to judge; the full check decides." }],
+s.addText([{ text: "What this rules out: ", options: { bold: true, color: C.text2 } },
+  { text: "weights from the linear classifier's own residuals. Neighbour-based weights (T7, fuzzy kNN) remain the best noise detectors we have, and both are already published." }],
   tx({ x: 0.85, y: 4.55, w: 11.6, h: 1.1, fontSize: 15, valign: "middle" }));
-takeaway(s, "Either outcome is useful: a passing method adds a contribution, and a failing one strengthens the evaluation.");
-s.addNotes("We chose to test the residual membership before writing. Step one is the cheap detection check on all 21 datasets, which restarts at eight in a new session. Step two, the full fair comparison, only runs if step one passes. Step three is a prior-art search for this specific idea on granular balls. Step four, the evaluation paper, goes ahead either way. A very small first look, on two datasets and one split, had the residual weights doing worse than T7, but that is far too little data to decide anything.");
+takeaway(s, "Next: draft the evaluation paper and pick a venue with the professor.");
+s.addNotes("This is where the plan stands. The detection check is done and the residual idea failed it, so the fair cross-validation run and the prior-art search for a method claim are no longer needed. Classification filters can still be cited as related work. The next step is to write the evaluation paper: where granular balls help and hurt in LSTSVM, with keep plus T7 as the simple fix and this residual test as a documented negative result. The venue should be chosen with the professor.");
 
 // =====================================================================================
-// 14. References
+// 15. References
 // =====================================================================================
 s = content("Next step", "References");
 const half = Math.ceil(REFS.length / 2);

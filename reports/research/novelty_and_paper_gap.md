@@ -100,3 +100,22 @@ The one idea worth testing next is **cross-fitted residual membership**:
 - **If it fails,** it becomes one more row in the evaluation paper's "memberships that don't help" table, so the test is not wasted.
 
 Sources from the searches: [GBFTSVM, arXiv 2408.00699](https://arxiv.org/abs/2408.00699), [GBG++, arXiv 2305.18450](https://arxiv.org/pdf/2305.18450), [GB K-class TSVC, arXiv 2412.05438](https://arxiv.org/pdf/2412.05438), [GBSVM, arXiv 2210.03120](https://arxiv.org/pdf/2210.03120), [GB CNN with label noise, arXiv 2207.08810](https://arxiv.org/pdf/2207.08810). None of them re-tests GB classifiers under fair CV.
+
+## 3. Update, 4 Nov: the residual membership fails gate 1
+
+`experiments/residual_membership_probe.py` was run on 21 datasets, 5 splits and k = 2, 4, 6. Results are in `results/residual_probe/summary.md`.
+
+The score is the detection AUC of "low weight" for flipped labels; 0.5 is chance. The last column counts the datasets where the measure beats T7.
+
+| Measure | 10% | 20% | 30% | Beats T7 on |
+|---|---|---|---|---|
+| T7 (neighbour agreement on balls) | 0.88 | 0.87 | 0.82 | — |
+| Residual on balls, best C (0.1) | 0.66 | 0.65 | 0.60 | 2–3 of 21 |
+| T7 × residual | 0.88 | 0.83 | 0.74 | 6–9 of 21 |
+| Residual on points (classification filter) | 0.82 | 0.76 | 0.70 | 4–8 of 21 |
+| Fuzzy kNN on points | 0.89 | 0.87 | 0.82 | 9–17 of 21 |
+
+- **On the imbalanced sets the residual is worse than chance.** These are ecoli2, ecoli4, the yeast sets and glass4. A linear plane leaves clean minority points on the wrong side, so the residual flags them as noise.
+- **Gate 1 failed.** The fair-CV run is skipped, and the idea goes into the paper as a negative result.
+- **Neighbour-based weights remain the best noise detectors**, and they are already published.
+- **Next step:** draft the evaluation paper.
