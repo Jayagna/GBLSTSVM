@@ -1,0 +1,291 @@
+{
+ "dataset": "wdbc",
+ "noise": 0.3,
+ "samples": 569,
+ "features": 30,
+ "minority": 212,
+ "majority": 357,
+ "repeats": [
+  {
+   "repeat": 0,
+   "cv_folds": 5,
+   "methods": {
+    "Keep+boundary": {
+     "accuracy": 84.21052631578947,
+     "balanced_accuracy": 0.8392961448598131,
+     "gmean": 0.8392217968445919,
+     "sensitivity": 0.828125,
+     "specificity": 0.8504672897196262,
+     "f1": 0.7969924812030075,
+     "roc_auc": 0.916179906542056,
+     "k": 4,
+     "imbalance": false,
+     "param": [
+      5,
+      3.0
+     ],
+     "c1": 1.0,
+     "c2": 1.0,
+     "cv_bal_acc": 0.6347546897546896,
+     "n_balls": 300,
+     "fit_time": 0.15047216415405273,
+     "mean_membership": 0.4686541533547702,
+     "min_membership": 0.006150611754985986
+    }
+   }
+  },
+  {
+   "repeat": 1,
+   "cv_folds": 5,
+   "methods": {
+    "Keep+boundary": {
+     "accuracy": 78.3625730994152,
+     "balanced_accuracy": 0.7172167056074766,
+     "gmean": 0.6668248449418901,
+     "sensitivity": 0.453125,
+     "specificity": 0.9813084112149533,
+     "f1": 0.6105263157894737,
+     "roc_auc": 0.8919392523364487,
+     "k": 3,
+     "imbalance": false,
+     "param": [
+      10,
+      1.0
+     ],
+     "c1": 1.0,
+     "c2": 0.1,
+     "cv_bal_acc": 0.6207647907647907,
+     "n_balls": 300,
+     "fit_time": 0.2435283660888672,
+     "mean_membership": 0.7378911620933722,
+     "min_membership": 0.2876867143835623
+    }
+   }
+  },
+  {
+   "repeat": 2,
+   "cv_folds": 5,
+   "methods": {
+    "Keep+boundary": {
+     "accuracy": 73.68421052631578,
+     "balanced_accuracy": 0.6484375,
+     "gmean": 0.5448623679425842,
+     "sensitivity": 0.296875,
+     "specificity": 1.0,
+     "f1": 0.4578313253012048,
+     "roc_auc": 0.9407126168224298,
+     "k": 4,
+     "imbalance": true,
+     "param": [
+      10,
+      1.0
+     ],
+     "c1": 1.0,
+     "c2": 1.0,
+     "cv_bal_acc": 0.6441630591630593,
+     "n_balls": 321,
+     "fit_time": 0.21740245819091797,
+     "mean_membership": 0.7544274710947544,
+     "min_membership": 0.29246605216489563
+    }
+   }
+  },
+  {
+   "repeat": 3,
+   "cv_folds": 5,
+   "methods": {
+    "Keep+boundary": {
+     "accuracy": 83.62573099415205,
+     "balanced_accuracy": 0.790668808411215,
+     "gmean": 0.769603612014762,
+     "sensitivity": 0.609375,
+     "specificity": 0.9719626168224299,
+     "f1": 0.7358490566037735,
+     "roc_auc": 0.955607476635514,
+     "k": 4,
+     "imbalance": false,
+     "param": [
+      10,
+      3.0
+     ],
+     "c1": 0.001,
+     "c2": 1.0,
+     "cv_bal_acc": 0.6310894660894661,
+     "n_balls": 325,
+     "fit_time": 0.23336315155029297,
+     "mean_membership": 0.4570731688001764,
+     "min_membership": 0.011172450717424462
+    }
+   }
+  },
+  {
+   "repeat": 4,
+   "cv_folds": 5,
+   "methods": {
+    "Keep+boundary": {
+     "accuracy": 50.29239766081871,
+     "balanced_accuracy": 0.5965245327102804,
+     "gmean": 0.4661434539132436,
+     "sensitivity": 0.96875,
+     "specificity": 0.22429906542056074,
+     "f1": 0.5933014354066986,
+     "roc_auc": 0.8646320093457943,
+     "k": 2,
+     "imbalance": true,
+     "param": [
+      5,
+      3.0
+     ],
+     "c1": 100.0,
+     "c2": 10.0,
+     "cv_bal_acc": 0.637987012987013,
+     "n_balls": 294,
+     "fit_time": 0.3444082736968994,
+     "mean_membership": 0.4719006583825012,
+     "min_membership": 0.001606942400334775
+    }
+   }
+  },
+  {
+   "repeat": 5,
+   "cv_folds": 5,
+   "methods": {
+    "Keep+boundary": {
+     "accuracy": 83.62573099415205,
+     "balanced_accuracy": 0.7969480140186915,
+     "gmean": 0.7814660916101533,
+     "sensitivity": 0.640625,
+     "specificity": 0.9532710280373832,
+     "f1": 0.7454545454545455,
+     "roc_auc": 0.8640478971962617,
+     "k": 6,
+     "imbalance": true,
+     "param": [
+      10,
+      3.0
+     ],
+     "c1": 0.1,
+     "c2": 0.1,
+     "cv_bal_acc": 0.6381746031746032,
+     "n_balls": 358,
+     "fit_time": 0.16169285774230957,
+     "mean_membership": 0.46516946830299283,
+     "min_membership": 0.04287500000003957
+    }
+   }
+  },
+  {
+   "repeat": 6,
+   "cv_folds": 5,
+   "methods": {
+    "Keep+boundary": {
+     "accuracy": 81.87134502923976,
+     "balanced_accuracy": 0.7640917056074766,
+     "gmean": 0.7325660634940562,
+     "sensitivity": 0.546875,
+     "specificity": 0.9813084112149533,
+     "f1": 0.693069306930693,
+     "roc_auc": 0.9452394859813084,
+     "k": 5,
+     "imbalance": false,
+     "param": [
+      5,
+      1.0
+     ],
+     "c1": 0.1,
+     "c2": 0.1,
+     "cv_bal_acc": 0.640007215007215,
+     "n_balls": 332,
+     "fit_time": 0.14468812942504883,
+     "mean_membership": 0.7506658886110725,
+     "min_membership": 0.15529100529127593
+    }
+   }
+  },
+  {
+   "repeat": 7,
+   "cv_folds": 5,
+   "methods": {
+    "Keep+boundary": {
+     "accuracy": 83.62573099415205,
+     "balanced_accuracy": 0.7843896028037383,
+     "gmean": 0.7567839603326847,
+     "sensitivity": 0.578125,
+     "specificity": 0.9906542056074766,
+     "f1": 0.7254901960784313,
+     "roc_auc": 0.920998831775701,
+     "k": 4,
+     "imbalance": false,
+     "param": [
+      10,
+      3.0
+     ],
+     "c1": 1.0,
+     "c2": 1.0,
+     "cv_bal_acc": 0.6633189033189033,
+     "n_balls": 321,
+     "fit_time": 0.1602323055267334,
+     "mean_membership": 0.4589853864244244,
+     "min_membership": 0.0061832788199085885
+    }
+   }
+  },
+  {
+   "repeat": 8,
+   "cv_folds": 5,
+   "methods": {
+    "Keep+boundary": {
+     "accuracy": 77.19298245614034,
+     "balanced_accuracy": 0.7769421728971962,
+     "gmean": 0.7766864376502957,
+     "sensitivity": 0.796875,
+     "specificity": 0.7570093457943925,
+     "f1": 0.723404255319149,
+     "roc_auc": 0.8608352803738318,
+     "k": 2,
+     "imbalance": true,
+     "param": [
+      10,
+      3.0
+     ],
+     "c1": 0.01,
+     "c2": 1.0,
+     "cv_bal_acc": 0.6712337662337662,
+     "n_balls": 275,
+     "fit_time": 0.3869788646697998,
+     "mean_membership": 0.45302211499226175,
+     "min_membership": 0.005070383402622947
+    }
+   }
+  },
+  {
+   "repeat": 9,
+   "cv_folds": 5,
+   "methods": {
+    "Keep+boundary": {
+     "accuracy": 65.49707602339181,
+     "balanced_accuracy": 0.5390625,
+     "gmean": 0.2795084971874737,
+     "sensitivity": 0.078125,
+     "specificity": 1.0,
+     "f1": 0.14492753623188406,
+     "roc_auc": 0.9322429906542055,
+     "k": 4,
+     "imbalance": false,
+     "param": [
+      10,
+      3.0
+     ],
+     "c1": 10.0,
+     "c2": 10.0,
+     "cv_bal_acc": 0.6288672438672439,
+     "n_balls": 314,
+     "fit_time": 0.1547105312347412,
+     "mean_membership": 0.4613122073495958,
+     "min_membership": 0.023925879744694623
+    }
+   }
+  }
+ ],
+ "elapsed_sec": 60.43599534034729
+}

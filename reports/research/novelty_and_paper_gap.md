@@ -146,6 +146,22 @@ The score is the detection AUC of "low weight" for flipped labels; 0.5 is chance
 
 **Proposed framing for the professor.** Keep + T7 is a new fuzzy GBLSTSVM model, at the same level of novelty as GBFTSVM, with the deletion analysis as its motivation. The two failed memberships are evidence that the search was done.
 
+**Gate 2 run anyway (user asked, 4 Nov).** Keep + boundary-aware (single-point balls kept, k ∈ {5, 10}, γ ∈ {1, 3}) was put through the fair 5-fold CV on 21 datasets × 10 splits. Results are in `results/fuzzy_cv_boundary/summary_vs_baselines.csv`.
+
+| Balanced accuracy (%) | 0% | 10% | 20% | 30% |
+|---|---|---|---|---|
+| Keep + boundary-aware | 77.4 | 76.0 | 73.8 | 67.8 |
+| Keep + T7 | 76.8 | 75.9 | 73.9 | 68.9 |
+| p vs keep + T7 (Wilcoxon) | 0.26 | 0.63 | 0.86 | 0.19 |
+| GBLSTSVM | 73.5 | 73.3 | 71.0 | 64.0 |
+| LSTSVM | 80.8 | 78.5 | 75.7 | 69.1 |
+| Fuzzy-kNN LSTSVM | 80.3 | 78.6 | 76.9 | 71.0 |
+
+- It ties keep + T7 at every noise level and beats GBLSTSVM by 2.7–3.9 points (p ≤ 0.016).
+- It trails LSTSVM at 0–20% (p ≤ 0.002) and fuzzy-kNN LSTSVM everywhere (p ≤ 0.002).
+- It uses the same balls as keep + T7, so there is no time saving.
+- It can be named as the model's membership only as an equal to T7, not an improvement. A fuller prior-art search is needed first (for example neighbour-of-neighbour rules in noise filtering and instance selection).
+
 ## 5. Update, 4 Nov: borrowed memberships (new only for GBLSTSVM) also fail gate 1
 
 `experiments/transplant_membership_probe.py` was run with single-point balls kept. Results are in `results/transplant_probe/summary.md`.
