@@ -97,6 +97,7 @@ METHODS = [
     ("GBF-entropy", "samples_gb", via_balls(member("entropy")), [5, 10]),
     ("T7-agree-gb", "gb", member("agreement"), AGREE_GRID),
     ("T7-agree", "gb_all", member("agreement"), AGREE_GRID),
+    ("Keep+boundary", "gb_all", member("boundary"), AGREE_GRID),
     ("GBF-agree", "samples_gb", via_balls(member("agreement")), AGREE_GRID),
     ("FKNN-LSTSVM", "samples", member("agreement"), AGREE_GRID),
     ("GB-adp", "adp", member("none"), [None]),
@@ -278,7 +279,8 @@ def run_one(task):
             X_va, y_va = fold_va[:, :-1], fold_va[:, -1]
             for k in k_values:
                 score_ball_sets(build_ball_sets(fold_tr, k), X_va, y_va, k, cv_scores)
-            score_ball_sets(build_kfree_sets(fold_tr), X_va, y_va, 0, cv_scores)
+            if any(m[1] in KFREE_SETS for m in ACTIVE_METHODS):  # ADPGBG is slow; build only when used
+                score_ball_sets(build_kfree_sets(fold_tr), X_va, y_va, 0, cv_scores)
 
         rep = {"repeat": r, "cv_folds": folds, "methods": {}}
         ball_cache = {}

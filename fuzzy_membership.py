@@ -18,6 +18,7 @@ Candidates (topic ids follow the progress deck):
     T4 overlap  : how deeply the ball overlaps balls of the other class
     T5 density  : samples per unit radius, relative to the class
     T7 agreement: share of the ball's own class among its nearest balls
+    boundary    : T7 discounted only when the neighbours agree with each other (intruders)
 """
 import numpy as np
 
@@ -144,6 +145,30 @@ def membership_agreement(centers, radii, labels, counts, param=(10, 1.0), floor=
     return np.clip(agree ** float(gamma), floor, 1.0)
 
 
+def membership_boundary(centers, radii, labels, counts, param=(10, 1.0), floor=1e-3):
+    """Boundary-aware agreement: m_i = (1 - (1 - a_i) * b_i) ** gamma, where a_i is T7's
+    agreement and b_i the count-weighted mean agreement of ball i's k nearest balls. A ball
+    with few same-label neighbours keeps a high weight when those neighbours are mixed too
+    (a clean boundary ball) and gets a low weight when they agree with each other (an
+    intruder inside the other class). param = (k, gamma)."""
+    centers, radii, labels, counts = _as_arrays(centers, radii, labels, counts)
+    k_nn, gamma = param
+    n = len(radii)
+    if n < 2:
+        return np.ones(n, dtype=np.float64)
+    k_nn = min(int(k_nn), n - 1)
+    if n > DENSE_LIMIT:
+        nn = _tree_neighbours(centers, k_nn)
+    else:
+        dist = _pairwise_distances(centers)
+        np.fill_diagonal(dist, np.inf)
+        nn = np.argpartition(dist, k_nn - 1, axis=1)[:, :k_nn]
+    w = counts[nn]
+    agree = np.sum(w * (labels[nn] == labels[:, None]), axis=1) / (np.sum(w, axis=1) + EPS)
+    nb_agree = np.sum(w * agree[nn], axis=1) / (np.sum(w, axis=1) + EPS)
+    return np.clip((1.0 - (1.0 - agree) * nb_agree) ** float(gamma), floor, 1.0)
+
+
 MEMBERSHIPS = {
     "none": membership_none,
     "centre": membership_centre,
@@ -151,6 +176,7 @@ MEMBERSHIPS = {
     "overlap": membership_overlap,
     "density": membership_density,
     "agreement": membership_agreement,
+    "boundary": membership_boundary,
 }
 
 
