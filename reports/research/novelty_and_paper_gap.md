@@ -56,7 +56,7 @@ How to read these tables:
   - It has an extra knob (k, or `num` and `pur` in the paper).
   - Every k builds a different set of balls, so it offers more, and more different, models to pick the luckiest from.
   - Noise makes those models more different again, so the bonus grows with noise.
-- **Uneven tuning makes this much worse.** If only the proposed model were tuned on the test set and LSTSVM tuned fairly, GBLSTSVM would "win" by 5.5, 8.0, 11.3 and 17.2 accuracy points at 0–30% noise.
+- **Uneven tuning makes this much worse.** If only the proposed model were tuned on the test set and LSTSVM tuned fairly, GBLSTSVM would "win" by 5.6, 8.0, 11.3 and 17.2 accuracy points at 0–30% noise.
 
 ### Other things that differ
 - **One split vs ten.** A single 70/30 split moves dataset-level numbers by several points.
