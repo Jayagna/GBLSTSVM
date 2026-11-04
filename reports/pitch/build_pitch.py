@@ -227,14 +227,7 @@ svg .rl {{ font-size: 12.5px; }} svg .vl {{ font-size: 12px; font-weight: 600; }
 
 <p>Papers like this are respected. Demšar's 2006 paper on how to compare classifiers fairly is one of the most cited papers on machine learning methods, and "Do we need hundreds of classifiers?" (2014) is widely cited for the same kind of careful re-testing.</p>
 
-<div class="box key">
-<h3>What I need from you</h3>
-<ol>
-<li>Agreement to write the fair-testing paper, with keep + T7 as our new fuzzy GBLSTSVM.</li>
-<li>A suggested journal or conference to aim for.</li>
-</ol>
 <p class="small">Working title: "Where do granular balls help least squares twin SVMs? A fair evaluation and a simple fix." All code and results are on GitHub (Jayagna/GBLSTSVM).</p>
-</div>
 
 </body></html>
 """
