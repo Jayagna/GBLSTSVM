@@ -119,3 +119,29 @@ The score is the detection AUC of "low weight" for flipped labels; 0.5 is chance
 - **Gate 1 failed.** The fair-CV run is skipped, and the idea goes into the paper as a negative result.
 - **Neighbour-based weights remain the best noise detectors**, and they are already published.
 - **Next step:** draft the evaluation paper.
+
+## 4. Update, 4 Nov: boundary-aware neighbour agreement also fails gate 1
+
+**The idea.** m = 1 − (1 − a)·b, where a is a ball's neighbour agreement (T7, k = 10) and b is the mean agreement of its neighbours. The aim was to keep the weight of clean boundary points while cutting intruders.
+
+**The run.** `experiments/boundary_membership_probe.py` was run on 21 datasets, 5 splits and k = 2, 4, 6. Results are in `results/boundary_probe/summary.md`.
+
+| Detection AUC | 10% | 20% | 30% |
+|---|---|---|---|
+| T7 on balls | 0.885 | 0.868 | 0.821 |
+| Boundary-aware on balls | 0.882 | 0.864 | 0.816 |
+| T7, minority label only | 0.804 | 0.771 | 0.715 |
+| Boundary-aware, minority label only | 0.795 | 0.761 | 0.705 |
+
+**What the run shows:**
+- **Overall.** The boundary-aware version is below T7 on 19–20 of the 21 datasets (Wilcoxon p ≤ 0.002 at every noise level).
+- **Class-balanced votes.** These are worse still: 0.78, 0.73 and 0.67 overall.
+- **Same on raw samples.** It loses to fuzzy kNN there too.
+
+**Why it fails.** With random label noise, most flipped points sit deep inside the other class, where T7 already catches them. Flipped points near the boundary get protected along with the clean ones.
+
+**Prior art checked.** Neither paper uses this formula:
+- GBABS (arXiv 2506.02366) uses a hard, first-order rule on ball centres to select samples.
+- NCE (arXiv 2208.03207) compares each label with the neighbours' predictions in deep networks.
+
+**Proposed framing for the professor.** Keep + T7 is a new fuzzy GBLSTSVM model, at the same level of novelty as GBFTSVM, with the deletion analysis as its motivation. The two failed memberships are evidence that the search was done.
