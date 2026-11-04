@@ -145,3 +145,25 @@ The score is the detection AUC of "low weight" for flipped labels; 0.5 is chance
 - NCE (arXiv 2208.03207) compares each label with the neighbours' predictions in deep networks.
 
 **Proposed framing for the professor.** Keep + T7 is a new fuzzy GBLSTSVM model, at the same level of novelty as GBFTSVM, with the deletion analysis as its motivation. The two failed memberships are evidence that the search was done.
+
+## 5. Update, 4 Nov: borrowed memberships (new only for GBLSTSVM) also fail gate 1
+
+`experiments/transplant_membership_probe.py` was run with single-point balls kept. Results are in `results/transplant_probe/summary.md`.
+
+| Detection AUC | 10% | 20% | 30% | Beats T7 on |
+|---|---|---|---|---|
+| T7 | 0.885 | 0.868 | 0.821 | — |
+| Intuitionistic score (Ha 2013; Rezvani IFTSVM 2019): μ = T1, ν = (1 − μ)(1 − T7) | 0.757 | 0.694 | 0.640 | 0 of 21 |
+| Fuzzy-rough lower approximation (nearest other-class ball) | 0.654 | 0.596 | 0.557 | 0 of 21 |
+
+**Already tried earlier:**
+- Lin–Wang centre distance (T1)
+- EFSVM kNN entropy (T2)
+- fuzzy kNN (T7)
+- GBFTSVM's Pythagorean score
+
+**Not worth running:**
+- FSVM-CIL reduces to T1 plus class weighting, or to the residual idea.
+- ACFSVM's SVDD affinity is geometric, so it should be flat on pure balls.
+
+**The pattern:** only weights that compare a ball's label with its neighbours' labels detect noise, and none beats T7. The deck `post_midsem.pptx` now has 21 slides; slides 14–20 cover this, the case against a new fuzzy formula, and the case for the evaluation paper.
