@@ -19,6 +19,9 @@ Candidates (topic ids follow the progress deck):
     T5 density  : samples per unit radius, relative to the class
     T7 agreement: share of the ball's own class among its nearest balls
     boundary    : T7 discounted only when the neighbours agree with each other (intruders)
+    shrunk      : T7 shrunk towards 1 by the ball's own size (big balls vouch for themselves)
+    gapvote     : T7 with a soft vote over surface-to-surface gaps (uses the radii)
+    relative    : gap to the nearest other-class balls relative to the nearest same-class balls
 """
 import numpy as np
 
@@ -169,6 +172,68 @@ def membership_boundary(centers, radii, labels, counts, param=(10, 1.0), floor=1
     return np.clip((1.0 - (1.0 - agree) * nb_agree) ** float(gamma), floor, 1.0)
 
 
+def _gaps(centers, radii):
+    """Surface-to-surface distance between balls, max(0, ||c_i - c_j|| - r_i - r_j); inf on the diagonal."""
+    gap = np.maximum(0.0, _pairwise_distances(centers) - radii[:, None] - radii[None, :])
+    np.fill_diagonal(gap, np.inf)
+    return gap
+
+
+def membership_shrunk(centers, radii, labels, counts, param=(10, 1.0), floor=1e-3):
+    """Evidence-shrunk agreement: m_i = ((n_i - 1) + lam * a_i) / ((n_i - 1) + lam), a_i = T7's
+    agreement, param = (k, lam). A single-point ball has no evidence of its own and takes the
+    neighbours' verdict (m = a); a pure ball of many points vouches for itself and stays near 1
+    even on the class boundary. lam is the number of pseudo-points the neighbour vote is worth."""
+    centers, radii, labels, counts = _as_arrays(centers, radii, labels, counts)
+    k_nn, lam = param
+    agree = membership_agreement(centers, radii, labels, counts, (k_nn, 1.0), floor=0.0)
+    own = np.maximum(counts - 1.0, 0.0)
+    return np.clip((own + lam * agree) / (own + lam), floor, 1.0)
+
+
+def membership_gapvote(centers, radii, labels, counts, param=(10, 1.0), floor=1e-3):
+    """Radius-aware soft agreement: neighbours are the k balls with the smallest surface gap
+    g_ij = max(0, ||c_i - c_j|| - r_i - r_j); neighbour j votes with weight
+    n_j * exp(-(g_ij / s_i)^2), s_i = gap to the k-th neighbour. m_i = (own-class share) ** gamma,
+    param = (k, gamma). Touching or overlapping balls count fully, distant ones fade out."""
+    centers, radii, labels, counts = _as_arrays(centers, radii, labels, counts)
+    k_nn, gamma = param
+    n = len(radii)
+    if n < 2:
+        return np.ones(n, dtype=np.float64)
+    k_nn = min(int(k_nn), n - 1)
+    gap = _gaps(centers, radii)
+    nn = np.argsort(gap, axis=1)[:, :k_nn]
+    g = np.take_along_axis(gap, nn, axis=1)
+    w = counts[nn] * np.exp(-(g / (g[:, -1:] + EPS)) ** 2)
+    agree = np.sum(w * (labels[nn] == labels[:, None]), axis=1) / (np.sum(w, axis=1) + EPS)
+    return np.clip(agree ** float(gamma), floor, 1.0)
+
+
+def membership_relative(centers, radii, labels, counts, param=(5, 1.0), floor=1e-3):
+    """Friend/enemy relative gap: F_i, E_i = mean surface gap to the k nearest balls of the same
+    / the other class; m_i = (E_i / (E_i + F_i)) ** gamma, param = (k, gamma). A ball far from
+    its own class and close to the other one gets a low weight; no label vote is involved."""
+    centers, radii, labels, counts = _as_arrays(centers, radii, labels, counts)
+    k_nn, gamma = param
+    n = len(radii)
+    if n < 2:
+        return np.ones(n, dtype=np.float64)
+    gap = _gaps(centers, radii)
+    same = labels[:, None] == labels[None, :]
+
+    def mean_nearest(mask):
+        g = np.sort(np.where(mask, gap, np.inf), axis=1)[:, :int(k_nn)]
+        ok = np.isfinite(g)
+        return np.where(ok.any(axis=1), np.sum(np.where(ok, g, 0.0), axis=1) / np.maximum(ok.sum(axis=1), 1), np.nan)
+
+    friend, enemy = mean_nearest(same), mean_nearest(~same)
+    m = enemy / (enemy + friend + EPS)
+    m = np.where(np.isnan(friend), 0.5, np.where(np.isnan(enemy), 1.0, m))  # lone ball of a class / one class only
+    m = np.where((enemy + friend) < EPS, 0.5, m)
+    return np.clip(m ** float(gamma), floor, 1.0)
+
+
 MEMBERSHIPS = {
     "none": membership_none,
     "centre": membership_centre,
@@ -177,6 +242,9 @@ MEMBERSHIPS = {
     "density": membership_density,
     "agreement": membership_agreement,
     "boundary": membership_boundary,
+    "shrunk": membership_shrunk,
+    "gapvote": membership_gapvote,
+    "relative": membership_relative,
 }
 
 
