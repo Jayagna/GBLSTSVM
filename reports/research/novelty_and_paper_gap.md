@@ -201,3 +201,17 @@ The score is the detection AUC of "low weight" for flipped labels; 0.5 is chance
 - **A label-aware mixture (one per class)** detects noise, being a smoothed neighbour vote, but trails T7 at every level.
 - **Prior art.** G-GBC (J. Yang, Q. Liu, X. Cao, F. Li, X. Yang, Knowledge-Based Systems 341, 115754, 2026, DOI 10.1016/j.knosys.2026.115754; PDF uploaded by the user) fits one GMM (K components, hard assignment) to each CNN batch's features, with no recursive splitting. It gives low-purity clusters a fixed weight 0.1 and scores each sample by purity × squared Mahalanobis distance to every ball centre (Eqs. 14-17), then adds the mean score to the features. Posteriors are not used as weights. So GMM granular balls are taken; recursive GMM splitting with posterior weights in an SVM is not, but it fails gate 1 anyway.
 - No fair-CV run: the weight fails gate 1.
+
+## Backup: every model tuned on the test set (11 Nov)
+
+Asked by Jayagna as a fallback pitch: score the fuzzy models the way the published granular-ball numbers come out (one 70/30 split, best test score over the whole grid, no CV). `experiments/run_test_tuning.py`, 13 models, 21 datasets, 0/10/20/30% noise, 10 splits; summary in `results/test_tuning/summary.md`.
+
+- Keep + T7 beats GBLSTSVM by +1.8/+1.6/+2.1/+2.5 accuracy points (wins 17/19/16/18 of 21, Wilcoxon p ≤ 0.003); keep + boundary-aware +1.8/+1.6/+1.8/+2.1. Both are also above test-tuned LSTSVM and level with fuzzy-kNN LSTSVM.
+- T1/T2 add 0.1–0.3; GBFTSVM is 1.0/0.7 below GBLSTSVM at 0/10% noise and level after.
+- Caveat 1: all numbers are optimistic (test labels pick the settings).
+- Caveat 2: keep + T7 searches 1,960 settings against GBLSTSVM's 490. With one T7 setting (equal grid) the gain is +1.2/+0.9/+1.1/+1.4 and significant only at 30% noise. Keeping single-point balls with no fuzzy weight gives +1.3/+0.7/+0.7/+0.8.
+- Split 0 alone gives the same picture (keep + T7 +1.7/+2.1/+2.3/+2.5).
+
+Three more ball memberships (`fuzzy_membership.py`: `shrunk`, `gapvote`, `relative`), all on kept balls:
+- Detection (gate 1, `results/new_membership_probe`): radius-aware vote AUC .886/.877/.854 vs T7 .885/.868/.821, ahead on 15/18/19 of 21 datasets, the first membership to beat T7; friend/enemy distance .884/.875/.841; size-shrunk vote level with T7.
+- Fair CV (gate 2, `results/fuzzy_cv_new/summary_vs_baselines.csv`): all three tie keep + T7 in balanced accuracy (within about 1 point; only friend/enemy at 0% noise has p < 0.05, uncorrected), beat GBLSTSVM by 2.5–4.7 points and trail fuzzy-kNN LSTSVM. Literature not yet searched for these three.

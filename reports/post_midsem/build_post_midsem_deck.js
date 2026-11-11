@@ -59,7 +59,7 @@ const REFS = [
   ["ggbc", "J. Yang, Q. Liu, X. Cao, F. Li, X. Yang. G-GBC: a Gaussian mixture-based granular ball computing method for robust CNN classification under noisy labels. Knowledge-Based Systems 341, 115754, 2026."],
   ["acfsvm", "X. Tao, Q. Li, C. Ren, W. Guo, Q. He, R. Liu, J. Zou. Affinity and class probability-based fuzzy support vector machine for imbalanced data sets. Neural Networks 122:289–307, 2020. (ACFSVM)"],
   ["hundreds", "M. Fernández-Delgado, E. Cernadas, S. Barro, D. Amorim. Do we need hundreds of classifiers to solve real world classification problems? J. Machine Learning Research 15:3133–3181, 2014."],
-  ["ours", "Jayagna/GBLSTSVM, branch claude/project-thread-bwmgim: experiments/run_lstsvm_test_tuning.py, run_gbftsvm_cv.py, noise_diagnostics.py and the residual, boundary, transplant and GMM probes; results/."],
+  ["ours", "Jayagna/GBLSTSVM, branch claude/project-thread-bwmgim: experiments/run_lstsvm_test_tuning.py, run_gbftsvm_cv.py, run_test_tuning.py, noise_diagnostics.py and the residual, boundary, transplant, GMM and new-membership probes; results/. Latest branch: claude/project-thread-vi7tua."],
 ];
 const REF_NO = Object.fromEntries(REFS.map(([k], i) => [k, i + 1]));
 const R = (...keys) => "[" + keys.map(k => { if (!REF_NO[k]) throw new Error("unknown ref " + k); return REF_NO[k]; }).join(", ") + "]";
@@ -825,7 +825,194 @@ takeaway(s, "Next: draft the evaluation paper around C1–C4.");
 s.addNotes("To sum up the plan. Four new membership ideas were checked today and none beat T7 at the first, cheapest test: the residual weights, the soft Gaussian-mixture split, the boundary-aware version of T7, and the borrowed intuitionistic and fuzzy-rough weights. The boundary-aware weight also went through the full fair cross-validation and tied keep plus T7 on accuracy, so it is an equal alternative but not an improvement. So the next step is to draft the evaluation paper around the four contributions, with keep plus T7 as the new fuzzy GBLSTSVM model and the failed weights reported in the benchmark table. What I need from the professor is agreement on that framing and a target venue. If he wants a broader study, the same protocol can add the granular-ball twin SVM and multi-class datasets.");
 
 // =====================================================================================
-// 23. References
+// 23-30. Backup: every model scored the way the paper's numbers were (tuned on the test set), 11 Nov
+// Data: results/test_tuning (summary.csv, fixed_param.csv, split0.csv), results/new_membership_probe,
+// results/fuzzy_cv_new/summary_vs_baselines.csv; copied to data/ by data/make_backup_csv.py.
+// =====================================================================================
+const readCsv = name => {
+  const rows = fs.readFileSync(path.join(__dirname, "data", name), "utf8").trim().split("\n");
+  const h = rows[0].split(",");
+  return rows.slice(1).map(l => Object.fromEntries(l.split(",").map((v, i) => [h[i], v !== "" && !isNaN(Number(v)) ? Number(v) : v])));
+};
+const TT = { best: readCsv("test_tuning_best.csv"), fixed: readCsv("test_tuning_fixed.csv"), split0: readCsv("test_tuning_split0.csv") };
+const NZ = [0, 0.1, 0.2, 0.3];
+const tt = (set, metric, method, key = "mean") => NZ.map(n => TT[set].find(r => r.metric === metric && r.noise === n && r.method === method)[key]);
+const NCV = readCsv("new_cv.csv");
+const ncv = (metric, method, key = "mean") => NZ.map(n => NCV.find(r => r.metric === metric && r.noise === n && r.method === method)[key]);
+const NPR = readCsv("new_probe.csv"); // rows: measure, auc at 10/20/30%, wins vs T7 at 10/20/30%
+const npr = m => { const r = NPR.find(q => q.measure === m); return { auc: [r.auc10, r.auc20, r.auc30], wins: [r.wins10, r.wins20, r.wins30] }; };
+const rng = a => `${sgn(Math.min(...a))} to ${sgn(Math.max(...a))}`;
+const PITCH_MODEL = "T7", PITCH_KEY = "T7-agree";
+const NEWCV_HEAD = "tie keep + T7";
+const NEWCV_P = ["Keep+shrunk", "Keep+gapvote", "Keep+relative"].flatMap(m => ncv("balanced_accuracy", m, "p_T7-agree"));
+const NEWCV_GB = ["Keep+shrunk", "Keep+gapvote", "Keep+relative"].flatMap(m => ncv("balanced_accuracy", m, "vs_GBLSTSVM"));
+const NEWCV_BULLETS = [
+  [B("Level with keep + T7: "), `within about 1 point either way; the only difference with p < 0.05 is friend/enemy at 0% noise (${sgn(ncv("balanced_accuracy", "Keep+relative", "vs_T7-agree")[0])}, p = ${pfmt(ncv("balanced_accuracy", "Keep+relative", "p_T7-agree")[0])}, uncorrected).`],
+  [B("All beat GBLSTSVM "), `by ${rng(NEWCV_GB)} points (p ≤ ${Math.max(...["Keep+shrunk", "Keep+gapvote", "Keep+relative"].flatMap(m => ncv("balanced_accuracy", m, "p_GBLSTSVM"))).toFixed(2)}) and still trail fuzzy-kNN LSTSVM.`],
+];
+const NEWCV_TAKE = "Better at spotting wrong labels, but not more accurate than keep + T7: equal alternatives, not improvements.";
+const NEWCV_NOTES = "The radius-aware vote and the friend and enemy distance passed the first gate, so all three new weights went through the full fair cross-validation: 21 datasets, 10 splits, four noise levels. The bars show each new weight's balanced accuracy minus that of keep plus T7. They are all within about one point of zero, some above and some below, and almost none of the differences is statistically significant. The one exception is the friend and enemy distance with no added noise, about one point better, but that is one test out of twelve and would not survive a correction for multiple tests. The table gives the actual numbers. All three new weights beat GBLSTSVM by about two and a half to nearly five points, just like keep plus T7, and all of them are still behind plain LSTSVM at low noise and behind fuzzy-kNN LSTSVM everywhere. So the lesson repeats: spotting flipped labels a little better does not translate into a more accurate classifier. Any of these can be named as our membership, and the radius-aware vote has the nicest story because it uses the ball radius, but we can only claim it matches T7.";
+const BK = "Backup: the paper's protocol";
+
+// ---- 23. The backup plan and its caveat
+s = content(BK, "Backup plan: tune every model on the test set, as the papers do", "Backup pitch, 11 Nov");
+[
+  ["1", "What we did", "For each dataset: one 70/30 split, train every setting of every model, and keep the best score on the test part. No cross-validation. 13 models, 21 datasets, 0–30% label noise, repeated on 10 splits (split 0 alone is also reported).", C.accent5],
+  ["2", "Why it is a fair backup", `GBLSTSVM's published numbers match this protocol, not fair CV (slides 5–6), and the GBFTSVM paper ${R("gbfuzzy")} tunes this way openly. Every model here gets the same treatment, so the comparison is like-for-like with those papers.`, C.accent1],
+  ["3", "The catch", "The test labels choose the settings, so every number is too high (by 8–20 points here), and a model with more settings to try gets more chances to look good. A careful reviewer can object to this.", C.accent2],
+].forEach(([n, h, t, color], i) => {
+  const x = 0.6 + i * 4.1, w = 3.9;
+  card(s, x, 1.6, w, 4.3);
+  badge(s, x + 0.25, 1.85, n, color, 0.55, 18);
+  s.addText(h, tx({ x: x + 0.95, y: 1.85, w: w - 1.2, h: 0.55, fontSize: 19, bold: true, color: C.text2, valign: "middle" }));
+  s.addText(t, tx({ x: x + 0.25, y: 2.65, w: w - 0.5, h: 3.1, fontSize: 16.5 }));
+});
+takeaway(s, "Pitch it as \"scored the way the published granular-ball numbers were\", never as a fair test.");
+s.addNotes("This section is the backup plan, in case the professor does not want an evaluation paper. The question is: if we simply score our fuzzy models the way the published numbers were produced, do they beat GBLSTSVM? The protocol is simple. Split the data once into 70% training and 30% test. Train the model with every combination of settings, and report the best score it gets on the test part. There is no cross-validation. I ran 13 models this way on the same 21 datasets and noise levels as before. To make the averages steadier I repeated it on 10 different splits, and I also report the first split alone, which is exactly one split as in the paper's code. Why is this a fair backup? Because, as the earlier slides showed, the GBLSTSVM paper's numbers match this protocol and not honest cross-validation, and the GBFTSVM paper does it openly. So our models are compared like for like. The catch is that the test data is choosing the settings, so every number is too optimistic, and a model with more settings to try has more lottery tickets. We should say this ourselves rather than wait for a reviewer to find it.");
+
+// ---- 24. Result: gain over GBLSTSVM
+s = content(BK, "Tuned on the test set, our kept-ball fuzzy models beat GBLSTSVM", "Result: accuracy");
+barChart(s, [
+  ["T1 centre", tt("best", "accuracy", "T1-centre", "vs_GBLSTSVM").map(r1)],
+  ["T2 entropy", tt("best", "accuracy", "T2-entropy", "vs_GBLSTSVM").map(r1)],
+  ["GBFTSVM", tt("best", "accuracy", "GBFTSVM", "vs_GBLSTSVM").map(r1)],
+  ["Keep + T7", tt("best", "accuracy", "T7-agree", "vs_GBLSTSVM").map(r1)],
+  ["Keep + boundary-aware", tt("best", "accuracy", "Keep+boundary", "vs_GBLSTSVM").map(r1)],
+], NOISE, [HEX.accent6, HEX.accent4, HEX.accent5, HEX.accent1, HEX.accent3], {
+  x: 0.6, y: 1.6, w: 7.6, h: 4.45, valAxisMinVal: -1.5, valAxisMaxVal: 3, valAxisMajorUnit: 0.5, dataLabelFormatCode: "+0.0;−0.0;0.0", dataLabelFontSize: 9.5,
+  barGapWidthPct: 40, catAxisTitle: "Label noise", showCatAxisTitle: true, valAxisTitle: "Accuracy minus GBLSTSVM (points)", showValAxisTitle: true, catAxisLabelPos: "low",
+});
+const t7w = tt("best", "accuracy", "T7-agree", "wins"), t7l = tt("best", "accuracy", "T7-agree", "losses"), t7p = tt("best", "accuracy", "T7-agree", "p");
+const ttRows = [[th("Noise"), th("GBLSTSVM", { align: "center" }), th("Keep + T7", { align: "center" }), th("Wins", { align: "center" }), th("p", { align: "center" })]];
+NOISE.forEach((n, i) => ttRows.push([td(n, { bold: true }), td(f1(tt("best", "accuracy", "GBLSTSVM")[i]), { align: "center" }), td(f1(tt("best", "accuracy", "T7-agree")[i]), { align: "center", bold: true }),
+  td(`${t7w[i]} / ${t7l[i]}`, { align: "center" }), td(pfmt(t7p[i]), { align: "center" })]));
+s.addText("Test-tuned accuracy (%), 21 datasets", tx({ x: 8.45, y: 1.6, w: 4.25, h: 0.35, fontSize: 15, bold: true, color: C.text2 }));
+table(s, ttRows, { x: 8.45, y: 2.0, w: 4.25, colW: [0.75, 1.05, 1.0, 0.75, 0.7], rowH: 0.38, fontSize: 12.5 });
+s.addText(bullets([
+  [B("Keep + T7: "), `${rng(tt("best", "accuracy", "T7-agree", "vs_GBLSTSVM"))} accuracy points over GBLSTSVM, ahead on ${Math.min(...t7w)}–${Math.max(...t7w)} of 21 datasets, significant at every noise level.`],
+  [B("Boundary-aware: "), `the same picture (${rng(tt("best", "accuracy", "Keep+boundary", "vs_GBLSTSVM"))}).`],
+  [B("T1, T2: "), "0.1–0.3 points, as under fair CV. ", B("GBFTSVM: "), "below GBLSTSVM at 0–10% noise, level after."],
+], { space: 6 }), tx({ x: 8.45, y: 4.05, w: 4.25, h: 2.05, fontSize: 12.5 }));
+takeaway(s, "Yes: under the papers' protocol, keep + T7 and keep + boundary-aware beat GBLSTSVM by about 2 points.");
+s.addNotes("Here is the answer to your question. Each group of bars is one noise level, and each bar is how many accuracy points a model is above or below GBLSTSVM when both are tuned on the test set. The two bars on the right of each group are our models that keep the single-point balls and weight them: keep plus T7 and keep plus boundary-aware. They are about one and a half to two and a half points above GBLSTSVM at every noise level, and they win on 16 to 19 of the 21 datasets. The table shows the actual accuracies; p is the chance of seeing such a difference by luck, and it is far below 0.05 everywhere. The older weights, T1 and T2, add only a few tenths of a point, the same as under fair testing. GBFTSVM, the published fuzzy granular-ball twin SVM, is actually below GBLSTSVM when there is little noise. So yes, the backup pitch works: under the published protocol our fuzzy model improves on GBLSTSVM.");
+
+// ---- 25. All models
+s = content(BK, "All 13 models under the papers' protocol", "Result: full table");
+const TT_NAMES = [["LSTSVM", "LSTSVM (no balls)"], ["FKNN-LSTSVM", "Fuzzy-kNN LSTSVM (no balls)"], ["GBLSTSVM", "GBLSTSVM"], ["T1-centre", "GBLSTSVM + T1 centre"], ["T2-entropy", "GBLSTSVM + T2 entropy"],
+  ["GBTWSVM", "GBTWSVM (twin SVM on balls)"], ["GBFTSVM", "GBFTSVM (Pythagorean fuzzy)"], ["GB-keep", "Keep single-point balls, no fuzzy"], ["T7-agree", "Keep + T7"],
+  ["Keep+boundary", "Keep + boundary-aware"], ["Keep+shrunk", "Keep + size-shrunk vote (new)"], ["Keep+gapvote", "Keep + radius-aware vote (new)"], ["Keep+relative", "Keep + friend/enemy distance (new)"]];
+const allRows = [[th("Model"), ...NOISE.map(n => th("Acc " + n, { align: "center" })), ...NOISE.map(n => th("BA " + n, { align: "center" }))]];
+const bestOf = metric => NZ.map((_, i) => Math.max(...TT_NAMES.map(([m]) => tt("best", metric, m)[i])));
+const bAcc = bestOf("accuracy"), bBa = bestOf("balanced_accuracy");
+TT_NAMES.forEach(([m, label]) => {
+  const a = tt("best", "accuracy", m), b = tt("best", "balanced_accuracy", m);
+  const base = m === "GBLSTSVM" ? { fill: { color: C.background2 } } : {};
+  allRows.push([td(label, Object.assign({ bold: m === "GBLSTSVM" }, base)),
+    ...a.map((v, i) => td(f1(v), Object.assign({ align: "center", bold: v > bAcc[i] - 0.05 }, base))),
+    ...b.map((v, i) => td(f1(v), Object.assign({ align: "center", bold: v > bBa[i] - 0.05 }, base)))]);
+});
+table(s, allRows, { x: 0.6, y: 1.5, w: 12.1, colW: [3.94, ...Array(8).fill(1.02)], rowH: 0.32, fontSize: 12 });
+takeaway(s, "Every kept-ball fuzzy model is above GBLSTSVM and above plain LSTSVM; best in each column is bold.", 6.25);
+s.addNotes("This is the full table, for reference. Rows are the 13 models; the columns are accuracy and balanced accuracy at the four noise levels, each tuned on the test set and averaged over 21 datasets and 10 splits. Balanced accuracy is the average of the accuracy on each class, which matters on imbalanced data. GBLSTSVM is the shaded row. The first two rows use no balls at all. The last five rows keep the single-point balls and weight them; the last three are the new weights added today. Under this protocol all five are above GBLSTSVM and also above plain LSTSVM, and they are level with or slightly above fuzzy-kNN LSTSVM, the strongest point-based model. Remember that all of these numbers are optimistic because the test set chose the settings.");
+
+// ---- 26. How much of the gain is real
+s = content(BK, "Honesty check: part of the gain is just a bigger grid", "How much is real?");
+barChart(s, [
+  ["Keep balls, no fuzzy (490 settings)", tt("best", "accuracy", "GB-keep", "vs_GBLSTSVM").map(r1)],
+  ["Keep + T7, one T7 setting (490)", tt("fixed", "accuracy", "T7-agree", "vs_GBLSTSVM").map(r1)],
+  ["Keep + T7, all T7 settings (1,960)", tt("best", "accuracy", "T7-agree", "vs_GBLSTSVM").map(r1)],
+  ["Keep + T7 under fair CV", ncv("accuracy", "T7-agree", "vs_GBLSTSVM").map(r1)],
+], NOISE, [HEX.accent6, HEX.accent3, HEX.accent5, HEX.accent1], {
+  x: 0.6, y: 1.6, w: 7.6, h: 4.45, valAxisMinVal: 0, valAxisMaxVal: 5, valAxisMajorUnit: 1, dataLabelFormatCode: "+0.0;−0.0;0.0", dataLabelFontSize: 10,
+  barGapWidthPct: 45, catAxisTitle: "Label noise", showCatAxisTitle: true, valAxisTitle: "Accuracy minus GBLSTSVM, same protocol (points)", showValAxisTitle: true,
+});
+const fxp = tt("fixed", "accuracy", "T7-agree", "p");
+s.addText(bullets([
+  [B("More settings, more luck. "), "GBLSTSVM tries 490 settings per split; keep + T7 tries 1,960 (four T7 settings). The best of more tries is higher even if the model is no better."],
+  [B("Same grid size: "), `with one T7 setting the gain is ${rng(tt("fixed", "accuracy", "T7-agree", "vs_GBLSTSVM"))} points and only significant at 30% noise (p = ${fxp.map(pfmt).join(", ")}).`],
+  [B("Most of it is keeping the balls: "), `keeping single-point balls with no fuzzy weight already gives ${rng(tt("best", "accuracy", "GB-keep", "vs_GBLSTSVM"))}.`],
+  [B("But the gain is not an artefact: "), `fair CV, where grid size can't help, gives ${rng(ncv("accuracy", "T7-agree", "vs_GBLSTSVM"))} accuracy and ${rng(ncv("balanced_accuracy", "T7-agree", "vs_GBLSTSVM"))} balanced-accuracy points.`],
+], { space: 7 }), tx({ x: 8.45, y: 1.6, w: 4.25, h: 4.5, fontSize: 13 }));
+takeaway(s, "Report the same-grid numbers next to the headline ones; the improvement survives, at about 1 point under test tuning.");
+s.addNotes("Before pitching the two-point gain we should know how much of it is real. Tuning on the test set rewards models that have more settings to try. GBLSTSVM has 490 combinations per split. Keep plus T7 has four times as many, because T7 has its own two settings with two values each. Picking the best of four times as many tries gives a higher number even for an equally good model. So I also scored keep plus T7 with a single fixed T7 setting, which gives it exactly the same number of tries as GBLSTSVM. That is the blue bar: the gain shrinks to roughly one point, and it is only statistically significant at 30% noise. The grey bar shows that simply keeping the single-point balls, with no fuzzy weight at all, gives most of that. The amber bar is the headline number with all settings. The teal bar is the gain under fair cross-validation, where the size of the grid cannot help. With no added noise it is close to zero in plain accuracy, but from 10% noise on it is as large as or larger than the test-tuned gain, and in balanced accuracy it is three to five points at every noise level. So the improvement is real, not a product of the protocol. The honest way to present the backup is to show the headline number and the same-grid number side by side.");
+
+// ---- 27. Three more fuzzy functions
+s = content(BK, "Three more fuzzy functions, built on the balls' size and radius", "New ideas, 11 Nov");
+[
+  ["Size-shrunk vote", ["m_i = ((n_i − 1) + λ a_i) / ((n_i − 1) + λ)"], "a_i is T7's neighbour vote, n_i the points in the ball. A single-point ball has no evidence of its own, so it takes the neighbours' verdict. A big pure ball vouches for itself and keeps a weight near 1 even on the class boundary.", C.accent4],
+  ["Radius-aware vote", ["g_{ij} = max(0, ‖c_i − c_j‖ − r_i − r_j)", "vote of ball j: n_j · exp(−(g_{ij} / s_i)²)"], "Like T7, but neighbours are found by the gap between ball surfaces, not centres, and closer balls get a louder vote. Touching balls count fully. Only granular balls have a radius, so point-based fuzzy kNN can't do this.", C.accent1],
+  ["Friend / enemy distance", ["m_i = E_i / (E_i + F_i)"], "F_i and E_i are the mean surface gaps to the nearest balls of the same class and of the other class. Far from friends and close to enemies means a low weight. No label vote at all.", C.accent3],
+].forEach(([h, lines, t, color], i) => {
+  const x = 0.6 + i * 4.1, w = 3.9;
+  card(s, x, 1.6, w, 4.4);
+  s.addShape(pres.shapes.RECTANGLE, { x, y: 1.6, w: 0.09, h: 4.4, fill: { color }, line: { color }, objectName: "card-accent" });
+  s.addText(h, tx({ x: x + 0.3, y: 1.75, w: w - 0.5, h: 0.45, fontSize: 19, bold: true, color: C.text2 }));
+  s.addText(eqLines(lines, { fontSize: 14.5 }), tx({ x: x + 0.3, y: 2.3, w: w - 0.5, h: 0.95, fontSize: 14.5, paraSpaceAfter: 4 }));
+  s.addText(eq(t), tx({ x: x + 0.3, y: 3.3, w: w - 0.5, h: 2.6, fontSize: 14.5 }));
+});
+takeaway(s, "All three use ball size or radius, which point-based fuzzy SVMs don't have. Novelty is not yet checked in the literature.");
+s.addNotes("You also asked for more fuzzy functions. I added three, and each one uses something that only granular balls have: how many points are in the ball, or its radius. The first, the size-shrunk vote, starts from T7, the vote of the neighbouring balls, and mixes it with the ball's own size. A ball with a single point has nothing to back it up, so it gets whatever its neighbours say. A ball with many points of one class is its own evidence, so it keeps a weight near one even if it sits on the border between the classes. The second, the radius-aware vote, changes how neighbours are found. T7 measures distance between ball centres. This one measures the gap between the ball surfaces, so two big balls that touch are close neighbours, and nearer balls get a louder vote. The third, friend and enemy distance, does not vote at all. It compares how far the ball is from the nearest balls of its own class with how far it is from the nearest balls of the other class. I have not yet searched the literature for these three, so we can't call them new until that is done. Distance-weighted voting itself goes back to fuzzy kNN in 1985; what may be new is doing it with ball radii.");
+
+// ---- 28. Detection check for the new functions
+const NP = { t7: npr("auc_T7"), bd: npr("auc_boundary"), sh: npr("auc_shrunk"), gv: npr("auc_gapvote"), rl: npr("auc_relative") };
+s = content(BK, "Radius-aware vote beats T7 at spotting wrong labels", "Detection check, 11 Nov");
+barChart(s, [
+  ["T7", NP.t7.auc.map(r2)], ["Boundary-aware", NP.bd.auc.map(r2)], ["Size-shrunk vote", NP.sh.auc.map(r2)],
+  ["Radius-aware vote", NP.gv.auc.map(r2)], ["Friend / enemy distance", NP.rl.auc.map(r2)],
+], ["10%", "20%", "30%"], [HEX.accent6, HEX.accent5, HEX.accent4, HEX.accent1, HEX.accent3], {
+  x: 0.6, y: 1.6, w: 7.6, h: 4.45, valAxisMinVal: 0.7, valAxisMaxVal: 0.95, valAxisMajorUnit: 0.05, dataLabelFormatCode: "0.00", dataLabelFontSize: 10,
+  barGapWidthPct: 45, catAxisTitle: "Label noise", showCatAxisTitle: true, valAxisTitle: "Flipped-label detection AUC (0.5 = chance)", showValAxisTitle: true,
+});
+const a3 = a => a.map(v => v.toFixed(3)).join(" / ");
+s.addText(bullets([
+  [B("Radius-aware vote: "), `${a3(NP.gv.auc)} against T7's ${a3(NP.t7.auc)}; ahead of T7 on ${NP.gv.wins.join(", ")} of 21 datasets at 10, 20, 30% noise.`],
+  [B("Friend / enemy distance: "), `${a3(NP.rl.auc)}, ahead on ${NP.rl.wins.join(", ")} of 21.`],
+  [B("Size-shrunk vote: "), `${a3(NP.sh.auc)}, about level with T7 (ahead on ${NP.sh.wins.join(", ")}).`],
+  [B("The gain grows with noise: "), `at 30% the radius-aware vote is ${(NP.gv.auc[2] - NP.t7.auc[2]).toFixed(3)} above T7. Earlier ideas (residual, GMM, boundary-aware, borrowed weights) all landed below T7.`],
+], { space: 8 }), tx({ x: 8.45, y: 1.65, w: 4.25, h: 4.4, fontSize: 13.5 }));
+takeaway(s, "Gate 1 passed by the radius-aware vote and the friend/enemy distance. The axis starts at 0.7; differences are small.");
+s.addNotes("This is the same first check as before: how well does each weight pick out the labels we flipped on purpose, where 0.5 is guessing and 1 is perfect. Note that the axis starts at 0.7, so the differences look bigger than they are. The grey bar is T7, which until today nothing had beaten. The teal bar, the radius-aware vote, is level with T7 at 10% noise and clearly ahead at 20 and 30%, and it beats T7 on 15 to 19 of the 21 datasets. The friend and enemy distance, in blue, also beats T7 at 20 and 30% noise. The size-shrunk vote is about the same as T7. So for the first time a weight passes the first gate. The reason is probably that surface gaps and distance weighting let the nearest, most relevant balls decide, which matters more when many labels are wrong. This updates the earlier slide that called T7 the ceiling: the useful signal is still the neighbours' labels, but using the radii reads it a little better.");
+
+// ---- 29. Fair CV for the new functions
+s = content(BK, "Under fair CV the new weights " + NEWCV_HEAD, "Fair CV, 11 Nov");
+barChart(s, [
+  ["Size-shrunk vote", ncv("balanced_accuracy", "Keep+shrunk", "vs_T7-agree").map(r1)],
+  ["Radius-aware vote", ncv("balanced_accuracy", "Keep+gapvote", "vs_T7-agree").map(r1)],
+  ["Friend / enemy distance", ncv("balanced_accuracy", "Keep+relative", "vs_T7-agree").map(r1)],
+], NOISE, [HEX.accent4, HEX.accent1, HEX.accent3], {
+  x: 0.6, y: 1.6, w: 6.3, h: 4.45, valAxisMinVal: -2, valAxisMaxVal: 2, valAxisMajorUnit: 0.5, dataLabelFormatCode: "+0.0;−0.0;0.0", dataLabelFontSize: 10,
+  barGapWidthPct: 45, catAxisTitle: "Label noise", showCatAxisTitle: true, valAxisTitle: "Balanced accuracy minus keep + T7 (points)", showValAxisTitle: true, catAxisLabelPos: "low",
+});
+const cvRows = [[th("Fair-CV BA (%)"), ...NOISE.map(n => th(n, { align: "center" }))]];
+[["GBLSTSVM", "GBLSTSVM"], ["T7-agree", "Keep + T7"], ["Keep+boundary", "Keep + boundary-aware"], ["Keep+shrunk", "Keep + size-shrunk"], ["Keep+gapvote", "Keep + radius-aware"],
+  ["Keep+relative", "Keep + friend/enemy"], ["LSTSVM", "LSTSVM"], ["FKNN-LSTSVM", "Fuzzy-kNN LSTSVM"]].forEach(([m, label]) => {
+  const isNew = ["Keep+shrunk", "Keep+gapvote", "Keep+relative"].includes(m);
+  cvRows.push([td(label, { bold: isNew }), ...ncv("balanced_accuracy", m).map(v => td(f1(v), { align: "center", bold: isNew }))]);
+});
+table(s, cvRows, { x: 7.15, y: 1.6, w: 5.55, colW: [2.35, 0.8, 0.8, 0.8, 0.8], rowH: 0.34, fontSize: 12.5 });
+s.addText(bullets(NEWCV_BULLETS, { space: 6 }), tx({ x: 7.15, y: 4.8, w: 5.55, h: 1.35, fontSize: 12.5 }));
+takeaway(s, NEWCV_TAKE);
+s.addNotes(NEWCV_NOTES);
+
+// ---- 30. What to pitch
+s = content(BK, "What to tell the professor", "Backup pitch, 11 Nov");
+[
+  ["A", "First choice: evaluation paper", "Fair CV, keep + T7 as the fixed model, and the finding that published gains come from test-set tuning. This run adds one more table to it: all 13 models under both protocols.", C.accent1],
+  ["B", "Backup: a \"new fuzzy GBLSTSVM\" paper", `Scored the way the GBLSTSVM paper's numbers come out and the GBFTSVM paper tunes. Keep + ${PITCH_MODEL} beats GBLSTSVM by ${rng(tt("best", "accuracy", PITCH_KEY, "vs_GBLSTSVM"))} accuracy points on 21 datasets, and beats GBFTSVM and LSTSVM too.`, C.accent5],
+  ["!", "What to say openly in B", "The numbers are optimistic; with an equal grid the gain is about 1 point; a reviewer who asks for cross-validation gets our fair-CV table, where the gain over GBLSTSVM holds but LSTSVM is ahead.", C.accent2],
+].forEach(([n, h, t, color], i) => {
+  const x = 0.6 + i * 4.1, w = 3.9;
+  card(s, x, 1.6, w, 4.3);
+  badge(s, x + 0.25, 1.85, n, color, 0.55, 18);
+  s.addText(h, tx({ x: x + 0.95, y: 1.85, w: w - 1.2, h: 0.55, fontSize: 17, bold: true, color: C.text2, valign: "middle" }));
+  s.addText(t, tx({ x: x + 0.25, y: 2.65, w: w - 0.5, h: 3.1, fontSize: 16.5 }));
+});
+takeaway(s, "Both options use the same experiments, so nothing is wasted whichever the professor picks.");
+s.addNotes("To sum up what you can tell the professor. The first choice is still the evaluation paper, because it is the strongest and most defensible. If he rejects that and wants a paper that proposes a new fuzzy GBLSTSVM and shows it beating the original, that is possible: under the same protocol as the published granular-ball papers, our model that keeps the single-point balls and weights them by their neighbours beats GBLSTSVM by around two accuracy points across 21 datasets and all noise levels, and it also beats GBFTSVM and plain LSTSVM. What you should say openly, if you go this way, is that tuning on the test set gives optimistic numbers, that with an equal number of settings the gain is about one point, and that if a reviewer asks for cross-validation we already have that table: the gain over GBLSTSVM holds there, but plain LSTSVM is ahead. Both options use the same code and experiments, so the work done so far counts either way.");
+
+
+// =====================================================================================
+// 31. References
 // =====================================================================================
 s = content("The direction", "References");
 const half = Math.ceil(REFS.length / 2);
