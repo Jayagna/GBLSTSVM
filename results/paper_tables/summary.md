@@ -77,20 +77,20 @@
 | GBLSTSVM, balls kept (no weight) | 87.49 | nan | +1.12 | 31-1-3 | 6.24e-07 |
 | Plain neighbour count | 88.67 | nan | -0.06 | 13-4-18 | 0.666 |
 
-### noise 0.3 (16 datasets; Friedman chi2 = 48.70, p = 8.6e-09)
+### noise 0.3 (35 datasets; Friedman chi2 = 111.91, p = 8.1e-22)
 
 | Model | Mean | Avg rank | Proposed − model | W-T-L | Wilcoxon p |
 |---|---|---|---|---|---|
-| SVM | 83.74 | 4.78 | +2.08 | 15-0-1 | 0.00112 |
-| TSVM | 82.70 | 4.88 | +3.12 | 16-0-0 | 3.05e-05 |
-| GBSVM | 79.36 | 5.72 | +6.46 | 14-0-2 | 0.000153 |
-| LSTSVM | 82.47 | 5.00 | +3.35 | 16-0-0 | 3.05e-05 |
-| GBLSTSVM | 82.62 | 3.81 | +3.20 | 13-0-3 | 0.00418 |
-| LS-GBLSTSVM | 85.47 | 2.09 | +0.35 | 10-1-5 | 0.394 |
-| Proposed | 85.82 | 1.72 | | | |
-| GBFTSVM | 82.63 | nan | +3.19 | 13-0-3 | 0.00763 |
-| GBLSTSVM, balls kept (no weight) | 83.38 | nan | +2.44 | 16-0-0 | 3.05e-05 |
-| Plain neighbour count | 85.39 | nan | +0.43 | 8-1-7 | 0.173 |
+| SVM | 85.39 | 5.40 | +2.29 | 33-1-1 | 9.67e-07 |
+| TSVM | 85.33 | 4.70 | +2.35 | 33-1-1 | 5.22e-07 |
+| GBSVM | 83.09 | 5.81 | +4.59 | 31-1-3 | 8.12e-07 |
+| LSTSVM | 85.27 | 4.69 | +2.41 | 34-1-0 | 3.65e-07 |
+| GBLSTSVM | 85.56 | 3.50 | +2.12 | 27-0-8 | 7.9e-05 |
+| LS-GBLSTSVM | 87.41 | 2.11 | +0.27 | 21-3-11 | 0.112 |
+| Proposed | 87.68 | 1.79 | | | |
+| GBFTSVM | 85.12 | nan | +2.56 | 30-0-5 | 6.89e-05 |
+| GBLSTSVM, balls kept (no weight) | 86.08 | nan | +1.60 | 33-2-0 | 5.39e-07 |
+| Plain neighbour count | 87.46 | nan | +0.22 | 16-6-13 | 0.133 |
 
 ## oracle, balanced_accuracy
 
@@ -169,20 +169,20 @@
 | GBLSTSVM, balls kept (no weight) | 82.05 | nan | +2.05 | 34-0-1 | 2.95e-07 |
 | Plain neighbour count | 84.22 | nan | -0.13 | 18-0-17 | 0.781 |
 
-### noise 0.3 (16 datasets; Friedman chi2 = 62.99, p = 1.1e-11)
+### noise 0.3 (35 datasets; Friedman chi2 = 133.64, p = 2.2e-26)
 
 | Model | Mean | Avg rank | Proposed − model | W-T-L | Wilcoxon p |
 |---|---|---|---|---|---|
-| SVM | 77.45 | 4.12 | +4.45 | 15-0-1 | 0.000153 |
-| TSVM | 76.44 | 4.62 | +5.47 | 16-0-0 | 3.05e-05 |
-| GBSVM | 67.74 | 6.31 | +14.17 | 15-0-1 | 6.1e-05 |
-| LSTSVM | 75.79 | 5.62 | +6.12 | 16-0-0 | 3.05e-05 |
-| GBLSTSVM | 78.10 | 3.75 | +3.81 | 14-0-2 | 0.00168 |
-| LS-GBLSTSVM | 81.62 | 1.97 | +0.29 | 10-1-5 | 0.496 |
-| Proposed | 81.91 | 1.59 | | | |
-| GBFTSVM | 78.30 | nan | +3.60 | 13-0-3 | 0.00269 |
-| GBLSTSVM, balls kept (no weight) | 78.58 | nan | +3.32 | 16-0-0 | 3.05e-05 |
-| Plain neighbour count | 81.38 | nan | +0.52 | 12-0-4 | 0.0577 |
+| SVM | 76.05 | 4.91 | +6.27 | 34-0-1 | 3.82e-07 |
+| TSVM | 76.21 | 4.77 | +6.12 | 34-0-1 | 2.7e-07 |
+| GBSVM | 69.19 | 6.20 | +13.14 | 33-0-2 | 3.51e-07 |
+| LSTSVM | 76.28 | 5.20 | +6.04 | 35-0-0 | 2.48e-07 |
+| GBLSTSVM | 79.85 | 3.30 | +2.48 | 27-0-8 | 0.000456 |
+| LS-GBLSTSVM | 82.48 | 1.80 | -0.16 | 18-1-16 | 0.912 |
+| Proposed | 82.33 | 1.81 | | | |
+| GBFTSVM | 79.61 | nan | +2.72 | 26-0-9 | 0.000295 |
+| GBLSTSVM, balls kept (no weight) | 79.31 | nan | +3.02 | 35-0-0 | 2.48e-07 |
+| Plain neighbour count | 82.16 | nan | +0.17 | 22-0-13 | 0.35 |
 
 ## cv, accuracy
 
@@ -200,6 +200,20 @@
 | GBLSTSVM, balls kept (no weight) | 79.72 | nan | -1.20 | 15-0-20 | 0.159 |
 | Plain neighbour count | 79.03 | nan | -0.51 | 16-1-18 | 0.293 |
 
+### noise 0.05 (35 datasets; Friedman chi2 = 43.66, p = 8.6e-08)
+
+| Model | Mean | Avg rank | Proposed − model | W-T-L | Wilcoxon p |
+|---|---|---|---|---|---|
+| SVM | 79.76 | 3.54 | -1.35 | 14-1-20 | 0.106 |
+| TSVM | 79.11 | 3.71 | -0.70 | 15-0-20 | 0.219 |
+| GBSVM | 70.26 | 5.60 | +8.15 | 28-0-7 | 0.000379 |
+| LSTSVM | 79.41 | 3.47 | -1.00 | 12-1-22 | 0.0858 |
+| GBLSTSVM | 77.77 | 4.91 | +0.64 | 21-0-14 | 0.252 |
+| LS-GBLSTSVM | 81.10 | 2.64 | -2.69 | 10-0-25 | 0.00536 |
+| Proposed | 78.41 | 4.11 | | | |
+| GBLSTSVM, balls kept (no weight) | 76.71 | nan | +1.70 | 26-0-9 | 0.000834 |
+| Plain neighbour count | 77.44 | nan | +0.97 | 23-1-11 | 0.11 |
+
 ### noise 0.1 (35 datasets; Friedman chi2 = 42.12, p = 1.7e-07)
 
 | Model | Mean | Avg rank | Proposed − model | W-T-L | Wilcoxon p |
@@ -214,6 +228,20 @@
 | GBLSTSVM, balls kept (no weight) | 76.68 | nan | -0.68 | 14-0-21 | 0.252 |
 | Plain neighbour count | 76.38 | nan | -0.38 | 15-2-18 | 0.348 |
 
+### noise 0.15 (35 datasets; Friedman chi2 = 27.61, p = 0.00011)
+
+| Model | Mean | Avg rank | Proposed − model | W-T-L | Wilcoxon p |
+|---|---|---|---|---|---|
+| SVM | 75.98 | 3.67 | -1.85 | 15-0-20 | 0.169 |
+| TSVM | 74.99 | 3.93 | -0.86 | 17-0-18 | 0.566 |
+| GBSVM | 64.15 | 5.29 | +9.98 | 25-0-10 | 0.000485 |
+| LSTSVM | 75.82 | 3.44 | -1.70 | 12-0-23 | 0.0513 |
+| GBLSTSVM | 74.32 | 4.64 | -0.19 | 21-0-14 | 0.404 |
+| LS-GBLSTSVM | 77.47 | 2.91 | -3.34 | 11-0-24 | 0.0051 |
+| Proposed | 74.13 | 4.11 | | | |
+| GBLSTSVM, balls kept (no weight) | 74.48 | nan | -0.35 | 20-0-15 | 0.731 |
+| Plain neighbour count | 75.61 | nan | -1.49 | 15-0-20 | 0.225 |
+
 ### noise 0.2 (35 datasets; Friedman chi2 = 43.87, p = 7.8e-08)
 
 | Model | Mean | Avg rank | Proposed − model | W-T-L | Wilcoxon p |
@@ -227,6 +255,20 @@
 | Proposed | 73.69 | 3.91 | | | |
 | GBLSTSVM, balls kept (no weight) | 71.74 | nan | +1.94 | 23-0-12 | 0.039 |
 | Plain neighbour count | 72.63 | nan | +1.06 | 21-0-14 | 0.159 |
+
+### noise 0.3 (35 datasets; Friedman chi2 = 63.21, p = 1e-11)
+
+| Model | Mean | Avg rank | Proposed − model | W-T-L | Wilcoxon p |
+|---|---|---|---|---|---|
+| SVM | 72.20 | 2.20 | -5.74 | 7-0-28 | 0.00133 |
+| TSVM | 65.52 | 3.87 | +0.95 | 14-0-21 | 0.819 |
+| GBSVM | 52.50 | 5.89 | +13.96 | 28-0-7 | 0.00016 |
+| LSTSVM | 66.05 | 4.17 | +0.42 | 18-1-16 | 0.952 |
+| GBLSTSVM | 64.06 | 4.80 | +2.40 | 25-0-10 | 0.0666 |
+| LS-GBLSTSVM | 70.03 | 3.03 | -3.57 | 11-0-24 | 0.0192 |
+| Proposed | 66.46 | 4.04 | | | |
+| GBLSTSVM, balls kept (no weight) | 64.97 | nan | +1.50 | 22-0-13 | 0.196 |
+| Plain neighbour count | 67.48 | nan | -1.02 | 20-0-15 | 0.768 |
 
 ## cv, balanced_accuracy
 
@@ -244,6 +286,20 @@
 | GBLSTSVM, balls kept (no weight) | 76.88 | nan | +0.02 | 16-0-19 | 0.756 |
 | Plain neighbour count | 76.62 | nan | +0.28 | 18-0-17 | 0.857 |
 
+### noise 0.05 (35 datasets; Friedman chi2 = 73.01, p = 9.8e-14)
+
+| Model | Mean | Avg rank | Proposed − model | W-T-L | Wilcoxon p |
+|---|---|---|---|---|---|
+| SVM | 79.79 | 2.50 | -2.91 | 8-0-27 | 0.000657 |
+| TSVM | 78.68 | 3.40 | -1.79 | 10-0-25 | 0.00484 |
+| GBSVM | 69.85 | 5.91 | +7.03 | 27-0-8 | 0.000356 |
+| LSTSVM | 79.20 | 2.79 | -2.31 | 7-0-28 | 0.000165 |
+| GBLSTSVM | 75.11 | 5.31 | +1.78 | 24-0-11 | 0.0153 |
+| LS-GBLSTSVM | 77.83 | 3.69 | -0.95 | 15-0-20 | 0.14 |
+| Proposed | 76.88 | 4.40 | | | |
+| GBLSTSVM, balls kept (no weight) | 75.89 | nan | +0.99 | 20-0-15 | 0.0885 |
+| Plain neighbour count | 76.70 | nan | +0.19 | 16-0-19 | 0.806 |
+
 ### noise 0.1 (35 datasets; Friedman chi2 = 67.46, p = 1.4e-12)
 
 | Model | Mean | Avg rank | Proposed − model | W-T-L | Wilcoxon p |
@@ -258,6 +314,20 @@
 | GBLSTSVM, balls kept (no weight) | 75.27 | nan | +0.53 | 16-0-19 | 0.948 |
 | Plain neighbour count | 75.43 | nan | +0.37 | 20-0-15 | 0.647 |
 
+### noise 0.15 (35 datasets; Friedman chi2 = 67.98, p = 1.1e-12)
+
+| Model | Mean | Avg rank | Proposed − model | W-T-L | Wilcoxon p |
+|---|---|---|---|---|---|
+| SVM | 76.85 | 2.54 | -2.87 | 9-0-26 | 0.000188 |
+| TSVM | 75.46 | 3.51 | -1.48 | 10-0-25 | 0.00688 |
+| GBSVM | 67.44 | 5.74 | +6.54 | 26-0-9 | 0.000165 |
+| LSTSVM | 76.37 | 2.60 | -2.39 | 6-0-29 | 3.18e-05 |
+| GBLSTSVM | 72.33 | 5.27 | +1.64 | 26-1-8 | 0.00639 |
+| LS-GBLSTSVM | 74.59 | 4.03 | -0.61 | 17-0-18 | 0.87 |
+| Proposed | 73.98 | 4.30 | | | |
+| GBLSTSVM, balls kept (no weight) | 73.35 | nan | +0.63 | 18-0-17 | 0.334 |
+| Plain neighbour count | 74.22 | nan | -0.24 | 13-0-22 | 0.287 |
+
 ### noise 0.2 (35 datasets; Friedman chi2 = 79.96, p = 3.6e-15)
 
 | Model | Mean | Avg rank | Proposed − model | W-T-L | Wilcoxon p |
@@ -271,3 +341,17 @@
 | Proposed | 73.03 | 3.90 | | | |
 | GBLSTSVM, balls kept (no weight) | 71.82 | nan | +1.21 | 20-0-15 | 0.0642 |
 | Plain neighbour count | 72.77 | nan | +0.27 | 22-0-13 | 0.28 |
+
+### noise 0.3 (35 datasets; Friedman chi2 = 50.15, p = 4.4e-09)
+
+| Model | Mean | Avg rank | Proposed − model | W-T-L | Wilcoxon p |
+|---|---|---|---|---|---|
+| SVM | 69.72 | 2.91 | -1.53 | 12-0-23 | 0.0319 |
+| TSVM | 68.56 | 3.17 | -0.37 | 14-0-21 | 0.258 |
+| GBSVM | 59.65 | 5.71 | +8.54 | 28-0-7 | 9.69e-05 |
+| LSTSVM | 68.69 | 3.31 | -0.50 | 13-0-22 | 0.132 |
+| GBLSTSVM | 63.68 | 5.16 | +4.51 | 27-1-7 | 2.15e-05 |
+| LS-GBLSTSVM | 67.96 | 4.00 | +0.23 | 20-0-15 | 0.589 |
+| Proposed | 68.19 | 3.73 | | | |
+| GBLSTSVM, balls kept (no weight) | 65.70 | nan | +2.50 | 27-0-8 | 8.46e-05 |
+| Plain neighbour count | 68.43 | nan | -0.24 | 15-0-20 | 0.502 |
