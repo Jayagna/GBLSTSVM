@@ -1088,6 +1088,22 @@ takeaway(s, "Both options use the same experiments, so nothing is wasted whichev
 s.addNotes("To sum up what you can tell the professor. The first choice is still the evaluation paper, because it is the strongest and most defensible. If he rejects that and wants a paper that proposes a new fuzzy GBLSTSVM and shows it beating the original, that is possible: under the same protocol as the published granular-ball papers, our model that keeps the single-point balls and weights them by their neighbours beats GBLSTSVM by around two accuracy points across 21 datasets and all noise levels, and it also beats GBFTSVM and plain LSTSVM. What you should say openly, if you go this way, is that tuning on the test set gives optimistic numbers, that with an equal number of settings the gain is about one point, and that if a reviewer asks for cross-validation we already have that table: the gain over GBLSTSVM holds there, but plain LSTSVM is ahead. Both options use the same code and experiments, so the work done so far counts either way.");
 
 
+// ---- Decision, 12 Nov: one paper
+s = content(BK, "Decision: one research paper with the new fuzzy and the evaluation", "Direction, 12 Nov");
+[
+  ["1", "What we write", "One paper in the style of the GBLSTSVM paper. The proposed model is GBLSTSVM with all balls kept and the radius-aware fuzzy weight. The evaluation findings go in as analysis sections. Plain T7 is left out of the main tables (kept as a small ablation).", C.accent1],
+  ["2", "Compared with", "The models of the GBLSTSVM paper: SVM, TSVM, GBSVM, LSTSVM, GBLSTSVM and LS-GBLSTSVM, at 0/5/10/15/20% label noise, on 35 datasets. Results under both tuning methods, each clearly labelled.", C.accent5],
+  ["3", "Started today", "Code for SVM, TSVM, GBSVM and LS-GBLSTSVM under both tuning methods (experiments/run_baselines.py, gbsvm.py). Runs on 14 more datasets. First finding: GBSVM solved exactly often collapses to one class on these balls.", C.accent3],
+].forEach(([n, h, t, color], i) => {
+  const x = 0.6 + i * 4.1, w = 3.9;
+  card(s, x, 1.6, w, 4.3);
+  badge(s, x + 0.25, 1.85, n, color, 0.55, 18);
+  s.addText(h, tx({ x: x + 0.95, y: 1.85, w: w - 1.2, h: 0.55, fontSize: 17, bold: true, color: C.text2, valign: "middle" }));
+  s.addText(t, tx({ x: x + 0.25, y: 2.65, w: w - 0.5, h: 3.1, fontSize: 15 }));
+});
+takeaway(s, "The clean story of this path is kept in a second deck, compre_presentation.pptx; this deck keeps recording everything.");
+s.addNotes("On 12 November we decided the direction. We write one research paper, shaped like the GBLSTSVM paper. The proposed model keeps all granular balls and weights them with the radius-aware fuzzy weight. Our evaluation findings become analysis sections of the same paper. We compare against the six models of the GBLSTSVM paper and report results under both ways of choosing the settings, clearly labelled. Work started the same day on the four competitors we did not have yet and on fourteen more datasets. A first finding along the way: when the granular-ball SVM is solved exactly, instead of with the random search the papers use, it often ends up predicting a single class on these balls. From now on there are two decks: this one records everything, including dead ends, and the comprehensive presentation holds only the path we are taking forward.");
+
 // =====================================================================================
 // 31. References
 // =====================================================================================
