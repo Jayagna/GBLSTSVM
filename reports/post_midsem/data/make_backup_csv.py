@@ -12,6 +12,7 @@ RES = HERE.parents[2] / "results"
 
 for src, dst in [("summary.csv", "test_tuning_best.csv"), ("fixed_param.csv", "test_tuning_fixed.csv"), ("split0.csv", "test_tuning_split0.csv")]:
     shutil.copy(RES / "test_tuning" / src, HERE / dst)
+shutil.copy(RES / "test_tuning" / "rank_table_main.csv", HERE / "rank_table_main.csv")
 shutil.copy(RES / "fuzzy_cv_new" / "summary_vs_baselines.csv", HERE / "new_cv.csv")
 
 df = pd.read_csv(RES / "new_membership_probe" / "probe.csv")

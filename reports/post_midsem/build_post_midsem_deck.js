@@ -949,6 +949,31 @@ table(s, allRows, { x: 0.6, y: 1.5, w: 12.1, colW: [3.94, ...Array(8).fill(1.02)
 takeaway(s, "Every kept-ball fuzzy model is above GBLSTSVM and above plain LSTSVM; best in each column is bold.", 6.25);
 s.addNotes("This is the full table, for reference. Rows are the 13 models; the columns are accuracy and balanced accuracy at the four noise levels, each tuned on the test set and averaged over 21 datasets and 10 splits. Balanced accuracy is the average of the accuracy on each class, which matters on imbalanced data. GBLSTSVM is the shaded row. The first two rows use no balls at all. The last five rows keep the single-point balls and weight them; the last three are the new weights added today. Under this protocol all five are above GBLSTSVM and also above plain LSTSVM, and they are level with or slightly above fuzzy-kNN LSTSVM, the strongest point-based model. Remember that all of these numbers are optimistic because the test set chose the settings.");
 
+// ---- 27. The paper's Table 1 layout: average accuracy and average rank
+const RK = readCsv("rank_table_main.csv");
+const RK_NZ = [0, 0.05, 0.1, 0.15, 0.2], RK_LAB = ["0%", "5%", "10%", "15%", "20%"];
+const RK_M = [["LSTSVM", "LSTSVM"], ["GBLSTSVM", "GBLSTSVM"], ["GBTWSVM", "GBTWSVM"], ["GBFTSVM", "GBFTSVM"], ["T7-agree", "Keep + T7 (ours)"], ["Keep+gapvote", "Keep + radius (ours)"]];
+const rk = (n, m, key) => RK.find(r => r.noise === n && r.method === m)[key];
+const PAPER_T1 = { l: [86.67, 85.33, 84.82, 84.12, 83.79], g: [88.26, 87.50, 87.47, 86.04, 86.09], lr: [2.59, 2.94, 3.10, 2.74, 2.72], gr: [1.62, 1.71, 1.93, 1.68, 1.71] }; // paper Table 1
+s = content(BK, "Our run in the layout of the paper's Table 1", "Result: average accuracy and rank");
+const rkRows = [[th(""), th("Noise"), ...RK_M.map(([, l]) => th(l, { align: "center" })), th("Paper LSTSVM", { align: "center", fill: { color: C.accent6 } }), th("Paper GBLSTSVM", { align: "center", fill: { color: C.accent6 } })]];
+[["mean_accuracy", "Average ACC", true, PAPER_T1.l, PAPER_T1.g], ["mean_rank", "Average rank", false, PAPER_T1.lr, PAPER_T1.gr]].forEach(([key, label, hi, pl, pg]) => {
+  RK_NZ.forEach((n, i) => {
+    const vals = RK_M.map(([m]) => rk(n, m, key));
+    const best = hi ? Math.max(...vals) : Math.min(...vals);
+    rkRows.push([td(i === 2 ? label : "", { bold: true, border: [{ type: i === 0 ? "solid" : "none", pt: 0.5, color: GRID }, { type: "solid", pt: 0.5, color: GRID }, { type: i === 4 ? "solid" : "none", pt: 0.5, color: GRID }, { type: "solid", pt: 0.5, color: GRID }] }),
+      td(RK_LAB[i], { align: "center" }), ...vals.map(v => td(v.toFixed(2), { align: "center", bold: v === best })),
+      td(pl[i].toFixed(2), { align: "center", color: C.accent6 }), td(pg[i].toFixed(2), { align: "center", color: C.accent6 })]);
+  });
+});
+table(s, rkRows, { x: 0.6, y: 1.5, w: 12.1, colW: [1.35, 0.75, 1.1, 1.2, 1.15, 1.15, 1.55, 1.75, 1.0, 1.1], rowH: 0.29, fontSize: 11.5, margin: [1, 5, 1, 5] });
+s.addText(bullets([
+  [B("Ours, six models: "), "every model tuned on the test set, 21 datasets, 10 splits; rank 1 = best of the six on a dataset, averaged over datasets. Best in each row is bold."],
+  [B("Grey columns: "), `the paper's own Table 1 ${R("gblstsvm")}, for reference only. Its datasets, splits and competitors differ, so its ranks are among a different six models.`],
+], { space: 4 }), tx({ x: 0.6, y: 5.42, w: 12.1, h: 0.75, fontSize: 11.5 }));
+takeaway(s, "Our two kept-ball fuzzy models take ranks 1.8–2.1 at every noise level; GBLSTSVM is third at 3.6–3.9.", 6.25);
+s.addNotes("This slide puts our run in the same layout as Table 1 of the GBLSTSVM paper: average accuracy on top, average rank below, at 0, 5, 10, 15 and 20% label noise. I ran the two extra noise levels, 5 and 15%, to match the paper's rows. To get the rank, on each dataset the six models are ordered by accuracy, the best gets rank 1 and the worst rank 6, and the ranks are averaged over the 21 datasets. A lower rank is better. I used six models, the same number as in the paper, so the ranks are on the same 1 to 6 scale: plain LSTSVM, GBLSTSVM, the two published granular-ball twin SVMs, and our two best models, keep plus T7 and keep plus the radius-aware vote. Our two models have the highest accuracy and the best rank, about 2, in every row. GBLSTSVM comes third with a rank of about 3.7, and LSTSVM falls from fourth to last as noise grows. The two grey columns on the right copy the paper's own numbers for LSTSVM and GBLSTSVM. Our GBLSTSVM accuracy is within about a point of theirs. Their ranks are not directly comparable, because they are ranks among a different set of six models on different datasets. Remember that all numbers here are tuned on the test set and therefore optimistic.");
+
 // ---- 26. How much of the gain is real
 s = content(BK, "Honesty check: part of the gain is just a bigger grid", "How much is real?");
 barChart(s, [
