@@ -87,6 +87,23 @@
 | GBLSTSVM, balls kept (no weight) | 87.49 | nan | +1.59 | 31-2-2 | 8.54e-07 |
 | Plain neighbour count | 88.67 | nan | +0.41 | 24-0-11 | 0.00688 |
 
+### noise 0.3 (35 datasets; Friedman chi2 = 123.06, p = 3.7e-24)
+
+| Model | Mean | Avg rank | Proposed − model | W-T-L | Wilcoxon p |
+|---|---|---|---|---|---|
+| SVM | 85.39 | 5.43 | +2.71 | 34-1-0 | 3.65e-07 |
+| TSVM | 85.33 | 4.70 | +2.76 | 33-1-1 | 5.71e-07 |
+| GBSVM | 83.09 | 5.90 | +5.01 | 34-1-0 | 3.65e-07 |
+| LSTSVM | 85.27 | 4.69 | +2.83 | 34-1-0 | 3.65e-07 |
+| GBLSTSVM | 85.56 | 3.59 | +2.54 | 29-2-4 | 1.87e-05 |
+| LS-GBLSTSVM | 87.41 | 2.29 | +0.69 | 28-1-6 | 0.000245 |
+| Proposed | 88.10 | 1.41 | | | |
+| Proposed without the regulariser | 87.68 | nan | +0.42 | 23-4-8 | 0.00815 |
+| LS-GBLSTSVM, balls kept (no weight) | 86.62 | nan | +1.48 | 35-0-0 | 2.48e-07 |
+| GBFTSVM | 85.12 | nan | +2.97 | 28-0-7 | 2.96e-05 |
+| GBLSTSVM, balls kept (no weight) | 86.08 | nan | +2.02 | 32-1-2 | 5.22e-07 |
+| Plain neighbour count | 87.46 | nan | +0.64 | 23-3-9 | 0.00277 |
+
 ## oracle, balanced_accuracy
 
 ### noise 0 (35 datasets; Friedman chi2 = 92.49, p = 9.2e-18)
@@ -174,6 +191,23 @@
 | GBLSTSVM, balls kept (no weight) | 82.05 | nan | +2.29 | 28-0-7 | 1.05e-05 |
 | Plain neighbour count | 84.22 | nan | +0.12 | 18-0-17 | 0.819 |
 
+### noise 0.3 (35 datasets; Friedman chi2 = 139.07, p = 1.6e-27)
+
+| Model | Mean | Avg rank | Proposed − model | W-T-L | Wilcoxon p |
+|---|---|---|---|---|---|
+| SVM | 76.05 | 4.94 | +6.61 | 35-0-0 | 2.48e-07 |
+| TSVM | 76.21 | 4.77 | +6.46 | 34-0-1 | 3.22e-07 |
+| GBSVM | 69.19 | 6.26 | +13.48 | 35-0-0 | 2.48e-07 |
+| LSTSVM | 76.28 | 5.20 | +6.38 | 35-0-0 | 2.48e-07 |
+| GBLSTSVM | 79.85 | 3.30 | +2.82 | 27-0-8 | 0.000657 |
+| LS-GBLSTSVM | 82.48 | 1.90 | +0.18 | 22-0-13 | 0.185 |
+| Proposed | 82.67 | 1.63 | | | |
+| Proposed without the regulariser | 82.33 | nan | +0.34 | 21-0-14 | 0.207 |
+| LS-GBLSTSVM, balls kept (no weight) | 80.58 | nan | +2.09 | 30-0-5 | 4.51e-06 |
+| GBFTSVM | 79.61 | nan | +3.06 | 27-0-8 | 0.000884 |
+| GBLSTSVM, balls kept (no weight) | 79.31 | nan | +3.36 | 33-0-2 | 1.15e-06 |
+| Plain neighbour count | 82.16 | nan | +0.51 | 20-0-15 | 0.201 |
+
 ## cv, accuracy
 
 ### noise 0 (35 datasets; Friedman chi2 = 44.52, p = 5.8e-08)
@@ -256,6 +290,22 @@
 | GBLSTSVM, balls kept (no weight) | 71.74 | nan | +6.18 | 28-1-6 | 9.5e-06 |
 | Plain neighbour count | 72.63 | nan | +5.29 | 32-0-3 | 4.88e-06 |
 
+### noise 0.3 (35 datasets; Friedman chi2 = 81.76, p = 1.5e-15)
+
+| Model | Mean | Avg rank | Proposed − model | W-T-L | Wilcoxon p |
+|---|---|---|---|---|---|
+| SVM | 72.20 | 2.56 | +1.56 | 19-1-15 | 0.309 |
+| TSVM | 65.52 | 4.36 | +8.25 | 31-0-4 | 3.04e-06 |
+| GBSVM | 52.50 | 5.94 | +21.26 | 30-0-5 | 3.29e-06 |
+| LSTSVM | 66.05 | 4.59 | +7.72 | 33-0-2 | 1.15e-06 |
+| GBLSTSVM | 64.06 | 4.91 | +9.70 | 29-0-6 | 4.17e-06 |
+| LS-GBLSTSVM | 70.03 | 3.51 | +3.73 | 28-0-7 | 0.00374 |
+| Proposed | 73.76 | 2.13 | | | |
+| Proposed without the regulariser | 66.46 | nan | +7.30 | 31-0-4 | 2.03e-06 |
+| LS-GBLSTSVM, balls kept (no weight) | 68.96 | nan | +4.81 | 28-0-7 | 2.38e-05 |
+| GBLSTSVM, balls kept (no weight) | 64.97 | nan | +8.80 | 31-0-4 | 1.06e-06 |
+| Plain neighbour count | 67.48 | nan | +6.28 | 30-0-5 | 9.76e-06 |
+
 ## cv, balanced_accuracy
 
 ### noise 0 (35 datasets; Friedman chi2 = 105.17, p = 2.1e-20)
@@ -337,3 +387,19 @@
 | LS-GBLSTSVM, balls kept (no weight) | 74.14 | nan | +1.12 | 21-0-14 | 0.112 |
 | GBLSTSVM, balls kept (no weight) | 71.82 | nan | +3.43 | 23-1-11 | 0.00028 |
 | Plain neighbour count | 72.77 | nan | +2.49 | 25-0-10 | 0.000277 |
+
+### noise 0.3 (35 datasets; Friedman chi2 = 53.89, p = 7.8e-10)
+
+| Model | Mean | Avg rank | Proposed − model | W-T-L | Wilcoxon p |
+|---|---|---|---|---|---|
+| SVM | 69.72 | 3.14 | +0.55 | 20-0-15 | 0.413 |
+| TSVM | 68.56 | 3.37 | +1.71 | 21-0-14 | 0.0553 |
+| GBSVM | 59.65 | 5.71 | +10.62 | 28-0-7 | 9.05e-06 |
+| LSTSVM | 68.69 | 3.63 | +1.58 | 24-0-11 | 0.0147 |
+| GBLSTSVM | 63.68 | 5.20 | +6.59 | 29-0-6 | 1.32e-05 |
+| LS-GBLSTSVM | 67.96 | 4.17 | +2.30 | 26-0-9 | 0.00759 |
+| Proposed | 70.27 | 2.77 | | | |
+| Proposed without the regulariser | 68.19 | nan | +2.08 | 23-0-12 | 0.00186 |
+| LS-GBLSTSVM, balls kept (no weight) | 69.64 | nan | +0.63 | 19-1-15 | 0.222 |
+| GBLSTSVM, balls kept (no weight) | 65.70 | nan | +4.57 | 28-0-7 | 3.41e-05 |
+| Plain neighbour count | 68.43 | nan | +1.84 | 24-0-11 | 0.00231 |
