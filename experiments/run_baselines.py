@@ -14,6 +14,9 @@ Models and grids
   TSVM         twin SVM of Jayadeva et al. on the samples (gbftsvm.py's exact dual solver with
                zero radii and unit scores); C1 = C3, C2 = C4 in 2^-5..2^5; class weighting off/on.
   GBSVM        gbsvm.py (exact conic solve) on GBLSTSVM's balls; k, C in C_GRID; class weighting off/on.
+  LSTSVM, GBLSTSVM  as in run_fuzzy_cv.py (c1, c2 in C_GRID); here so that --kernel covers them.
+  --kernel     Gaussian kernel for every model: SVM uses libsvm's RBF kernel; the others are trained
+               on kernel features against the ball centres (the samples for TSVM and LSTSVM).
   LS-keep, LS-keep+gapvote  LS-GBLSTSVM with single-point balls kept, without and with the
                radius-aware fuzzy weight (k, gamma as in run_fuzzy_cv); not run by default.
   LS-GBLSTSVM  GBLSTSVM with the regulariser c3/2 (||w||^2 + b^2) (paper eq. 26-27, solved in the
@@ -55,17 +58,19 @@ from gbftsvm import twin_planes_over_grid  # noqa: E402
 from gbsvm import GBSVMProblem  # noqa: E402
 from GBLSTSVM import gb_decision_scores, solve_gb_planes  # noqa: E402
 
-METHODS = ["SVM", "TSVM", "GBSVM", "LS-GBLSTSVM", "LS-keep", "LS-keep+gapvote"]
+METHODS = ["SVM", "TSVM", "GBSVM", "LS-GBLSTSVM", "LS-keep", "LS-keep+gapvote", "LSTSVM", "GBLSTSVM"]
+GAMMA_GRID = [0.25, 1.0, 4.0]  # Gaussian kernel exp(-gamma ||x - z||^2) with gamma = g / n_features (--kernel)
 GAPVOTE = rfc.METHOD_INDEX["Keep+gapvote"]  # (name, ball set, membership(ball set, param), grid)
 C_GRID = rfc.C_GRID
 
 
-def svm_scores(train, Xs):
+def svm_scores(train, Xs, gamma=None):
     X, y = train[:, :-1], train[:, -1]
+    kern = {"kernel": "linear"} if gamma is None else {"kernel": "rbf", "gamma": gamma}
     out = {}
     for imb in rfc.IMB_GRID:
         for C in C_GRID:
-            clf = SVC(kernel="linear", C=C, class_weight="balanced" if imb else None, max_iter=200000, cache_size=500)
+            clf = SVC(C=C, class_weight="balanced" if imb else None, max_iter=200000, cache_size=500, **kern)
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", ConvergenceWarning)
                 clf.fit(X, y)
@@ -74,8 +79,21 @@ def svm_scores(train, Xs):
     return out
 
 
-def tsvm_scores(train, Xs):
-    bs = ball_set_from_samples(train)
+def rbf(X, C, gamma):
+    sq = np.sum(X ** 2, axis=1)[:, None] + np.sum(C ** 2, axis=1)[None, :] - 2.0 * X @ C.T
+    return np.exp(-gamma * np.maximum(sq, 0.0))
+
+
+def kmap(bs, Xs, gamma):
+    """Gaussian-kernel version of a ball set: every centre and every test point is replaced by its
+    kernel values against the ball centres (the reduced-kernel form used by kernel GBLSTSVM); radii,
+    labels and counts stay. gamma None = linear, nothing changes."""
+    if gamma is None or bs is None:
+        return bs, Xs
+    return dict(bs, centers=rbf(bs["centers"], bs["centers"], gamma)), [rbf(Z, bs["centers"], gamma) for Z in Xs]
+
+
+def tsvm_scores(bs, Xs):
     ones = np.ones(len(bs["labels"]))
     out = {}
     for imb in rfc.IMB_GRID:
@@ -123,25 +141,54 @@ def lsgb_scores(bs, k, Xs, memberships=None):
     return out
 
 
-def all_scores(train, k_values, Xs, methods):
-    """{method: {config: [signed scores per X in Xs]}} for one training set."""
+def lsfam_scores(bs, k, Xs):
+    """LSTSVM (bs = samples) or GBLSTSVM (bs = balls): c1 and c2 free, fixed tiny ridge, as in run_fuzzy_cv."""
+    out = {}
+    ones = np.ones(len(bs["labels"]))
+    for imb, _, c1, c2 in rfc.method_configs([None]):
+        try:
+            planes = rfc.fit_planes(bs, ones, c1, c2, imb)
+        except np.linalg.LinAlgError:
+            continue
+        out[(k, imb, c1, c2)] = [gb_decision_scores(Z, *planes) for Z in Xs]
+    return out
+
+
+def all_scores(train, k_values, Xs, methods, gammas=(None,)):
+    """{method: {config: [signed scores per X in Xs]}} for one training set. With kernel gammas
+    (g, so that gamma = g / n_features) every config gets ("g", g) appended."""
     res = {m: {} for m in methods}
-    if "SVM" in methods:
-        res["SVM"] = svm_scores(train, Xs)
-    if "TSVM" in methods:
-        res["TSVM"] = tsvm_scores(train, Xs)
-    if set(methods) - {"SVM", "TSVM"}:
-        for k in k_values:
-            sets = build_ball_sets(train, k)
+    d = train.shape[1] - 1
+    samples = ball_set_from_samples(train)
+    ball_sets = {k: build_ball_sets(train, k) for k in k_values} if set(methods) - {"SVM", "TSVM", "LSTSVM"} else {}
+    for g in gammas:
+        gamma = None if g is None else g / d
+        new = {m: {} for m in methods}
+        if "SVM" in methods:
+            new["SVM"] = svm_scores(train, Xs, gamma)
+        if "TSVM" in methods or "LSTSVM" in methods:
+            sk, Xk = kmap(samples, Xs, gamma)
+            if "TSVM" in methods:
+                new["TSVM"] = tsvm_scores(sk, Xk)
+            if "LSTSVM" in methods:
+                new["LSTSVM"] = lsfam_scores(sk, 0, Xk)
+        for k, sets in ball_sets.items():
             bs, bs_all = sets.get("gb"), sets.get("gb_all")
+            bk, Xb = kmap(bs, Xs, gamma)
+            ak, Xa = kmap(bs_all, Xs, gamma)
             if bs is not None and "GBSVM" in methods:
-                res["GBSVM"].update(gbsvm_scores(bs, k, Xs))
+                new["GBSVM"].update(gbsvm_scores(bk, k, Xb))
+            if bs is not None and "GBLSTSVM" in methods:
+                new["GBLSTSVM"].update(lsfam_scores(bk, k, Xb))
             if bs is not None and "LS-GBLSTSVM" in methods:
-                res["LS-GBLSTSVM"].update(lsgb_scores(bs, k, Xs))
+                new["LS-GBLSTSVM"].update(lsgb_scores(bk, k, Xb))
             if bs_all is not None and "LS-keep" in methods:  # single-point balls kept, no weight
-                res["LS-keep"].update(lsgb_scores(bs_all, k, Xs))
+                new["LS-keep"].update(lsgb_scores(ak, k, Xa))
             if bs_all is not None and "LS-keep+gapvote" in methods:  # kept balls + radius-aware weight + regulariser
-                res["LS-keep+gapvote"].update(lsgb_scores(bs_all, k, Xs, {p: GAPVOTE[2](bs_all, p) for p in GAPVOTE[3]}))
+                # the fuzzy weight is computed from the balls in the input space
+                new["LS-keep+gapvote"].update(lsgb_scores(ak, k, Xa, {p: GAPVOTE[2](bs_all, p) for p in GAPVOTE[3]}))
+        for m, scores in new.items():
+            res[m].update(scores if g is None else {cfg + (("g", g),): v for cfg, v in scores.items()})
     return res
 
 
@@ -151,7 +198,7 @@ def ba_acc(y, s):
 
 
 def run_one(task):
-    path, noise, repeats, n_folds, k_values, out_dir, methods = task
+    path, noise, repeats, n_folds, k_values, out_dir, methods, gammas = task
     path = Path(path)
     out_file = Path(out_dir) / f"{path.stem}__noise{noise:g}.json"
     if out_file.exists():
@@ -172,12 +219,12 @@ def run_one(task):
         skf = StratifiedKFold(n_splits=folds, shuffle=True, random_state=r)
         for tr_idx, va_idx in skf.split(train[:, :-1], y_train):
             X_va, y_va = train[va_idx, :-1], train[va_idx, -1]
-            for m, scores in all_scores(train[tr_idx], k_values, [X_va], methods).items():
+            for m, scores in all_scores(train[tr_idx], k_values, [X_va], methods, gammas).items():
                 for cfg, (s,) in scores.items():
                     cv[m].setdefault(cfg, []).append(ba_acc(y_va, s)[0])
         X_te, y_te = test[:, :-1], test[:, -1]
         rep = {"repeat": r, "cv_folds": folds, "methods": {}}
-        for m, scores in all_scores(train, k_values, [X_te], methods).items():
+        for m, scores in all_scores(train, k_values, [X_te], methods, gammas).items():
             if not scores:
                 continue
             te = {cfg: ba_acc(y_te, s) for cfg, (s,) in scores.items()}
@@ -186,7 +233,7 @@ def run_one(task):
             best = max(sorted(te, key=str), key=lambda c: mean_cv[c])
             rep["methods"][m] = {
                 "cv_balanced_accuracy": 100.0 * te[best][0], "cv_accuracy": 100.0 * te[best][1],
-                "cv_config": list(best), "cv_score": float(mean_cv[best]),
+                "cv_config": [list(x) if isinstance(x, tuple) else x for x in best], "cv_score": float(mean_cv[best]),
                 "oracle_balanced_accuracy": 100.0 * max(v[0] for v in te.values()),
                 "oracle_accuracy": 100.0 * max(v[1] for v in te.values()),
                 "n_configs": len(te),
@@ -210,9 +257,11 @@ def main():
     ap.add_argument("--out", default=str(ROOT / "results" / "baselines"))
     ap.add_argument("--jobs", type=int, default=os.cpu_count() or 1)
     ap.add_argument("--methods", nargs="+", default=METHODS[:4], choices=METHODS)
+    ap.add_argument("--kernel", action="store_true", help="Gaussian kernel, gamma = g / n_features for g in GAMMA_GRID")
     args = ap.parse_args()
+    gammas = tuple(GAMMA_GRID) if args.kernel else (None,)
     files = {p.stem: p for p in discover_datasets(str(ROOT / "Data"))}
-    tasks = [(str(files[d]), nz, list(range(args.repeats)), args.folds, args.k_values, args.out, args.methods)
+    tasks = [(str(files[d]), nz, list(range(args.repeats)), args.folds, args.k_values, args.out, args.methods, gammas)
              for nz in args.noise for d in args.datasets]
     print(f"{len(tasks)} tasks, {args.jobs} workers", flush=True)
     with Pool(args.jobs) as pool:
