@@ -53,11 +53,7 @@ def merge(*parts):
     return out
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--out", default=str(ROOT / "results" / "paper_tables"))
-    args = ap.parse_args()
-    res = ROOT / "results"
+def linear_data(res):
     cv_family = load(res / "paper_cv", {"accuracy": "accuracy", "balanced_accuracy": "balanced_accuracy"})
     for methods in cv_family.values():  # run_fuzzy_cv stores balanced accuracy as a fraction
         for d in methods.values():
@@ -70,6 +66,22 @@ def main():
         "cv": merge(cv_family, load(res / "baselines", {"accuracy": "cv_accuracy", "balanced_accuracy": "cv_balanced_accuracy"}),
                     load(res / "baselines_ls", {"accuracy": "cv_accuracy", "balanced_accuracy": "cv_balanced_accuracy"})),
     }
+    return data
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default=None)
+    ap.add_argument("--kernel", action="store_true", help="Gaussian-kernel runs (results/kernel) instead of the linear ones")
+    args = ap.parse_args()
+    args.out = args.out or str(ROOT / "results" / ("paper_tables_kernel" if args.kernel else "paper_tables"))
+    res = ROOT / "results"
+    orc = {"accuracy": "oracle_accuracy", "balanced_accuracy": "oracle_balanced_accuracy"}
+    cvf = {"accuracy": "cv_accuracy", "balanced_accuracy": "cv_balanced_accuracy"}
+    if args.kernel:
+        data = {"oracle": load(res / "kernel", orc), "cv": load(res / "kernel", cvf)}
+    else:
+        data = linear_data(res)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     summary, pairwise, friedman, per_dataset = [], [], [], []
