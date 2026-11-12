@@ -1120,6 +1120,22 @@ s = content(BK, "First full comparison: 7 models, 35 datasets, both tuning metho
 takeaway(s, "Setup: 10 splits (70/30), linear models, grids as on the settings slide; details in results/paper_tables/summary.md.");
 s.addNotes("The first full comparison in the layout of the GBLSTSVM paper: seven models, thirty-five datasets, ten splits each. Under the published style of tuning, our model has the best average rank and beats every competitor except one. That one is LS-GBLSTSVM, the regularised version from the same paper, which matches our accuracy. Under fair cross-validation the order changes: the three models that train on every point, SVM, LSTSVM and TSVM, are on top. Our model and LS-GBLSTSVM are the best of the granular-ball models and both are clearly ahead of GBLSTSVM. Two things we learned. First, a simple regulariser gives GBLSTSVM about as much as our fuzzy weight does, so the natural next step is to combine the two. Second, GBSVM solved exactly is the weakest model, because with large balls its exact solution often predicts a single class. Fair cross-validation at five, fifteen and thirty percent noise is still running.");
 
+// ---- Proposed model moved onto LS-GBLSTSVM, 12 Nov
+s = content(BK, "Putting our weight on LS-GBLSTSVM gives the best model so far", "Results, 12 Nov (later)");
+[
+  ["1", "What changed", "LS-GBLSTSVM matched our model, so we combined them: LS-GBLSTSVM's regulariser, all balls kept, and the radius-aware weight (experiments/run_baselines.py, method LS-keep+gapvote; results/baselines_ls). 35 datasets, 10 splits, noise 0 to 20% so far.", C.accent1],
+  ["2", "Published-style tuning", "Accuracy 90.0/89.8/89.5/89.3/89.1 at 0/5/10/15/20% noise. First at every level and significantly ahead of all six competitors, including LS-GBLSTSVM (+0.3 to +0.5, p ≤ 0.002).", C.accent5],
+  ["3", "Fair cross-validation", "Accuracy 81.4/81.0/79.6/78.8/77.9. Ahead of SVM, TSVM and LSTSVM from 5% noise (over LSTSVM +1.6 to +4.5), level with LS-GBLSTSVM up to 10% and ahead after. On clean data SVM leads (83.2). Balanced accuracy: best ball model, SVM ahead at low noise.", C.accent3],
+].forEach(([n, h, t, color], i) => {
+  const x = 0.6 + i * 4.1, w = 3.9;
+  card(s, x, 1.6, w, 4.3);
+  badge(s, x + 0.25, 1.85, n, color, 0.55, 18);
+  s.addText(h, tx({ x: x + 0.95, y: 1.85, w: w - 1.2, h: 0.55, fontSize: 17, bold: true, color: C.text2, valign: "middle" }));
+  s.addText(t, tx({ x: x + 0.25, y: 2.65, w: w - 0.5, h: 3.1, fontSize: 14.5 }));
+});
+takeaway(s, "The proposed model is now: LS-GBLSTSVM + all balls kept + radius-aware fuzzy weight.");
+s.addNotes("Because LS-GBLSTSVM matched our model, we combined the two ideas. The proposed model now keeps the regulariser of LS-GBLSTSVM, keeps all balls, and adds the radius-aware weight. Under the published style of tuning it is first at every noise level and significantly ahead of all six competitors, including LS-GBLSTSVM. Under fair cross-validation it is ahead of SVM, TSVM and LSTSVM in accuracy from five percent noise upwards, while plain SVM is still ahead on clean data. On balanced accuracy it is the best granular-ball model, with SVM ahead at low noise. The thirty percent noise runs for this model are still finishing.");
+
 // =====================================================================================
 // 31. References
 // =====================================================================================

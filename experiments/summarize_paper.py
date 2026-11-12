@@ -3,6 +3,7 @@ Tables for the paper from the three result folders written by run_paper_all.sh:
 
   results/test_tuning   published-style protocol for the LSTSVM family and GBFTSVM (oracle_* fields)
   results/baselines     SVM, TSVM, GBSVM, LS-GBLSTSVM under both protocols (oracle_* and cv_* fields)
+  results/baselines_ls  the proposed weight on top of LS-GBLSTSVM (extra rows)
   results/paper_cv      fair cross-validation for the LSTSVM family
 
 For each protocol ("oracle" = best test score over the grid, "cv" = settings chosen by 5-fold CV on
@@ -23,10 +24,10 @@ import numpy as np
 from scipy import stats
 
 ROOT = Path(__file__).resolve().parents[1]
-OURS = "Keep+gapvote"
-LABEL = {OURS: "Proposed", "GB-keep": "GBLSTSVM, balls kept (no weight)", "T7-agree": "Plain neighbour count"}
+OURS = "LS-keep+gapvote"  # kept balls + radius-aware weight + regulariser
+LABEL = {OURS: "Proposed", "Keep+gapvote": "Proposed without the regulariser", "LS-keep": "LS-GBLSTSVM, balls kept (no weight)", "GB-keep": "GBLSTSVM, balls kept (no weight)", "T7-agree": "Plain neighbour count"}
 MAIN = ["SVM", "TSVM", "GBSVM", "LSTSVM", "GBLSTSVM", "LS-GBLSTSVM", OURS]
-EXTRA = ["GBFTSVM", "GB-keep", "T7-agree"]
+EXTRA = ["Keep+gapvote", "LS-keep", "GBFTSVM", "GB-keep", "T7-agree"]
 
 
 def load(folder, fields):
@@ -64,8 +65,10 @@ def main():
                 d["balanced_accuracy"] *= 100.0
     data = {
         "oracle": merge(load(res / "test_tuning", {"accuracy": "oracle_accuracy", "balanced_accuracy": "oracle_balanced_accuracy"}),
-                        load(res / "baselines", {"accuracy": "oracle_accuracy", "balanced_accuracy": "oracle_balanced_accuracy"})),
-        "cv": merge(cv_family, load(res / "baselines", {"accuracy": "cv_accuracy", "balanced_accuracy": "cv_balanced_accuracy"})),
+                        load(res / "baselines", {"accuracy": "oracle_accuracy", "balanced_accuracy": "oracle_balanced_accuracy"}),
+                        load(res / "baselines_ls", {"accuracy": "oracle_accuracy", "balanced_accuracy": "oracle_balanced_accuracy"})),
+        "cv": merge(cv_family, load(res / "baselines", {"accuracy": "cv_accuracy", "balanced_accuracy": "cv_balanced_accuracy"}),
+                    load(res / "baselines_ls", {"accuracy": "cv_accuracy", "balanced_accuracy": "cv_balanced_accuracy"})),
     }
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -80,7 +83,7 @@ def main():
                 models = [m for m in MAIN + EXTRA if any(m in r for r in rows.values())]
                 main_models = [m for m in MAIN if m in models]
                 full = sorted(d for d, r in rows.items() if all(m in r and metric in r[m] for m in main_models))
-                if len(full) < 3 or OURS not in main_models:
+                if len(full) < 30 or OURS not in main_models:  # only complete noise levels
                     continue
                 score = {m: np.array([rows[d][m][metric] for d in full]) for m in main_models}
                 for m in models:  # extras: only on datasets where they exist
