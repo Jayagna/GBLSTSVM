@@ -1104,6 +1104,22 @@ s = content(BK, "Decision: one research paper with the new fuzzy and the evaluat
 takeaway(s, "The clean story of this path is kept in a second deck, compre_presentation.pptx; this deck keeps recording everything.");
 s.addNotes("On 12 November we decided the direction. We write one research paper, shaped like the GBLSTSVM paper. The proposed model keeps all granular balls and weights them with the radius-aware fuzzy weight. Our evaluation findings become analysis sections of the same paper. We compare against the six models of the GBLSTSVM paper and report results under both ways of choosing the settings, clearly labelled. Work started the same day on the four competitors we did not have yet and on fourteen more datasets. A first finding along the way: when the granular-ball SVM is solved exactly, instead of with the random search the papers use, it often ends up predicting a single class on these balls. From now on there are two decks: this one records everything, including dead ends, and the comprehensive presentation holds only the path we are taking forward.");
 
+// ---- First full comparison on 35 datasets, 12 Nov
+s = content(BK, "First full comparison: 7 models, 35 datasets, both tuning methods", "Results, 12 Nov");
+[
+  ["A", "Published-style tuning", "Average accuracy at 0/10/20% noise: ours 89.5/89.2/88.6; LS-GBLSTSVM 89.5/89.2/88.7; GBLSTSVM 88.1/87.9/87.1; LSTSVM 88.2/87.6/86.8; TSVM 88.6/88.2/87.1; SVM 88.5/87.1/86.2; GBSVM 85.0/84.9/84.0. Ours has the best average rank (1.8) and beats all but LS-GBLSTSVM (p < 0.01).", C.accent5],
+  ["B", "Fair cross-validation", "Balanced accuracy at 0/10/20% noise: SVM 81.0/78.7/75.2; LSTSVM 80.4/77.9/74.3; TSVM 80.3/77.9/74.5; ours 76.9/75.8/73.0; LS-GBLSTSVM 76.9/76.5/72.8; GBLSTSVM 74.2/74.2/70.0; GBSVM 67.0/69.2/65.6. Ours beats GBLSTSVM (+1.6 to +3.0) and ties LS-GBLSTSVM; the point-based models lead.", C.accent1],
+  ["!", "What we learned", "LS-GBLSTSVM (GBLSTSVM with a regulariser, single-point balls still deleted) is as good as our model under both methods. Exact GBSVM is the weakest: with large balls it often predicts one class. Next idea: put our weight on top of LS-GBLSTSVM.", C.accent2],
+].forEach(([n, h, t, color], i) => {
+  const x = 0.6 + i * 4.1, w = 3.9;
+  card(s, x, 1.6, w, 4.3);
+  badge(s, x + 0.25, 1.85, n, color, 0.55, 18);
+  s.addText(h, tx({ x: x + 0.95, y: 1.85, w: w - 1.2, h: 0.55, fontSize: 17, bold: true, color: C.text2, valign: "middle" }));
+  s.addText(t, tx({ x: x + 0.25, y: 2.65, w: w - 0.5, h: 3.1, fontSize: 14 }));
+});
+takeaway(s, "Setup: 10 splits (70/30), linear models, grids as on the settings slide; details in results/paper_tables/summary.md.");
+s.addNotes("The first full comparison in the layout of the GBLSTSVM paper: seven models, thirty-five datasets, ten splits each. Under the published style of tuning, our model has the best average rank and beats every competitor except one. That one is LS-GBLSTSVM, the regularised version from the same paper, which matches our accuracy. Under fair cross-validation the order changes: the three models that train on every point, SVM, LSTSVM and TSVM, are on top. Our model and LS-GBLSTSVM are the best of the granular-ball models and both are clearly ahead of GBLSTSVM. Two things we learned. First, a simple regulariser gives GBLSTSVM about as much as our fuzzy weight does, so the natural next step is to combine the two. Second, GBSVM solved exactly is the weakest model, because with large balls its exact solution often predicts a single class. Fair cross-validation at five, fifteen and thirty percent noise is still running.");
+
 // =====================================================================================
 // 31. References
 // =====================================================================================

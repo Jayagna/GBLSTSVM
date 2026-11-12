@@ -285,7 +285,7 @@ function ref(s, text, y = 6.88) {
 }
 // ---------------------------------------------------------------- data
 const readCsv = name => {
-  const rows = fs.readFileSync(path.join(__dirname, "data", name), "utf8").trim().split("\n");
+  const rows = fs.readFileSync(path.join(__dirname, "data", name), "utf8").trim().split(/\r?\n/);
   const h = rows[0].split(",");
   return rows.slice(1).map(l => Object.fromEntries(l.split(",").map((v, i) => [h[i], v !== "" && !isNaN(v) ? Number(v) : v])));
 };
@@ -436,7 +436,7 @@ s.addNotes("We checked the literature before claiming this is new. The three ing
 s = content("How we test", "Test setup 1: data, noise and scores");
 table(s, [
   [th("Item"), th("What we use"), th("What it means")],
-  [td("Datasets", { bold: true }), td(`${N_DATA} two-class UCI/KEEL datasets so far; 35 are running to match the paper's 34`), td("Public benchmark tables; several are imbalanced (one class is rare)")],
+  [td("Datasets", { bold: true }), td("35 two-class UCI/KEEL datasets (the GBLSTSVM paper uses 34); the wrong-label test uses 21 of them"), td("Public benchmark tables; several are imbalanced (one class is rare)")],
   [td("Split", { bold: true }), td("70% training, 30% test, stratified; repeated 10 times with seeds 0–9"), td("Stratified = both parts keep the class proportions. Results are averaged over the 10 splits")],
   [td("Scaling", { bold: true }), td("Each feature standardised with the training mean and standard deviation"), td("No information from the test part leaks into training")],
   [td("Label noise", { bold: true }), td("0, 5, 10, 15, 20% (and 30%) of training labels flipped; test labels untouched"), td("Simulates wrong labels. The same share is flipped in each class")],
@@ -509,78 +509,86 @@ takeaway(s, `The radius helps: detection rises from ${f2(cw.auc30)} to ${f2(gv.a
 s.addNotes("The first test asks a direct question: do wrongly labelled points get low weights? We flip labels ourselves, so we know the answer for every point. The score is the AUC: the chance that a flipped point gets a lower weight than a correct one. Half means guessing, one means perfect. The grey bars are a plain count of neighbouring balls with the same label, which ignores the radius. The teal bars are our radius-aware weight. Ours is better at every noise level, and the gap grows as the noise grows.");
 
 // ===================================================================================== 12. Test B: published-style protocol
-const NZ = [0, 0.05, 0.1, 0.15, 0.2];
-const rk = (m, nz, key) => RANK.find(r => r.method === m && r.noise === nz)[key];
-const MODELS = [["LSTSVM", "LSTSVM"], ["GBLSTSVM", "GBLSTSVM"], ["GBFTSVM", "GBFTSVM (fuzzy ball twin SVM)"], [OURS, "Ours (radius-aware)"]];
+const SUM = readCsv("summary.csv"), PAIR = readCsv("pairwise.csv");
+const NP = SUM[0].datasets;
+const MODELS = [["SVM", "SVM"], ["TSVM", "TSVM"], ["GBSVM", "GBSVM"], ["LSTSVM", "LSTSVM"], ["GBLSTSVM", "GBLSTSVM"], ["LS-GBLSTSVM", "LS-GBLSTSVM"], [OURS, "Ours (radius-aware)"]];
+const cell = (prot, metric, nz, m) => SUM.find(r => r.protocol === prot && r.metric === metric && r.noise === nz && r.model === m);
+const pair = (prot, metric, nz, m) => PAIR.find(r => r.protocol === prot && r.metric === metric && r.noise === nz && r.model === m);
+const noisesOf = prot => [...new Set(SUM.filter(r => r.protocol === prot).map(r => r.noise))].sort((x, y) => x - y);
+const rng = (prot, metric, m, nzs) => { const d = nzs.map(n => pair(prot, metric, n, m).mean_diff); return `${sgn(Math.min(...d))} to ${sgn(Math.max(...d))}`; };
+function scoreTable(prot, metric, nzs, x, y, w) {
+  const best = nzs.map(n => Math.max(...MODELS.map(([m]) => cell(prot, metric, n, m).mean)));
+  const rows = [[th("Model"), ...nzs.map(n => th(`${Math.round(n * 100)}%`, centre)), th("Avg rank", centre)]].concat(MODELS.map(([m, label]) => [
+    td(label, { bold: m === OURS }),
+    ...nzs.map((n, i) => { const v = cell(prot, metric, n, m).mean; return td(f1(v), Object.assign({ bold: v > best[i] - 0.05, color: m === OURS ? HEX.accent1 : HEX.dk1 }, centre)); }),
+    td(f2(nzs.reduce((a, n) => a + cell(prot, metric, n, m).avg_rank, 0) / nzs.length), Object.assign({ bold: m === OURS }, centre)),
+  ]));
+  const cw = (w - 2.6 - 1.0) / nzs.length;
+  table(s, rows, { x, y, w, colW: [2.6, ...nzs.map(() => cw), 1.0], fontSize: 12.5, rowH: 0.36 });
+}
+const NZB = noisesOf("oracle").filter(n => n <= 0.2);
 s = content("Results so far", "Test B: published-style tuning (best test score over all settings)");
-const hdr = [th("Model"), ...NZ.map(n => th(`${n * 100}%`, centre))];
-const accRows = [hdr].concat(MODELS.map(([m, label]) => [td(label, { bold: m === OURS }), ...NZ.map(n => td(f1(rk(m, n, "mean_accuracy")), Object.assign({ bold: m === OURS }, centre)))]));
-s.addText("Average accuracy (%) by label noise", tx({ x: 0.6, y: 1.5, w: 7.3, h: 0.3, fontSize: 14, bold: true, color: C.text2 }));
-table(s, accRows, { x: 0.6, y: 1.85, w: 7.3, colW: [3.3, 0.8, 0.8, 0.8, 0.8, 0.8], fontSize: 13, rowH: 0.4 });
-const gain = NZ.map(n => rk(OURS, n, "mean_accuracy") - rk("GBLSTSVM", n, "mean_accuracy"));
-stat(s, 0.6, 4.1, 3.55, 1.85, `+${f1(Math.min(...gain))} to +${f1(Math.max(...gain))}`, "accuracy points over GBLSTSVM, at every noise level", C.accent1, 26);
-stat(s, 4.35, 4.1, 3.55, 1.85, `+${f1(Math.min(...NZ.map(n => rk(OURS, n, "mean_accuracy") - rk("LSTSVM", n, "mean_accuracy"))))} to +${f1(Math.max(...NZ.map(n => rk(OURS, n, "mean_accuracy") - rk("LSTSVM", n, "mean_accuracy"))))}`, "accuracy points over plain LSTSVM", C.accent3, 26);
-setupBox(s, 8.1, 1.5, 4.6, 4.45, [
-  `${N_DATA} datasets, 10 splits (70/30), linear models.`,
+s.addText(`Average accuracy (%) by label noise, ${NP} datasets; best in each column in bold`, tx({ x: 0.6, y: 1.5, w: 7.6, h: 0.3, fontSize: 13.5, bold: true, color: C.text2 }));
+scoreTable("oracle", "accuracy", NZB, 0.6, 1.85, 7.6);
+card(s, 0.6, 4.9, 7.6, 1.15);
+s.addText(bullets([
+  `Ours beats SVM, TSVM, GBSVM, LSTSVM and GBLSTSVM at every noise level (${rng("oracle", "accuracy", "GBLSTSVM", NZB)} points over GBLSTSVM; all p < 0.01).`,
+  `LS-GBLSTSVM is level with ours on average accuracy (${rng("oracle", "accuracy", "LS-GBLSTSVM", NZB)}, not significant); ours has the better average rank.`,
+], { space: 4 }), tx({ x: 0.8, y: 5.0, w: 7.2, h: 1.0, fontSize: 12.5 }));
+setupBox(s, 8.4, 1.5, 4.3, 4.55, [
+  `${NP} datasets, 10 splits (70/30), linear models.`,
   "Every combination of settings is trained on the training part and scored on the test part; the best score per split is kept, then averaged.",
-  "Settings searched: c_1 and c_2 in 0.001…1000 (7 values each), class weighting off/on, 2–6 clusters per split.",
-  "Ours also searches k = 5, 10 and γ = 1, 3.",
-  "GBFTSVM: its own penalties 2^{−5}…2^{5}.",
-  "Caution: these numbers are optimistic for every model, because the test labels chose the settings.",
+  "LSTSVM family: c_1, c_2 in 0.001…1000, class weighting off/on, 2–6 clusters per split; ours adds k = 5, 10 and γ = 1, 3.",
+  "SVM, GBSVM: C in 0.001…1000. TSVM: C_1, C_2 in 2^{−5}…2^{5}. LS-GBLSTSVM: c_1 = c_2 and c_3 = c_4 in 0.001…1000.",
+  "Avg rank: mean rank over datasets and noise levels (1 = best).",
+  "Caution: optimistic for every model, because the test labels chose the settings.",
 ]);
-takeaway(s, "Under the tuning used in the published work, our model is ahead of LSTSVM, GBLSTSVM and the published fuzzy ball SVM.");
-s.addNotes("The second test uses the published style of tuning: try all settings and keep the best test score. The table has the same layout as Table 1 of the GBLSTSVM paper. Our model has the highest average accuracy at every noise level, about two points above GBLSTSVM and above plain LSTSVM and the published fuzzy granular-ball twin SVM. The setup box lists exactly what was searched. One caution, which applies to every model in the table: these numbers are optimistic, because the test labels were used to pick the settings. SVM, TSVM, GBSVM and LS-GBLSTSVM are being added to this table now.");
+takeaway(s, "Under the tuning used in the published work, our model has the best average rank; only LS-GBLSTSVM matches its accuracy.");
+s.addNotes("The second test uses the published style of tuning: try all settings and keep the best test score. The table has the same layout as Table 1 of the GBLSTSVM paper and the same six competitors. Our model has the best average rank. It beats SVM, TSVM, GBSVM, LSTSVM and GBLSTSVM at every noise level, and those differences are statistically significant. One competitor matches it: LS-GBLSTSVM, the regularised version from the same paper, has the same average accuracy, with no significant difference. The setup box lists exactly what was searched for each model. These numbers are optimistic for every model, because the test labels were used to pick the settings.");
 
 // ===================================================================================== 13. Test C: fair CV
-const cvr = (metric, nz) => CV.find(r => r.metric === metric && r.method === OURS && r.noise === nz);
-const NZC = [0, 0.1, 0.2, 0.3];
+const NZC = noisesOf("cv");
 s = content("Results so far", "Test C: fair cross-validation (settings chosen on training data only)");
-const cvRows = [[th("Balanced accuracy (%)"), ...NZC.map(n => th(`${n * 100}%`, centre))],
-  [td("LSTSVM"), ...NZC.map(n => td(f1(cvr("balanced_accuracy", n).mean - cvr("balanced_accuracy", n).vs_LSTSVM), centre))],
-  [td("GBLSTSVM"), ...NZC.map(n => td(f1(cvr("balanced_accuracy", n).mean - cvr("balanced_accuracy", n).vs_GBLSTSVM), centre))],
-  [td("Ours (radius-aware)", { bold: true }), ...NZC.map(n => td(f1(cvr("balanced_accuracy", n).mean), Object.assign({ bold: true }, centre)))],
-  [td("Ours − GBLSTSVM"), ...NZC.map(n => td(`${sgn(cvr("balanced_accuracy", n).vs_GBLSTSVM)} (p ${pfmt(cvr("balanced_accuracy", n).p_GBLSTSVM)})`, Object.assign({ color: HEX.accent1, bold: true }, centre)))],
-  [td("Ours − LSTSVM"), ...NZC.map(n => td(`${sgn(cvr("balanced_accuracy", n).vs_LSTSVM)} (p ${pfmt(cvr("balanced_accuracy", n).p_LSTSVM)})`, Object.assign({ color: HEX.accent2 }, centre)))],
-];
-table(s, cvRows, { x: 0.6, y: 1.55, w: 7.4, colW: [2.2, 1.3, 1.3, 1.3, 1.3], fontSize: 12, rowH: 0.42 });
-card(s, 0.6, 4.25, 7.4, 1.75);
+s.addText(`Average balanced accuracy (%) by label noise, ${NP} datasets; best in each column in bold`, tx({ x: 0.6, y: 1.5, w: 7.6, h: 0.3, fontSize: 13.5, bold: true, color: C.text2 }));
+scoreTable("cv", "balanced_accuracy", NZC, 0.6, 1.85, 7.6);
+card(s, 0.6, 4.9, 7.6, 1.15);
 s.addText(bullets([
-  "Our model beats GBLSTSVM at every noise level, by 2.7 to 4.7 points, and the difference is statistically significant.",
-  "Plain LSTSVM is still ahead up to 20% noise; at 30% the two are level.",
-  "p = chance of seeing such a difference if the two models were equally good (Wilcoxon signed-rank test over datasets); below 0.05 counts as significant.",
-], { space: 4 }), tx({ x: 0.8, y: 4.37, w: 7.0, h: 1.55, fontSize: 12.5 }));
-setupBox(s, 8.2, 1.55, 4.5, 4.45, [
-  `${N_DATA} datasets, 10 splits (70/30), linear models.`,
+  `Ours beats GBLSTSVM (${rng("cv", "balanced_accuracy", "GBLSTSVM", NZC)} points, p < 0.05) and GBSVM, and is level with LS-GBLSTSVM.`,
+  `The models trained on every point are ahead: SVM ${rng("cv", "balanced_accuracy", "SVM", NZC)}, TSVM ${rng("cv", "balanced_accuracy", "TSVM", NZC)}, LSTSVM ${rng("cv", "balanced_accuracy", "LSTSVM", NZC)} (ours minus theirs). The gap shrinks as noise grows.`,
+], { space: 4 }), tx({ x: 0.8, y: 5.0, w: 7.2, h: 1.0, fontSize: 12.5 }));
+setupBox(s, 8.4, 1.5, 4.3, 4.55, [
+  `${NP} datasets, 10 splits (70/30), linear models.`,
   "Settings chosen by 5-fold cross-validation on the training part (best mean balanced accuracy), then one retrain and one test score.",
-  "Same grids as Test B: c_1, c_2 in 0.001…1000; class weighting off/on; 2–6 clusters per split; ours adds k = 5, 10 and γ = 1, 3.",
-  "Noise levels 0, 10, 20, 30% (5 and 15% are running).",
+  "Same grids as Test B for every model.",
+  `Noise levels shown: ${NZC.map(n => Math.round(n * 100) + "%").join(", ")}${NZC.length < 6 ? " (the rest are running)" : ""}.`,
+  "Balanced accuracy = mean of the accuracy on each class; fairer when one class is rare.",
 ]);
-takeaway(s, "Honest numbers: a clear gain over GBLSTSVM; training on every point (LSTSVM) is still better at low noise.");
-s.addNotes("The third test is the honest one. Settings are chosen by cross-validation on the training part only. Our model still beats GBLSTSVM clearly, by about three to five points of balanced accuracy, and the difference is statistically significant at every noise level. But plain LSTSVM, which trains on every point, is ahead of our model up to twenty percent noise, and level at thirty percent. We will say this openly in the paper. It is part of the evaluation message: the granular-ball models look better than LSTSVM only under the published style of tuning.");
+takeaway(s, "Honest numbers: best of the granular-ball models with LS-GBLSTSVM, but point-based SVMs are still ahead.");
+s.addNotes("The third test is the honest one. Settings are chosen by cross-validation on the training part only, and the test part is used once. Among the models that train on granular balls, ours and LS-GBLSTSVM are the best, clearly ahead of GBLSTSVM and GBSVM. But the three models that train on every point, SVM, TSVM and LSTSVM, are ahead of all the granular-ball models, by two to four points on clean data. The gap gets smaller as the label noise grows. We will say this openly in the paper. It is the evaluation message: the ranking of the published tables holds only under the published style of tuning.");
 
 // ===================================================================================== 14. Competitors
 s = content("Work in progress", "The competitors, as in the GBLSTSVM paper");
 table(s, mt([
   [th("Model"), th("What it is, in one line"), th("Settings we search"), th("Status")],
-  [td(`SVM ${R("svm")}`, { bold: true }), td("One separating line with the widest margin, trained on the points"), td("C in 0.001…1000; class weighting off/on"), td("running")],
-  [td(`TSVM ${R("tsvm")}`, { bold: true }), td("Twin SVM: two lines, each found by a small optimisation, on the points"), td("C_1, C_2 in 2^{−5}…2^{5}; class weighting off/on"), td("running")],
-  [td(`GBSVM ${R("gbsvm")}`, { bold: true }), td("SVM trained on granular balls"), td("C in 0.001…1000; 2–6 clusters; class weighting off/on"), td("running; see note")],
-  [td(`LSTSVM ${R("lstsvm")}`, { bold: true }), td("Least squares twin SVM on the points"), td("c_1, c_2 in 0.001…1000; class weighting off/on"), td("done (21), 14 more running")],
-  [td(`GBLSTSVM ${R("gblstsvm")}`, { bold: true }), td("LSTSVM on balls, single-point balls deleted"), td("as LSTSVM, plus 2–6 clusters"), td("done (21), 14 more running")],
-  [td(`LS-GBLSTSVM ${R("gblstsvm")}`, { bold: true }), td("GBLSTSVM with an extra term that keeps the line's coefficients small"), td("c_1 = c_2 and c_3 = c_4 in 0.001…1000; 2–6 clusters"), td("running")],
-  [td("Ours", { bold: true, color: HEX.accent1 }), td("GBLSTSVM with all balls kept and the radius-aware fuzzy weight"), td("as GBLSTSVM, plus k = 5, 10 and γ = 1, 3"), td("done (21), 14 more running")],
+  [td(`SVM ${R("svm")}`, { bold: true }), td("One separating line with the widest margin, trained on the points"), td("C in 0.001…1000; class weighting off/on"), td("done")],
+  [td(`TSVM ${R("tsvm")}`, { bold: true }), td("Twin SVM: two lines, each found by a small optimisation, on the points"), td("C_1, C_2 in 2^{−5}…2^{5}; class weighting off/on"), td("done")],
+  [td(`GBSVM ${R("gbsvm")}`, { bold: true }), td("SVM trained on granular balls"), td("C in 0.001…1000; 2–6 clusters; class weighting off/on"), td("done; see note")],
+  [td(`LSTSVM ${R("lstsvm")}`, { bold: true }), td("Least squares twin SVM on the points"), td("c_1, c_2 in 0.001…1000; class weighting off/on"), td("done")],
+  [td(`GBLSTSVM ${R("gblstsvm")}`, { bold: true }), td("LSTSVM on balls, single-point balls deleted"), td("as LSTSVM, plus 2–6 clusters"), td("done")],
+  [td(`LS-GBLSTSVM ${R("gblstsvm")}`, { bold: true }), td("GBLSTSVM with an extra term that keeps the line's coefficients small"), td("c_1 = c_2 and c_3 = c_4 in 0.001…1000; 2–6 clusters"), td("done")],
+  [td("Ours", { bold: true, color: HEX.accent1 }), td("GBLSTSVM with all balls kept and the radius-aware fuzzy weight"), td("as GBLSTSVM, plus k = 5, 10 and γ = 1, 3"), td("done")],
 ]), { x: 0.6, y: 1.55, w: 12.1, colW: [2.0, 4.6, 3.6, 1.9], fontSize: 12, rowH: 0.5 });
 card(s, 0.6, 5.7, 12.1, 0.42, { fill: C.background1, line: C.accent6 });
-s.addText("Note on GBSVM: the papers solve it with a random search (particle swarm). We solve it exactly; first checks show the exact solution often collapses to one class, so we are checking how to report it fairly.", tx({ x: 0.75, y: 5.72, w: 11.8, h: 0.38, fontSize: 11, color: C.accent6, valign: "middle" }));
-takeaway(s, "All models run on the same splits, the same noisy labels and under both tuning methods.");
+s.addText("Note on GBSVM: the papers solve it with a random search (particle swarm). We solve it exactly. With large balls the exact solution often predicts a single class, which is why its scores are low.", tx({ x: 0.75, y: 5.72, w: 11.8, h: 0.38, fontSize: 11, color: C.accent6, valign: "middle" }));
+takeaway(s, "All models run on the same splits, the same noisy labels and under both tuning methods (fair CV at 5, 15, 30% noise still running).");
 s.addNotes("The paper we follow compares against six models, and so will we. SVM and TSVM train on the points. GBSVM, GBLSTSVM and LS-GBLSTSVM train on granular balls. The table says in one line what each model is, which settings we search for it, and where the runs stand. Everything runs on the same splits and the same noisy labels, so the comparison is paired.");
 
 // ===================================================================================== 15. Next steps
 s = content("Work in progress", "Where we stand and what comes next");
 three(s, [
-  ["✓", "Done", "Model defined and coded. Novelty checked. Wrong-label detection test. Both tuning methods on 21 datasets against LSTSVM, GBLSTSVM and GBFTSVM.", C.accent1],
-  ["…", "Running now", "The four remaining competitors (SVM, TSVM, GBSVM, LS-GBLSTSVM). 14 more datasets, to reach 35. Fair CV at 5% and 15% noise.", C.accent5],
-  ["→", "Next", "Gaussian-kernel version of our model. Large-scale NDC datasets. Friedman, Wilcoxon and win-tie-loss tables. Sensitivity of k and γ. Then the paper draft.", C.accent3],
+  ["✓", "Done", "Model defined and coded. Novelty checked. Wrong-label detection test. All six competitors coded. Published-style tuning on 35 datasets at six noise levels. Fair CV at 0, 10, 20% noise.", C.accent1],
+  ["…", "Running now", "Fair CV at 5, 15 and 30% noise on the 35 datasets.", C.accent5],
+  ["→", "Next", "Our weight on top of LS-GBLSTSVM (the strongest ball model). Gaussian-kernel version. Large-scale NDC datasets. Friedman and win-tie-loss tables. Sensitivity of k and γ. Then the paper draft.", C.accent3],
 ]);
 takeaway(s, "This deck is updated with every new result; dropped ideas are recorded in the post-midsem deck.");
 s.addNotes("Where we are. The model, the novelty check and the first three tests are done on twenty-one datasets. Running now are the four remaining competitors from the GBLSTSVM paper, fourteen more datasets, and the two missing noise levels for cross-validation. After that come the kernel version, the large-scale datasets, the statistical tests and the sensitivity analysis, and then the draft of the paper.");
