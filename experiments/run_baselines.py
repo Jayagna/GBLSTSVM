@@ -14,6 +14,8 @@ Models and grids
   TSVM         twin SVM of Jayadeva et al. on the samples (gbftsvm.py's exact dual solver with
                zero radii and unit scores); C1 = C3, C2 = C4 in 2^-5..2^5; class weighting off/on.
   GBSVM        gbsvm.py (exact conic solve) on GBLSTSVM's balls; k, C in C_GRID; class weighting off/on.
+  LS-keep, LS-keep+gapvote  LS-GBLSTSVM with single-point balls kept, without and with the
+               radius-aware fuzzy weight (k, gamma as in run_fuzzy_cv); not run by default.
   LS-GBLSTSVM  GBLSTSVM with the regulariser c3/2 (||w||^2 + b^2) (paper eq. 26-27, solved in the
                primal, which has the same optimum as the paper's dual); c1 = c2 and c3 = c4 as in
                the paper, both in C_GRID; k; class weighting off/on.
@@ -53,7 +55,8 @@ from gbftsvm import twin_planes_over_grid  # noqa: E402
 from gbsvm import GBSVMProblem  # noqa: E402
 from GBLSTSVM import gb_decision_scores, solve_gb_planes  # noqa: E402
 
-METHODS = ["SVM", "TSVM", "GBSVM", "LS-GBLSTSVM"]
+METHODS = ["SVM", "TSVM", "GBSVM", "LS-GBLSTSVM", "LS-keep", "LS-keep+gapvote"]
+GAPVOTE = rfc.METHOD_INDEX["Keep+gapvote"]  # (name, ball set, membership(ball set, param), grid)
 C_GRID = rfc.C_GRID
 
 
@@ -97,21 +100,26 @@ def gbsvm_scores(bs, k, Xs):
     return out
 
 
-def lsgb_scores(bs, k, Xs):
+def lsgb_scores(bs, k, Xs, memberships=None):
+    """LS-GBLSTSVM on one ball set. memberships = {param: per-ball fuzzy weight} multiplies the
+    slack term as in run_fuzzy_cv.fit_planes; None means weight 1 (config param None)."""
     pos = bs["labels"] == 1
     neg = ~pos
+    memberships = memberships or {None: np.ones(len(pos))}
     out = {}
     for imb in rfc.IMB_GRID:
         w1 = np.full(int(np.sum(pos)), pos_weight(bs) if imb else 1.0)
         w2 = np.ones(int(np.sum(neg)))
-        for c in C_GRID:
-            for c3 in C_GRID:
-                try:
-                    planes = solve_gb_planes(bs["centers"][pos], bs["radii"][pos], bs["centers"][neg], bs["radii"][neg],
-                                             c, c, w1, w1, w2, w2, reg_term=c3 / c)
-                except np.linalg.LinAlgError:
-                    continue
-                out[(k, imb, c, c3)] = [gb_decision_scores(Z, *planes) for Z in Xs]
+        for p, memb in memberships.items():
+            for c in C_GRID:
+                for c3 in C_GRID:
+                    try:
+                        planes = solve_gb_planes(bs["centers"][pos], bs["radii"][pos], bs["centers"][neg], bs["radii"][neg],
+                                                 c, c, w1, w1 * memb[pos], w2, w2 * memb[neg], reg_term=c3 / c)
+                    except np.linalg.LinAlgError:
+                        continue
+                    key = (k, imb, c, c3) if p is None else (k, imb, c, c3, p)
+                    out[key] = [gb_decision_scores(Z, *planes) for Z in Xs]
     return out
 
 
@@ -122,15 +130,18 @@ def all_scores(train, k_values, Xs, methods):
         res["SVM"] = svm_scores(train, Xs)
     if "TSVM" in methods:
         res["TSVM"] = tsvm_scores(train, Xs)
-    if "GBSVM" in methods or "LS-GBLSTSVM" in methods:
+    if set(methods) - {"SVM", "TSVM"}:
         for k in k_values:
-            bs = build_ball_sets(train, k).get("gb")
-            if bs is None:
-                continue
-            if "GBSVM" in methods:
+            sets = build_ball_sets(train, k)
+            bs, bs_all = sets.get("gb"), sets.get("gb_all")
+            if bs is not None and "GBSVM" in methods:
                 res["GBSVM"].update(gbsvm_scores(bs, k, Xs))
-            if "LS-GBLSTSVM" in methods:
+            if bs is not None and "LS-GBLSTSVM" in methods:
                 res["LS-GBLSTSVM"].update(lsgb_scores(bs, k, Xs))
+            if bs_all is not None and "LS-keep" in methods:  # single-point balls kept, no weight
+                res["LS-keep"].update(lsgb_scores(bs_all, k, Xs))
+            if bs_all is not None and "LS-keep+gapvote" in methods:  # kept balls + radius-aware weight + regulariser
+                res["LS-keep+gapvote"].update(lsgb_scores(bs_all, k, Xs, {p: GAPVOTE[2](bs_all, p) for p in GAPVOTE[3]}))
     return res
 
 
@@ -198,7 +209,7 @@ def main():
     ap.add_argument("--k-values", nargs="+", type=int, default=[2, 3, 4, 5, 6])
     ap.add_argument("--out", default=str(ROOT / "results" / "baselines"))
     ap.add_argument("--jobs", type=int, default=os.cpu_count() or 1)
-    ap.add_argument("--methods", nargs="+", default=METHODS, choices=METHODS)
+    ap.add_argument("--methods", nargs="+", default=METHODS[:4], choices=METHODS)
     args = ap.parse_args()
     files = {p.stem: p for p in discover_datasets(str(ROOT / "Data"))}
     tasks = [(str(files[d]), nz, list(range(args.repeats)), args.folds, args.k_values, args.out, args.methods)
