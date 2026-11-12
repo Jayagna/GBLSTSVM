@@ -1136,6 +1136,22 @@ s = content(BK, "Putting our weight on LS-GBLSTSVM gives the best model so far",
 takeaway(s, "The proposed model is now: LS-GBLSTSVM + all balls kept + radius-aware fuzzy weight.");
 s.addNotes("Because LS-GBLSTSVM matched our model, we combined the two ideas. The proposed model now keeps the regulariser of LS-GBLSTSVM, keeps all balls, and adds the radius-aware weight. Under the published style of tuning it is first at every noise level and significantly ahead of all six competitors, including LS-GBLSTSVM. Under fair cross-validation it is ahead of SVM, TSVM and LSTSVM in accuracy from five percent noise upwards, while plain SVM is still ahead on clean data. On balanced accuracy it is the best granular-ball model, with SVM ahead at low noise. The thirty percent noise runs for this model are still finishing.");
 
+// ---- Gaussian kernel, 12 Nov
+s = content(BK, "Gaussian kernel: the same ranking as the linear models", "Results, 12 Nov (kernel)");
+[
+  ["1", "Setup", "All seven models with a Gaussian kernel (experiments/run_baselines.py --kernel; results/kernel). 35 datasets, 5 splits, noise 0/10/20%, kernel width g / features with g in 0.25, 1, 4, and 2, 4 or 6 clusters per split. Fewer splits and noise levels than the linear runs because kernel runs are slow (about 9 hours of computing).", C.accent3],
+  ["2", "Published-style tuning", "Accuracy at 0/10/20% noise: ours 91.9/91.1/90.2; LS-GBLSTSVM 90.9/90.5/89.7; SVM 90.8/89.9/88.6; LSTSVM 90.8/88.9/86.7; GBLSTSVM 90.3/89.8/88.8; TSVM 90.7/89.1/86.5; GBSVM 79.0/80.9/80.7. Ours beats all six (p ≤ 0.006).", C.accent5],
+  ["3", "Fair cross-validation", "Balanced accuracy: SVM 82.6/80.2/75.7; ours 81.9/78.8/73.9; LSTSVM 81.3/74.9/69.5; LS-GBLSTSVM 78.8/76.3/72.3; TSVM 78.4/77.2/71.1; GBLSTSVM 77.6/74.2/70.3. Ours is second, behind SVM by 0.8 to 1.8. On plain accuracy kernel TSVM and SVM lead by 1 to 3 points.", C.accent1],
+].forEach(([n, h, t, color], i) => {
+  const x = 0.6 + i * 4.1, w = 3.9;
+  card(s, x, 1.6, w, 4.3);
+  badge(s, x + 0.25, 1.85, n, color, 0.55, 18);
+  s.addText(h, tx({ x: x + 0.95, y: 1.85, w: w - 1.2, h: 0.55, fontSize: 17, bold: true, color: C.text2, valign: "middle" }));
+  s.addText(t, tx({ x: x + 0.25, y: 2.65, w: w - 0.5, h: 3.1, fontSize: 14 }));
+});
+takeaway(s, "Kernel GBSVM solved exactly is far behind (it often predicts one class); every other finding carries over from the linear runs.");
+s.addNotes("The same seven models with a Gaussian kernel. Because kernel runs are slow, this test uses five splits and three noise levels. Under the published style of tuning our model is first at every noise level and significantly ahead of all six competitors. Under fair cross-validation it is second on balanced accuracy, behind the kernel SVM by one to two points and ahead of every other model, including LSTSVM and LS-GBLSTSVM. On plain accuracy under fair cross-validation, kernel TSVM and SVM are ahead by one to three points. So the kernel results repeat the linear ones.");
+
 // =====================================================================================
 // 31. References
 // =====================================================================================
