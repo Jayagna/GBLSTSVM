@@ -1,0 +1,627 @@
+{
+ "dataset": "pima",
+ "noise": 0.3,
+ "repeats": [
+  {
+   "repeat": 0,
+   "cv_folds": 5,
+   "methods": {
+    "SVM": {
+     "cv_balanced_accuracy": 75.46913580246914,
+     "cv_accuracy": 76.62337662337663,
+     "cv_config": [
+      0,
+      true,
+      10.0,
+      null
+     ],
+     "cv_score": 0.5643256598069992,
+     "oracle_balanced_accuracy": 75.46913580246914,
+     "oracle_accuracy": 78.78787878787878,
+     "n_configs": 14
+    },
+    "TSVM": {
+     "cv_balanced_accuracy": 73.01234567901234,
+     "cv_accuracy": 67.53246753246754,
+     "cv_config": [
+      0,
+      false,
+      0.5,
+      1.0
+     ],
+     "cv_score": 0.5811731194047203,
+     "oracle_balanced_accuracy": 76.8888888888889,
+     "oracle_accuracy": 78.78787878787878,
+     "n_configs": 242
+    },
+    "GBSVM": {
+     "cv_balanced_accuracy": 50.0,
+     "cv_accuracy": 35.064935064935064,
+     "cv_config": [
+      6,
+      true,
+      10.0,
+      null
+     ],
+     "cv_score": 0.5341088245552843,
+     "oracle_balanced_accuracy": 50.0,
+     "oracle_accuracy": 64.93506493506493,
+     "n_configs": 68
+    },
+    "LS-GBLSTSVM": {
+     "cv_balanced_accuracy": 66.48148148148148,
+     "cv_accuracy": 67.53246753246754,
+     "cv_config": [
+      6,
+      true,
+      10.0,
+      1000.0
+     ],
+     "cv_score": 0.5933897221253343,
+     "oracle_balanced_accuracy": 77.45679012345678,
+     "oracle_accuracy": 77.48917748917748,
+     "n_configs": 490
+    }
+   }
+  },
+  {
+   "repeat": 1,
+   "cv_folds": 5,
+   "methods": {
+    "SVM": {
+     "cv_balanced_accuracy": 69.4320987654321,
+     "cv_accuracy": 70.995670995671,
+     "cv_config": [
+      0,
+      true,
+      0.1,
+      null
+     ],
+     "cv_score": 0.6040111614928497,
+     "oracle_balanced_accuracy": 71.0493827160494,
+     "oracle_accuracy": 74.89177489177489,
+     "n_configs": 14
+    },
+    "TSVM": {
+     "cv_balanced_accuracy": 71.0493827160494,
+     "cv_accuracy": 72.72727272727273,
+     "cv_config": [
+      0,
+      true,
+      0.5,
+      0.5
+     ],
+     "cv_score": 0.6028054877339845,
+     "oracle_balanced_accuracy": 71.85185185185186,
+     "oracle_accuracy": 74.02597402597402,
+     "n_configs": 242
+    },
+    "GBSVM": {
+     "cv_balanced_accuracy": 50.0,
+     "cv_accuracy": 35.064935064935064,
+     "cv_config": [
+      5,
+      true,
+      1.0,
+      null
+     ],
+     "cv_score": 0.5312091617253808,
+     "oracle_balanced_accuracy": 69.27160493827161,
+     "oracle_accuracy": 70.12987012987013,
+     "n_configs": 69
+    },
+    "LS-GBLSTSVM": {
+     "cv_balanced_accuracy": 68.77777777777779,
+     "cv_accuracy": 72.72727272727273,
+     "cv_config": [
+      4,
+      true,
+      1.0,
+      0.001
+     ],
+     "cv_score": 0.6133455412161377,
+     "oracle_balanced_accuracy": 71.14814814814815,
+     "oracle_accuracy": 75.32467532467533,
+     "n_configs": 490
+    }
+   }
+  },
+  {
+   "repeat": 2,
+   "cv_folds": 5,
+   "methods": {
+    "SVM": {
+     "cv_balanced_accuracy": 71.86419753086419,
+     "cv_accuracy": 74.89177489177489,
+     "cv_config": [
+      0,
+      true,
+      0.01,
+      null
+     ],
+     "cv_score": 0.5715730728985002,
+     "oracle_balanced_accuracy": 73.38271604938271,
+     "oracle_accuracy": 75.75757575757575,
+     "n_configs": 14
+    },
+    "TSVM": {
+     "cv_balanced_accuracy": 69.69135802469135,
+     "cv_accuracy": 75.75757575757575,
+     "cv_config": [
+      0,
+      false,
+      0.5,
+      0.03125
+     ],
+     "cv_score": 0.5773363562376469,
+     "oracle_balanced_accuracy": 71.24691358024691,
+     "oracle_accuracy": 75.75757575757575,
+     "n_configs": 242
+    },
+    "GBSVM": {
+     "cv_balanced_accuracy": 61.85185185185185,
+     "cv_accuracy": 69.26406926406926,
+     "cv_config": [
+      6,
+      true,
+      10.0,
+      null
+     ],
+     "cv_score": 0.5133687943262412,
+     "oracle_balanced_accuracy": 61.85185185185185,
+     "oracle_accuracy": 69.26406926406926,
+     "n_configs": 69
+    },
+    "LS-GBLSTSVM": {
+     "cv_balanced_accuracy": 60.82716049382716,
+     "cv_accuracy": 62.77056277056276,
+     "cv_config": [
+      5,
+      true,
+      0.1,
+      0.1
+     ],
+     "cv_score": 0.5625311010347633,
+     "oracle_balanced_accuracy": 71.66666666666667,
+     "oracle_accuracy": 75.32467532467533,
+     "n_configs": 490
+    }
+   }
+  },
+  {
+   "repeat": 3,
+   "cv_folds": 5,
+   "methods": {
+    "SVM": {
+     "cv_balanced_accuracy": 71.0493827160494,
+     "cv_accuracy": 72.72727272727273,
+     "cv_config": [
+      0,
+      true,
+      10.0,
+      null
+     ],
+     "cv_score": 0.615585397046855,
+     "oracle_balanced_accuracy": 72.33333333333334,
+     "oracle_accuracy": 74.45887445887446,
+     "n_configs": 14
+    },
+    "TSVM": {
+     "cv_balanced_accuracy": 70.33333333333334,
+     "cv_accuracy": 71.42857142857143,
+     "cv_config": [
+      0,
+      false,
+      0.03125,
+      0.5
+     ],
+     "cv_score": 0.6175113358911755,
+     "oracle_balanced_accuracy": 73.50617283950618,
+     "oracle_accuracy": 73.59307359307358,
+     "n_configs": 242
+    },
+    "GBSVM": {
+     "cv_balanced_accuracy": 69.49382716049382,
+     "cv_accuracy": 64.06926406926407,
+     "cv_config": [
+      6,
+      true,
+      10.0,
+      null
+     ],
+     "cv_score": 0.57018428089757,
+     "oracle_balanced_accuracy": 70.87654320987654,
+     "oracle_accuracy": 71.42857142857143,
+     "n_configs": 67
+    },
+    "LS-GBLSTSVM": {
+     "cv_balanced_accuracy": 68.48148148148148,
+     "cv_accuracy": 70.12987012987013,
+     "cv_config": [
+      6,
+      true,
+      0.1,
+      0.1
+     ],
+     "cv_score": 0.622350308103709,
+     "oracle_balanced_accuracy": 71.33333333333334,
+     "oracle_accuracy": 74.02597402597402,
+     "n_configs": 490
+    }
+   }
+  },
+  {
+   "repeat": 4,
+   "cv_folds": 5,
+   "methods": {
+    "SVM": {
+     "cv_balanced_accuracy": 62.81481481481481,
+     "cv_accuracy": 62.77056277056276,
+     "cv_config": [
+      0,
+      true,
+      0.01,
+      null
+     ],
+     "cv_score": 0.5707632833391465,
+     "oracle_balanced_accuracy": 68.80246913580247,
+     "oracle_accuracy": 69.26406926406926,
+     "n_configs": 14
+    },
+    "TSVM": {
+     "cv_balanced_accuracy": 62.75308641975308,
+     "cv_accuracy": 59.74025974025974,
+     "cv_config": [
+      0,
+      false,
+      0.03125,
+      0.03125
+     ],
+     "cv_score": 0.5750517381699802,
+     "oracle_balanced_accuracy": 68.46913580246914,
+     "oracle_accuracy": 68.83116883116884,
+     "n_configs": 242
+    },
+    "GBSVM": {
+     "cv_balanced_accuracy": 50.0,
+     "cv_accuracy": 64.93506493506493,
+     "cv_config": [
+      2,
+      false,
+      0.001,
+      null
+     ],
+     "cv_score": 0.5,
+     "oracle_balanced_accuracy": 50.0,
+     "oracle_accuracy": 64.93506493506493,
+     "n_configs": 69
+    },
+    "LS-GBLSTSVM": {
+     "cv_balanced_accuracy": 68.23456790123457,
+     "cv_accuracy": 67.96536796536796,
+     "cv_config": [
+      6,
+      true,
+      0.1,
+      100.0
+     ],
+     "cv_score": 0.5868811766073712,
+     "oracle_balanced_accuracy": 71.12345679012347,
+     "oracle_accuracy": 71.86147186147186,
+     "n_configs": 490
+    }
+   }
+  },
+  {
+   "repeat": 5,
+   "cv_folds": 5,
+   "methods": {
+    "SVM": {
+     "cv_balanced_accuracy": 71.1358024691358,
+     "cv_accuracy": 70.995670995671,
+     "cv_config": [
+      0,
+      true,
+      10.0,
+      null
+     ],
+     "cv_score": 0.5953185676084176,
+     "oracle_balanced_accuracy": 74.37037037037038,
+     "oracle_accuracy": 75.75757575757575,
+     "n_configs": 14
+    },
+    "TSVM": {
+     "cv_balanced_accuracy": 72.17283950617283,
+     "cv_accuracy": 70.12987012987013,
+     "cv_config": [
+      0,
+      true,
+      0.5,
+      0.5
+     ],
+     "cv_score": 0.595782467154982,
+     "oracle_balanced_accuracy": 73.88888888888889,
+     "oracle_accuracy": 75.32467532467533,
+     "n_configs": 242
+    },
+    "GBSVM": {
+     "cv_balanced_accuracy": 72.98765432098766,
+     "cv_accuracy": 72.2943722943723,
+     "cv_config": [
+      6,
+      true,
+      1.0,
+      null
+     ],
+     "cv_score": 0.5345756307406117,
+     "oracle_balanced_accuracy": 73.32098765432099,
+     "oracle_accuracy": 72.72727272727273,
+     "n_configs": 65
+    },
+    "LS-GBLSTSVM": {
+     "cv_balanced_accuracy": 71.4074074074074,
+     "cv_accuracy": 68.3982683982684,
+     "cv_config": [
+      5,
+      true,
+      0.1,
+      0.1
+     ],
+     "cv_score": 0.5887640971980003,
+     "oracle_balanced_accuracy": 75.0246913580247,
+     "oracle_accuracy": 75.75757575757575,
+     "n_configs": 490
+    }
+   }
+  },
+  {
+   "repeat": 6,
+   "cv_folds": 5,
+   "methods": {
+    "SVM": {
+     "cv_balanced_accuracy": 75.90123456790123,
+     "cv_accuracy": 77.92207792207793,
+     "cv_config": [
+      0,
+      true,
+      100.0,
+      null
+     ],
+     "cv_score": 0.5867532845018021,
+     "oracle_balanced_accuracy": 77.85185185185186,
+     "oracle_accuracy": 81.38528138528139,
+     "n_configs": 14
+    },
+    "TSVM": {
+     "cv_balanced_accuracy": 75.24691358024691,
+     "cv_accuracy": 79.65367965367966,
+     "cv_config": [
+      0,
+      true,
+      0.5,
+      0.03125
+     ],
+     "cv_score": 0.5789815137774678,
+     "oracle_balanced_accuracy": 76.09876543209877,
+     "oracle_accuracy": 79.65367965367966,
+     "n_configs": 242
+    },
+    "GBSVM": {
+     "cv_balanced_accuracy": 50.0,
+     "cv_accuracy": 64.93506493506493,
+     "cv_config": [
+      6,
+      true,
+      1.0,
+      null
+     ],
+     "cv_score": 0.5203191489361702,
+     "oracle_balanced_accuracy": 50.0,
+     "oracle_accuracy": 64.93506493506493,
+     "n_configs": 66
+    },
+    "LS-GBLSTSVM": {
+     "cv_balanced_accuracy": 70.59259259259258,
+     "cv_accuracy": 76.19047619047619,
+     "cv_config": [
+      6,
+      false,
+      0.001,
+      1000.0
+     ],
+     "cv_score": 0.606073712359028,
+     "oracle_balanced_accuracy": 80.22222222222221,
+     "oracle_accuracy": 81.38528138528139,
+     "n_configs": 490
+    }
+   }
+  },
+  {
+   "repeat": 7,
+   "cv_folds": 5,
+   "methods": {
+    "SVM": {
+     "cv_balanced_accuracy": 68.01234567901236,
+     "cv_accuracy": 70.995670995671,
+     "cv_config": [
+      0,
+      true,
+      0.01,
+      null
+     ],
+     "cv_score": 0.582099755842344,
+     "oracle_balanced_accuracy": 70.71604938271605,
+     "oracle_accuracy": 72.2943722943723,
+     "n_configs": 14
+    },
+    "TSVM": {
+     "cv_balanced_accuracy": 61.283950617283956,
+     "cv_accuracy": 69.26406926406926,
+     "cv_config": [
+      0,
+      false,
+      0.5,
+      0.03125
+     ],
+     "cv_score": 0.5719788396698059,
+     "oracle_balanced_accuracy": 71.25925925925927,
+     "oracle_accuracy": 73.16017316017316,
+     "n_configs": 242
+    },
+    "GBSVM": {
+     "cv_balanced_accuracy": 50.0,
+     "cv_accuracy": 35.064935064935064,
+     "cv_config": [
+      6,
+      true,
+      10.0,
+      null
+     ],
+     "cv_score": 0.5546808510638298,
+     "oracle_balanced_accuracy": 50.0,
+     "oracle_accuracy": 64.93506493506493,
+     "n_configs": 68
+    },
+    "LS-GBLSTSVM": {
+     "cv_balanced_accuracy": 65.5432098765432,
+     "cv_accuracy": 69.26406926406926,
+     "cv_config": [
+      4,
+      false,
+      0.01,
+      0.1
+     ],
+     "cv_score": 0.5789053598418787,
+     "oracle_balanced_accuracy": 71.83950617283949,
+     "oracle_accuracy": 74.45887445887446,
+     "n_configs": 490
+    }
+   }
+  },
+  {
+   "repeat": 8,
+   "cv_folds": 5,
+   "methods": {
+    "SVM": {
+     "cv_balanced_accuracy": 70.61728395061728,
+     "cv_accuracy": 71.42857142857143,
+     "cv_config": [
+      0,
+      true,
+      0.01,
+      null
+     ],
+     "cv_score": 0.5606696895709801,
+     "oracle_balanced_accuracy": 71.75308641975309,
+     "oracle_accuracy": 71.86147186147186,
+     "n_configs": 14
+    },
+    "TSVM": {
+     "cv_balanced_accuracy": 56.8641975308642,
+     "cv_accuracy": 45.45454545454545,
+     "cv_config": [
+      0,
+      false,
+      0.5,
+      1.0
+     ],
+     "cv_score": 0.5451842808975701,
+     "oracle_balanced_accuracy": 70.46913580246914,
+     "oracle_accuracy": 71.86147186147186,
+     "n_configs": 242
+    },
+    "GBSVM": {
+     "cv_balanced_accuracy": 50.0,
+     "cv_accuracy": 64.93506493506493,
+     "cv_config": [
+      2,
+      false,
+      0.001,
+      null
+     ],
+     "cv_score": 0.5,
+     "oracle_balanced_accuracy": 50.0,
+     "oracle_accuracy": 64.93506493506493,
+     "n_configs": 67
+    },
+    "LS-GBLSTSVM": {
+     "cv_balanced_accuracy": 60.5679012345679,
+     "cv_accuracy": 58.00865800865801,
+     "cv_config": [
+      6,
+      false,
+      0.001,
+      0.001
+     ],
+     "cv_score": 0.5712998488547842,
+     "oracle_balanced_accuracy": 73.85185185185186,
+     "oracle_accuracy": 74.89177489177489,
+     "n_configs": 490
+    }
+   }
+  },
+  {
+   "repeat": 9,
+   "cv_folds": 5,
+   "methods": {
+    "SVM": {
+     "cv_balanced_accuracy": 72.39506172839506,
+     "cv_accuracy": 77.05627705627705,
+     "cv_config": [
+      0,
+      false,
+      0.1,
+      null
+     ],
+     "cv_score": 0.5966294616905011,
+     "oracle_balanced_accuracy": 75.03703703703704,
+     "oracle_accuracy": 77.05627705627705,
+     "n_configs": 14
+    },
+    "TSVM": {
+     "cv_balanced_accuracy": 72.34567901234567,
+     "cv_accuracy": 76.62337662337663,
+     "cv_config": [
+      0,
+      false,
+      0.5,
+      0.5
+     ],
+     "cv_score": 0.5888937332868271,
+     "oracle_balanced_accuracy": 75.24691358024691,
+     "oracle_accuracy": 76.62337662337663,
+     "n_configs": 242
+    },
+    "GBSVM": {
+     "cv_balanced_accuracy": 73.12345679012347,
+     "cv_accuracy": 70.995670995671,
+     "cv_config": [
+      4,
+      true,
+      10.0,
+      null
+     ],
+     "cv_score": 0.5270172073014765,
+     "oracle_balanced_accuracy": 73.64197530864197,
+     "oracle_accuracy": 70.995670995671,
+     "n_configs": 69
+    },
+    "LS-GBLSTSVM": {
+     "cv_balanced_accuracy": 73.98765432098766,
+     "cv_accuracy": 73.59307359307358,
+     "cv_config": [
+      4,
+      false,
+      0.001,
+      0.001
+     ],
+     "cv_score": 0.6049284966864319,
+     "oracle_balanced_accuracy": 75.77777777777777,
+     "oracle_accuracy": 77.48917748917748,
+     "n_configs": 490
+    }
+   }
+  }
+ ],
+ "elapsed_sec": 170.3574094772339
+}
