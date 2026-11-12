@@ -870,6 +870,40 @@ s = content(BK, "Backup plan: tune every model on the test set, as the papers do
 takeaway(s, "Pitch it as \"scored the way the published granular-ball numbers were\", never as a fair test.");
 s.addNotes("This section is the backup plan, in case the professor does not want an evaluation paper. The question is: if we simply score our fuzzy models the way the published numbers were produced, do they beat GBLSTSVM? The protocol is simple. Split the data once into 70% training and 30% test. Train the model with every combination of settings, and report the best score it gets on the test part. There is no cross-validation. I ran 13 models this way on the same 21 datasets and noise levels as before. To make the averages steadier I repeated it on 10 different splits, and I also report the first split alone, which is exactly one split as in the paper's code. Why is this a fair backup? Because, as the earlier slides showed, the GBLSTSVM paper's numbers match this protocol and not honest cross-validation, and the GBFTSVM paper does it openly. So our models are compared like for like. The catch is that the test data is choosing the settings, so every number is too optimistic, and a model with more settings to try has more lottery tickets. We should say this ourselves rather than wait for a reviewer to find it.");
 
+// ---- 24. Every setting of the test-only run
+s = content(BK, "The test-only setup: every setting", "Settings, 11 Nov");
+const kv = (rows, o) => table(s, [[th(o.head[0]), th(o.head[1])], ...rows.map(([k, v]) => [td(k, { bold: true }), td(v)])], Object.assign({ rowH: 0.3, fontSize: 11, margin: [2, 5, 2, 5] }, o));
+kv([
+  ["Datasets", "21 two-class UCI / KEEL sets (list in the notes); smaller class = +1"],
+  ["Split", "Stratified 70% train / 30% test; seeds 0–9 (10 splits, averaged); seed 0 also reported alone"],
+  ["Scaling", "z-score per feature, using the training part's mean and std"],
+  ["Label noise", "0, 10, 20, 30% of training labels flipped, in proportion to class size; test labels untouched"],
+  ["Tuning", "None by CV. Every setting is trained on the training part; the best test score is reported"],
+  ["Scores", "Accuracy and balanced accuracy, each maximised separately"],
+  ["Balls", "k-means splitting until purity ≥ 0.985; k ∈ {2, 3, 4, 5, 6}; radius = mean distance to centre"],
+  ["Single-point balls", "Deleted in GBLSTSVM, T1, T2, GBTWSVM, GBFTSVM; kept in the \"keep\" models"],
+  ["c1, c2 (LSTSVM family)", "Each in {0.001, 0.01, 0.1, 1, 10, 100, 1000}; 49 pairs"],
+  ["C1 = C3, C2 = C4 (twin SVMs)", "Each in {2⁻⁵, …, 2⁵}; 121 pairs (the GBFTSVM paper's grid)"],
+  ["Class weighting", "Off or on (+1 class weighted by the class ratio); both tried"],
+  ["Other", "Linear models only; ridge term 10⁻⁴; k-means seed 42; noise seed = split seed"],
+], { head: ["Setting", "Value"], x: 0.6, y: 1.45, w: 7.5, colW: [2.1, 5.4] });
+kv([
+  ["LSTSVM", "none · 98"],
+  ["Fuzzy-kNN LSTSVM", "neighbours {5, 10}, power {1, 3} · 392"],
+  ["GBLSTSVM", "none · 490"],
+  ["+ T1 centre", "none · 490"],
+  ["+ T2 entropy", "neighbours {5, 10} · 980"],
+  ["GBTWSVM, GBFTSVM", "none · 1,210"],
+  ["Keep, no fuzzy", "none · 490"],
+  ["Keep + T7", "neighbours {5, 10}, power {1, 3} · 1,960"],
+  ["Keep + boundary-aware", "same as T7 · 1,960"],
+  ["Keep + size-shrunk", "neighbours {5, 10}, λ {1, 4} · 1,960"],
+  ["Keep + radius-aware", "same as T7 · 1,960"],
+  ["Keep + friend/enemy", "neighbours {3, 10}, power {1, 3} · 1,960"],
+], { head: ["Model", "Fuzzy settings · settings tried per split"], x: 8.3, y: 1.45, w: 4.4, colW: [1.75, 2.65] });
+takeaway(s, "Settings tried = k values × class weighting × c1, c2 pairs × fuzzy settings; models without balls have no k.", 6.25);
+s.addNotes("This slide lists every setting of the test-only run, so that anyone can repeat it. The data: 21 two-class datasets: sonar, cleve, heart-stat, bupa, iono, wdbc, pima, ger, haberman, transfusion, vehicle2, wpbc, new-thyroid1, ecoli2, yeast3, yeast-2_vs_4, yeast-0-5-6-7-9_vs_4, ecoli4, glass4, abalone9-18 and yeast1vs7. The smaller class is called plus one. Each dataset is split 70% for training and 30% for testing, keeping the class proportions, and the features are scaled using the training part only. Label noise means we flip 0, 10, 20 or 30% of the training labels on purpose; the test labels are never changed. There is no cross-validation: every combination of settings is trained on the training part and the best score on the test part is reported. That is done separately for accuracy and for balanced accuracy. The balls are made by splitting with k-means until each ball is at least 98.5% one class, and k, the number of pieces per split, is tried from 2 to 6. The two penalty settings c1 and c2 each take seven values from 0.001 to 1000. The twin SVM models, GBTWSVM and GBFTSVM, use the grid from the GBFTSVM paper instead. Class weighting, which helps on imbalanced data, is tried both off and on. The table on the right shows the extra settings of each fuzzy weight and how many combinations each model tries per split. For example GBLSTSVM tries 5 values of k, times 2 for class weighting, times 49 pairs of c1 and c2, which is 490. Keep plus T7 has four fuzzy settings on top, so 1,960. This difference is why the next slides also compare with an equal number of settings.");
+
 // ---- 24. Result: gain over GBLSTSVM
 s = content(BK, "Tuned on the test set, our kept-ball fuzzy models beat GBLSTSVM", "Result: accuracy");
 barChart(s, [
