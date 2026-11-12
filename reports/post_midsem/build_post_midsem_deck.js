@@ -60,6 +60,8 @@ const REFS = [
   ["acfsvm", "X. Tao, Q. Li, C. Ren, W. Guo, Q. He, R. Liu, J. Zou. Affinity and class probability-based fuzzy support vector machine for imbalanced data sets. Neural Networks 122:289–307, 2020. (ACFSVM)"],
   ["hundreds", "M. Fernández-Delgado, E. Cernadas, S. Barro, D. Amorim. Do we need hundreds of classifiers to solve real world classification problems? J. Machine Learning Research 15:3133–3181, 2014."],
   ["ours", "Jayagna/GBLSTSVM, branch claude/project-thread-bwmgim: experiments/run_lstsvm_test_tuning.py, run_gbftsvm_cv.py, run_test_tuning.py, noise_diagnostics.py and the residual, boundary, transplant, GMM and new-membership probes; results/. Latest branch: claude/project-thread-vi7tua."],
+  ["gbct", "S. Xia et al. GBCT: an efficient and adaptive granular-ball clustering algorithm for complex data. arXiv 2410.13917, 2024. (surface gap between balls)"],
+  ["wknn", "S. A. Dudani. The distance-weighted k-nearest-neighbor rule. IEEE Trans. SMC 6(4):325–327, 1976; K. Hechenbichler, K. Schliep. Weighted k-nearest-neighbor techniques and ordinal classification. LMU Munich SFB 386 Discussion Paper 399, 2004."],
 ];
 const REF_NO = Object.fromEntries(REFS.map(([k], i) => [k, i + 1]));
 const R = (...keys) => "[" + keys.map(k => { if (!REF_NO[k]) throw new Error("unknown ref " + k); return REF_NO[k]; }).join(", ") + "]";
@@ -1009,7 +1011,7 @@ s = content(BK, "Three more fuzzy functions, built on the balls' size and radius
   s.addText(eqLines(lines, { fontSize: 14.5 }), tx({ x: x + 0.3, y: 2.3, w: w - 0.5, h: 0.95, fontSize: 14.5, paraSpaceAfter: 4 }));
   s.addText(eq(t), tx({ x: x + 0.3, y: 3.3, w: w - 0.5, h: 2.6, fontSize: 14.5 }));
 });
-takeaway(s, "All three use ball size or radius, which point-based fuzzy SVMs don't have. Novelty is not yet checked in the literature.");
+takeaway(s, "All three use ball size or radius, which point-based fuzzy SVMs don't have. The literature check for the radius-aware vote is three slides on.");
 s.addNotes("You also asked for more fuzzy functions. I added three, and each one uses something that only granular balls have: how many points are in the ball, or its radius. The first, the size-shrunk vote, starts from T7, the vote of the neighbouring balls, and mixes it with the ball's own size. A ball with a single point has nothing to back it up, so it gets whatever its neighbours say. A ball with many points of one class is its own evidence, so it keeps a weight near one even if it sits on the border between the classes. The second, the radius-aware vote, changes how neighbours are found. T7 measures distance between ball centres. This one measures the gap between the ball surfaces, so two big balls that touch are close neighbours, and nearer balls get a louder vote. The third, friend and enemy distance, does not vote at all. It compares how far the ball is from the nearest balls of its own class with how far it is from the nearest balls of the other class. I have not yet searched the literature for these three, so we can't call them new until that is done. Distance-weighted voting itself goes back to fuzzy kNN in 1985; what may be new is doing it with ball radii.");
 
 // ---- 28. Detection check for the new functions
@@ -1052,6 +1054,22 @@ table(s, cvRows, { x: 7.15, y: 1.6, w: 5.55, colW: [2.35, 0.8, 0.8, 0.8, 0.8], r
 s.addText(bullets(NEWCV_BULLETS, { space: 6 }), tx({ x: 7.15, y: 4.8, w: 5.55, h: 1.35, fontSize: 12.5 }));
 takeaway(s, NEWCV_TAKE);
 s.addNotes(NEWCV_NOTES);
+
+// ---- Novelty check of the radius-aware vote (12 Nov)
+s = content(BK, "Is the radius-aware vote new? Partly", "Literature check, 12 Nov");
+[
+  ["1", "Each part already exists", "Neighbour vote on balls: SDAP-GBRVFL (plain count, no radius, no distance weight). Gap between ball surfaces: GBCT clustering, and the point-to-ball distance of the granular-ball kNN papers. Louder vote for closer neighbours: weighted kNN (Dudani 1976; Hechenbichler and Schliep 2004) and fuzzy kNN (Keller 1985).", C.accent2],
+  ["2", "The combination was not found", "No paper found picks a ball's neighbours by the surface gap and lets them vote by size and closeness to give that ball a fuzzy weight. GBFTSVM, GBFSVM and RGBIFTSVM use the distance to the class centre; SDAP-GBRVFL counts neighbours without radius or weighting.", C.accent1],
+  ["3", "What we can claim", "A new fuzzy membership for granular-ball SVMs, built from known parts. That is the same level of novelty as GBFTSVM. We cannot claim a new idea in fuzzy theory, and it does not beat T7 or plain LSTSVM under fair cross-validation.", C.accent5],
+].forEach(([n, h, t, color], i) => {
+  const x = 0.6 + i * 4.1, w = 3.9;
+  card(s, x, 1.6, w, 4.3);
+  badge(s, x + 0.25, 1.85, n, color, 0.55, 18);
+  s.addText(h, tx({ x: x + 0.95, y: 1.85, w: w - 1.2, h: 0.55, fontSize: 17, bold: true, color: C.text2, valign: "middle" }));
+  s.addText(t, tx({ x: x + 0.25, y: 2.65, w: w - 0.5, h: 3.1, fontSize: 15 }));
+});
+takeaway(s, "Safe to present as the paper's new fuzzy function, as long as we cite the three sources it is built from.");
+s.addNotes("I checked whether the radius-aware vote is already published. I looked at the granular-ball papers, the fuzzy support vector machine papers and the older nearest-neighbour papers. The answer is: partly new. Each of its three parts exists somewhere. Letting neighbouring balls vote on a ball's label is in the SDAP-GBRVFL paper, but there it is a plain count: the radius is not used and near and far neighbours count the same. Measuring the gap between the surfaces of two balls is used in a granular-ball clustering paper called GBCT, and the granular-ball nearest-neighbour classifiers measure the distance from a point to a ball's surface. Giving closer neighbours a louder vote is a classic idea from weighted nearest-neighbour methods. What I did not find anywhere is the combination: choosing a ball's neighbours by the surface gap and letting them vote by size and closeness to give that ball a fuzzy weight for training. So we can honestly call it a new fuzzy membership for granular-ball support vector machines, built from known parts. That is the same kind of novelty the GBFTSVM paper has. We should not call it a new idea in fuzzy theory. And the earlier result stands: under fair cross-validation it ties T7 and is still behind plain LSTSVM. One limit of the check: I searched what is publicly indexed up to 12 November 2026, and a few papers were read from their abstracts or partial text, so a very recent or paywalled paper could have been missed.");
 
 // ---- 30. What to pitch
 s = content(BK, "What to tell the professor", "Backup pitch, 11 Nov");

@@ -215,3 +215,24 @@ Asked by Jayagna as a fallback pitch: score the fuzzy models the way the publish
 Three more ball memberships (`fuzzy_membership.py`: `shrunk`, `gapvote`, `relative`), all on kept balls:
 - Detection (gate 1, `results/new_membership_probe`): radius-aware vote AUC .886/.877/.854 vs T7 .885/.868/.821, ahead on 15/18/19 of 21 datasets, the first membership to beat T7; friend/enemy distance .884/.875/.841; size-shrunk vote level with T7.
 - Fair CV (gate 2, `results/fuzzy_cv_new/summary_vs_baselines.csv`): all three tie keep + T7 in balanced accuracy (within about 1 point; only friend/enemy at 0% noise has p < 0.05, uncorrected), beat GBLSTSVM by 2.5–4.7 points and trail fuzzy-kNN LSTSVM. Literature not yet searched for these three.
+
+## Novelty check of the radius-aware vote (12 Nov)
+
+**Definition (`fuzzy_membership.py`, `membership_gapvote`).** For ball i, the neighbours are the k balls with the smallest surface gap g_ij = max(0, ‖c_i − c_j‖ − r_i − r_j). Neighbour j votes with weight n_j · exp(−(g_ij / s_i)²), where n_j is its point count and s_i is the gap to the k-th neighbour. The membership is (own-class share of the weighted vote)^γ. T7 differs in two places: neighbours by centre distance, and votes weighted by n_j only.
+
+**Verdict: partly novel.** Every ingredient is published; the combination, used as a ball's fuzzy weight, was not found.
+
+| Ingredient | Closest prior art | Difference |
+|---|---|---|
+| Neighbour-label vote on balls | SDAP-GBRVFL (arXiv 2609.29670), Eq. 6: LSI_i = (1/k) Σ I(y_j ≠ y_i) over the k nearest balls | Plain fraction: no distance weight, no size weight, radius absent; neighbour distance not defined; used as non-membership in an RVFL |
+| Surface gap between two balls | GBCT clustering (arXiv 2410.13917), Eq. 9: ‖c_i − c_j‖ − (r_i + r_j), used as a merge similarity | Unsupervised; no labels, no vote. RD-GBG (arXiv 2506.02366) has a one-sided conflict radius min(Δ(c_i, c) − r_i) for ball construction only |
+| Point-to-surface distance | GBKNN (arXiv 2608.12903) Eq. 16, DTW-GBC (arXiv 2608.11704) Eq. 7, original GB-kNN (Xia 2019): ‖x − c‖ − r | Classifies test points; no per-ball training weight |
+| Distance-weighted vote, bandwidth from the k-th neighbour | Dudani 1976; Hechenbichler and Schliep 2004 (kernel on distance scaled by the (k+1)-th neighbour); Keller fuzzy kNN 1985 (inverse-distance weights) | On points, not balls; no radius |
+| Weighted vote among balls | QGB-WkNN (arXiv 2609.05952), Eqs. 3–5: weight = purity × normalised 1/(1 + ‖x − c_i‖) | Centre distance, test-time classification only |
+| Fuzzy weight on balls in an SVM | GBFSVM, GBFTSVM, RGBIFTSVM | Distance to class centre (and purity); no neighbours |
+
+**What can be claimed.** "A radius-aware neighbour-vote membership for granular-ball (LS)TSVM": new on granular balls as a combination, GBFTSVM-level novelty. Not a new fuzzy concept. Must cite SDAP-GBRVFL, GBCT, and weighted/fuzzy kNN.
+
+**What the results allow.** Detection AUC beats T7 (.886/.877/.854 vs .885/.868/.821). Fair-CV balanced accuracy ties keep + T7 (76.5/76.0/74.2/68.8, differences −0.3/+0.1/+0.3/−0.1, n.s.), beats GBLSTSVM by 2.7–4.7 points (p ≤ .01), trails LSTSVM at 0–20% and fuzzy-kNN LSTSVM everywhere.
+
+**Limits of the search.** Web and arXiv search on 12 Nov 2026; GBKNN, QGB-WkNN, GBCT and RD-GBG were read partly (the tail of each page was only summarised); SDAP-GBRVFL was read in full. Paywalled journals without preprints and Chinese-language venues were not covered.
