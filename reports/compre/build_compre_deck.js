@@ -622,6 +622,28 @@ setupBox(s, 0.6, 4.6, 12.1, 1.45, [
 takeaway(s, "The three parts together are best under both tuning methods; the fuzzy weight matters most under label noise.");
 s.addNotes("This slide takes the model apart. We start from GBLSTSVM and switch on one part at a time: keeping the single-point balls, the radius-aware weight, and the regulariser from LS-GBLSTSVM. The regulariser and the weight are different kinds of improvement, and together they give the best result under both tuning methods. Under fair cross-validation with label noise, adding the weight to the regularised model with kept balls gives the largest step.");
 
+// ===================================================================================== 13c. Sensitivity
+const SENS = readCsv("sensitivity.csv");
+const SK = [...new Set(SENS.map(r => r.k))].sort((a, b) => a - b), SG = [...new Set(SENS.map(r => r.gamma))].sort((a, b) => a - b);
+s = content("Results so far", "How much do the two weight settings matter?");
+const sensTable = (nz, x, title) => {
+  const v = (k, g) => SENS.find(r => r.noise === nz && r.k === k && r.gamma === g).balanced_accuracy;
+  const all = SK.flatMap(k => SG.map(g => v(k, g))), lo = Math.min(...all), hi = Math.max(...all);
+  s.addText(`${title} (range ${f1(lo)} to ${f1(hi)})`, tx({ x, y: 1.5, w: 5.95, h: 0.3, fontSize: 13.5, bold: true, color: C.text2 }));
+  table(s, [[th("k \\ γ"), ...SG.map(g => th(`γ = ${g}`, centre))]].concat(SK.map(k => [td(`k = ${k}`, { bold: true }), ...SG.map(g => td(f1(v(k, g)), Object.assign({ bold: v(k, g) > hi - 0.05 }, centre)))])),
+    { x, y: 1.85, w: 5.95, colW: [1.2, ...SG.map(() => 0.95)], fontSize: 12.5, rowH: 0.4 });
+  return [lo, hi];
+};
+const [lo0, hi0] = sensTable(0, 0.6, "Balanced accuracy (%), 0% noise");
+const [lo2, hi2] = sensTable(0.2, 6.75, "Balanced accuracy (%), 20% noise");
+setupBox(s, 0.6, 4.45, 12.1, 1.6, [
+  `${SENS[0].datasets} datasets, 5 splits (70/30), linear model, fair cross-validation.`,
+  "k = number of neighbouring balls that vote on a ball's weight (3, 5, 10, 15, 20). γ = sharpness of the weight (0.5, 1, 2, 3, 5).",
+  "For each (k, γ) pair the other settings (c_1 = c_2, c_3 = c_4, 2/4/6 clusters per split, class weighting) are chosen by 5-fold cross-validation; the table shows the mean test score.",
+]);
+takeaway(s, `The model is not sensitive to k and γ: all 25 combinations stay within ${f1(Math.max(hi0 - lo0, hi2 - lo2))} points of each other.`);
+s.addNotes("A reviewer will ask whether the model needs careful tuning of its two new settings, the number of voting neighbours k and the sharpness gamma. We tried twenty-five combinations. For each one, all the other settings were chosen by cross-validation. The balanced accuracy barely moves: all combinations stay within about two points of each other, both on clean data and with twenty percent label noise. So the model does not depend on a lucky choice of k and gamma, and two or three values of each are enough in practice.");
+
 // ===================================================================================== 14. Competitors
 s = content("Work in progress", "The competitors, as in the GBLSTSVM paper");
 table(s, mt([
@@ -642,8 +664,8 @@ s.addNotes("The paper we follow compares against six models, and so will we. SVM
 // ===================================================================================== 15. Next steps
 s = content("Work in progress", "Where we stand and what comes next");
 three(s, [
-  ["✓", "Done", "Model defined and coded, now on top of LS-GBLSTSVM. Novelty checked. Wrong-label detection test. All six competitors, 35 datasets, six noise levels, both tuning methods. Ablation of the three parts.", C.accent1],
-  ["→", "Next", "Gaussian-kernel version of our model and the competitors. Large-scale NDC datasets and timing. Sensitivity of k and γ. Friedman and win-tie-loss tables in the paper's layout.", C.accent3],
+  ["✓", "Done", "Model defined and coded, now on top of LS-GBLSTSVM. Novelty checked. Wrong-label detection test. All six competitors, 35 datasets, six noise levels, both tuning methods, linear and Gaussian kernel. Ablation of the three parts. Sensitivity of k and γ.", C.accent1],
+  ["→", "Next", "Large-scale NDC datasets with training times (needs a faster neighbour search for big data). Friedman and win-tie-loss tables in the paper's layout.", C.accent3],
   ["✎", "Then", "Write the paper draft in the structure of the GBLSTSVM paper, with the evaluation findings (two tuning methods, what deletion removes) as analysis sections.", C.accent5],
 ]);
 takeaway(s, "This deck is updated with every new result; dropped ideas are recorded in the post-midsem deck.");

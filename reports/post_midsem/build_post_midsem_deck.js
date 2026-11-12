@@ -1152,6 +1152,22 @@ s = content(BK, "Gaussian kernel: the same ranking as the linear models", "Resul
 takeaway(s, "Kernel GBSVM solved exactly is far behind (it often predicts one class); every other finding carries over from the linear runs.");
 s.addNotes("The same seven models with a Gaussian kernel. Because kernel runs are slow, this test uses five splits and three noise levels. Under the published style of tuning our model is first at every noise level and significantly ahead of all six competitors. Under fair cross-validation it is second on balanced accuracy, behind the kernel SVM by one to two points and ahead of every other model, including LSTSVM and LS-GBLSTSVM. On plain accuracy under fair cross-validation, kernel TSVM and SVM are ahead by one to three points. So the kernel results repeat the linear ones.");
 
+// ---- Sensitivity, 12 Nov
+s = content(BK, "Sensitivity: the two weight settings hardly matter", "Results, 12 Nov (sensitivity)");
+[
+  ["1", "Setup", "Proposed linear model, 21 datasets, 5 splits, noise 0 and 20%. 25 combinations of k (3, 5, 10, 15, 20 voting neighbours) and γ (0.5, 1, 2, 3, 5 sharpness). For each, all other settings chosen by 5-fold cross-validation (experiments/run_sensitivity.py, results/sensitivity).", C.accent3],
+  ["2", "Result", "Balanced accuracy ranges from 77.7 to 79.4 on clean data and from 74.8 to 76.9 at 20% noise across all 25 combinations. Accuracy: 80.4 to 83.0 and 77.7 to 80.0. No clear best corner.", C.accent1],
+  ["3", "What it means", "The model does not depend on a lucky choice of k and γ. The two values of each used in the main runs (k = 5, 10; γ = 1, 3) are enough. This goes in the paper as the sensitivity analysis.", C.accent5],
+].forEach(([n, h, t, color], i) => {
+  const x = 0.6 + i * 4.1, w = 3.9;
+  card(s, x, 1.6, w, 4.3);
+  badge(s, x + 0.25, 1.85, n, color, 0.55, 18);
+  s.addText(h, tx({ x: x + 0.95, y: 1.85, w: w - 1.2, h: 0.55, fontSize: 17, bold: true, color: C.text2, valign: "middle" }));
+  s.addText(t, tx({ x: x + 0.25, y: 2.65, w: w - 0.5, h: 3.1, fontSize: 15 }));
+});
+takeaway(s, "Still open: the large NDC datasets with timing, which need a faster neighbour search first.");
+s.addNotes("The sensitivity analysis. We varied the two settings of the fuzzy weight, the number of voting neighbours and the sharpness, over twenty-five combinations, and chose everything else by cross-validation each time. The scores move by about two points at most, with no clear best corner. So the model is not sensitive to these two settings. What is still open on the experimental side is the large-scale test on the NDC datasets with training times.");
+
 // =====================================================================================
 // 31. References
 // =====================================================================================
