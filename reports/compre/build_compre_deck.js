@@ -514,19 +514,19 @@ s.addNotes("The first test asks a direct question: do wrongly labelled points ge
 const SUM = readCsv("summary.csv"), PAIR = readCsv("pairwise.csv");
 const NP = SUM[0].datasets;
 const MODELS = [["SVM", "SVM"], ["TSVM", "TSVM"], ["GBSVM", "GBSVM"], ["LSTSVM", "LSTSVM"], ["GBLSTSVM", "GBLSTSVM"], ["LS-GBLSTSVM", "LS-GBLSTSVM"], [OURS, "Ours (radius-aware)"]];
-const cell = (prot, metric, nz, m) => SUM.find(r => r.protocol === prot && r.metric === metric && r.noise === nz && r.model === m);
-const pair = (prot, metric, nz, m) => PAIR.find(r => r.protocol === prot && r.metric === metric && r.noise === nz && r.model === m);
+const cell = (prot, metric, nz, m, src = SUM) => src.find(r => r.protocol === prot && r.metric === metric && r.noise === nz && r.model === m);
+const pair = (prot, metric, nz, m, src = PAIR) => src.find(r => r.protocol === prot && r.metric === metric && r.noise === nz && r.model === m);
 const noisesOf = prot => [...new Set(SUM.filter(r => r.protocol === prot).map(r => r.noise))].sort((x, y) => x - y);
 const rng = (prot, metric, m, nzs) => { const d = nzs.map(n => pair(prot, metric, n, m).mean_diff); return `${sgn(Math.min(...d))} to ${sgn(Math.max(...d))}`; };
-function scoreTable(prot, metric, nzs, x, y, w) {
-  const best = nzs.map(n => Math.max(...MODELS.map(([m]) => cell(prot, metric, n, m).mean)));
+function scoreTable(prot, metric, nzs, x, y, w, src = SUM, mw = 2.6) {
+  const best = nzs.map(n => Math.max(...MODELS.map(([m]) => cell(prot, metric, n, m, src).mean)));
   const rows = [[th("Model"), ...nzs.map(n => th(`${Math.round(n * 100)}%`, centre)), th("Avg rank", centre)]].concat(MODELS.map(([m, label]) => [
     td(label, { bold: m === OURS }),
-    ...nzs.map((n, i) => { const v = cell(prot, metric, n, m).mean; return td(f1(v), Object.assign({ bold: v > best[i] - 0.05, color: m === OURS ? HEX.accent1 : HEX.dk1 }, centre)); }),
-    td(f2(nzs.reduce((a, n) => a + cell(prot, metric, n, m).avg_rank, 0) / nzs.length), Object.assign({ bold: m === OURS }, centre)),
+    ...nzs.map((n, i) => { const v = cell(prot, metric, n, m, src).mean; return td(f1(v), Object.assign({ bold: v > best[i] - 0.05, color: m === OURS ? HEX.accent1 : HEX.dk1 }, centre)); }),
+    td(f2(nzs.reduce((a, n) => a + cell(prot, metric, n, m, src).avg_rank, 0) / nzs.length), Object.assign({ bold: m === OURS }, centre)),
   ]));
-  const cw = (w - 2.6 - 1.0) / nzs.length;
-  table(s, rows, { x, y, w, colW: [2.6, ...nzs.map(() => cw), 1.0], fontSize: 12.5, rowH: 0.36 });
+  const cw = (w - mw - 1.0) / nzs.length;
+  table(s, rows, { x, y, w, colW: [mw, ...nzs.map(() => cw), 1.0], fontSize: 12.5, rowH: 0.36 });
 }
 const NZB = noisesOf("oracle").filter(n => n <= 0.2);
 s = content("Results so far", "Test B: published-style tuning (best test score over all settings)");
@@ -586,6 +586,23 @@ setupBox(s, 8.4, 1.5, 4.3, 4.55, [
 ]);
 takeaway(s, "On the rare-class-friendly score, ours leads the ball models; the point-based SVMs keep an edge at low noise.");
 s.addNotes("The same runs, scored with balanced accuracy, which treats both classes equally and so is stricter on imbalanced datasets. Our model is the best of the granular-ball models at every noise level. The point-based models, SVM in particular, are still ahead when there is little noise, and our model catches up at twenty and thirty percent noise. We will report this openly: it is the evaluation message of the paper.");
+
+// ===================================================================================== 13a. Gaussian kernel
+const SUMK = readCsv("kernel_summary.csv"), PAIRK = readCsv("kernel_pairwise.csv");
+const NZK = [...new Set(SUMK.map(r => r.noise))].sort((x, y) => x - y);
+const NK = Math.min(...SUMK.map(r => r.datasets));
+const rngK = (prot, metric, m) => { const d = NZK.map(n => pair(prot, metric, n, m, PAIRK).mean_diff); return `${sgn(Math.min(...d))} to ${sgn(Math.max(...d))}`; };
+s = content("Results so far", "Test D: Gaussian kernel (curved boundaries)");
+s.addText("Published-style tuning, accuracy (%)", tx({ x: 0.6, y: 1.5, w: 5.95, h: 0.3, fontSize: 13.5, bold: true, color: C.text2 }));
+scoreTable("oracle", "accuracy", NZK, 0.6, 1.85, 5.95, SUMK, 2.3);
+s.addText("Fair cross-validation, balanced accuracy (%)", tx({ x: 6.75, y: 1.5, w: 5.95, h: 0.3, fontSize: 13.5, bold: true, color: C.text2 }));
+scoreTable("cv", "balanced_accuracy", NZK, 6.75, 1.85, 5.95, SUMK, 2.3);
+setupBox(s, 0.6, 4.85, 12.1, 1.25, [
+  `${NK === 35 ? "35" : NK + " to 35"} datasets, 5 splits (70/30), noise 0/10/20%. Gaussian kernel exp(−γ_k ‖x − z‖²) with γ_k = g / (number of features), g in 0.25, 1, 4. Ball models use the kernel between each point and the ball centres; our fuzzy weight is still computed from the balls in the original space.`,
+  "Other grids as in Tests B and C, with 2, 4 or 6 clusters per split. Left: best test score over all settings. Right: settings chosen by 5-fold cross-validation.",
+]);
+takeaway(s, "Same picture as the linear models: first under published-style tuning; best ball model under fair CV, just behind SVM.");
+s.addNotes("The same comparison with a Gaussian kernel, which lets every model draw a curved boundary. The picture matches the linear results. Under the published style of tuning, on the left, our model is first at every noise level and significantly ahead of all six competitors. Under fair cross-validation, on the right, it is the best of the granular-ball models and close behind the kernel SVM, which stays ahead by about one to one and a half points. The setup box gives the kernel and its settings. Because kernel runs are much slower, this test uses five splits and three noise levels.");
 
 // ===================================================================================== 13b. Ablation
 const ABL = [["GBLSTSVM", "GBLSTSVM (start)"], ["GB-keep", "+ keep single-point balls"], ["Keep+gapvote", "+ keep balls + radius-aware weight"], ["LS-GBLSTSVM", "+ regulariser only (LS-GBLSTSVM)"], ["LS-keep", "+ regulariser + keep balls"], [OURS, "+ regulariser + keep balls + weight (ours)"]];
