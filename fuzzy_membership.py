@@ -181,34 +181,33 @@ def _gaps(centers, radii):
     return gap
 
 
-def _gap_neighbours(centers, radii, k_nn, chunk=2000):
+def _gap_neighbours(centers, radii, k_nn, chunk=512):
     """The k_nn balls with the smallest surface gap to each ball, and those gaps, without the m x m
-    matrix. A k-d tree on the centres gives a first guess (the k_nn nearest centres), whose k-th gap
-    U_i bounds the answer; every ball with a smaller gap has ||c_i - c_j|| < U_i + r_i + max(r), so a
-    radius query with that bound returns all candidates, and the exact k smallest are taken among
-    them (ties, e.g. between overlapping balls with gap 0, broken by centre distance, then index)."""
-    from scipy.spatial import cKDTree
+    matrix: rows are processed in blocks against all balls (one matrix product per block). Ties
+    (e.g. overlapping balls, gap 0) are broken by centre distance, then index, as in the dense path.
+    A k-d tree does not help here: the gap subtracts the neighbour's radius, so with a few large balls
+    the search radius covers almost every ball."""
     n = len(radii)
-    tree = cKDTree(centers)
-    _, idx = tree.query(centers, k=k_nn + 1)
-    g0 = np.maximum(0.0, np.linalg.norm(centers[:, None, :] - centers[idx], axis=2) - radii[:, None] - radii[idx])
-    g0[idx == np.arange(n)[:, None]] = np.inf
-    upper = np.sort(g0, axis=1)[:, k_nn - 1]
-    reach = upper + radii + radii.max() + 1e-9
+    sq = np.sum(centers ** 2, axis=1)
     nn = np.empty((n, k_nn), dtype=int)
     gaps = np.empty((n, k_nn))
     for s in range(0, n, chunk):
         rows = np.arange(s, min(n, s + chunk))
-        cand = tree.query_ball_point(centers[rows], reach[rows], workers=-1)
-        for r, c in zip(rows, cand):
-            c = np.asarray(c, dtype=int)
-            c = c[c != r]
-            dist = np.linalg.norm(centers[c] - centers[r], axis=1)
-            g = np.maximum(0.0, dist - radii[r] - radii[c])
-            order = np.lexsort((c, dist, g))[:k_nn]
-            nn[r], gaps[r] = c[order], g[order]
+        dist = np.sqrt(np.maximum(sq[rows, None] + sq[None, :] - 2.0 * centers[rows] @ centers.T, 0.0))
+        gap = np.maximum(0.0, dist - radii[rows, None] - radii[None, :])
+        gap[np.arange(len(rows)), rows] = np.inf
+        part = np.argpartition(gap, k_nn - 1, axis=1)[:, :k_nn]
+        kth = np.max(np.take_along_axis(gap, part, axis=1), axis=1)
+        ties = np.sum(gap <= kth[:, None], axis=1) > k_nn
+        for i in range(len(rows)):
+            if ties[i]:
+                cand = np.flatnonzero(gap[i] <= kth[i])
+            else:
+                cand = part[i]
+            order = np.lexsort((cand, dist[i, cand], gap[i, cand]))[:k_nn]
+            nn[rows[i]] = cand[order]
+            gaps[rows[i]] = gap[i, cand[order]]
     return nn, gaps
-
 
 def membership_shrunk(centers, radii, labels, counts, param=(10, 1.0), floor=1e-3):
     """Evidence-shrunk agreement: m_i = ((n_i - 1) + lam * a_i) / ((n_i - 1) + lam), a_i = T7's
