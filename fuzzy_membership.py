@@ -27,6 +27,8 @@ import numpy as np
 
 EPS = 1e-12
 DENSE_LIMIT = 1000  # above this many balls, neighbours come from a k-d tree (same result, faster)
+TIE_BREAK = True  # gapvote: break tied gaps (overlapping balls, gap 0) by centre distance; False = arbitrary order as in the first runs
+GAP_DENSE_LIMIT = 5000  # gapvote: above this many balls, exact gap neighbours from a k-d tree (no m x m matrix)
 
 
 def _as_arrays(centers, radii, labels, counts):
@@ -179,6 +181,35 @@ def _gaps(centers, radii):
     return gap
 
 
+def _gap_neighbours(centers, radii, k_nn, chunk=2000):
+    """The k_nn balls with the smallest surface gap to each ball, and those gaps, without the m x m
+    matrix. A k-d tree on the centres gives a first guess (the k_nn nearest centres), whose k-th gap
+    U_i bounds the answer; every ball with a smaller gap has ||c_i - c_j|| < U_i + r_i + max(r), so a
+    radius query with that bound returns all candidates, and the exact k smallest are taken among
+    them (ties, e.g. between overlapping balls with gap 0, broken by centre distance, then index)."""
+    from scipy.spatial import cKDTree
+    n = len(radii)
+    tree = cKDTree(centers)
+    _, idx = tree.query(centers, k=k_nn + 1)
+    g0 = np.maximum(0.0, np.linalg.norm(centers[:, None, :] - centers[idx], axis=2) - radii[:, None] - radii[idx])
+    g0[idx == np.arange(n)[:, None]] = np.inf
+    upper = np.sort(g0, axis=1)[:, k_nn - 1]
+    reach = upper + radii + radii.max() + 1e-9
+    nn = np.empty((n, k_nn), dtype=int)
+    gaps = np.empty((n, k_nn))
+    for s in range(0, n, chunk):
+        rows = np.arange(s, min(n, s + chunk))
+        cand = tree.query_ball_point(centers[rows], reach[rows], workers=-1)
+        for r, c in zip(rows, cand):
+            c = np.asarray(c, dtype=int)
+            c = c[c != r]
+            dist = np.linalg.norm(centers[c] - centers[r], axis=1)
+            g = np.maximum(0.0, dist - radii[r] - radii[c])
+            order = np.lexsort((c, dist, g))[:k_nn]
+            nn[r], gaps[r] = c[order], g[order]
+    return nn, gaps
+
+
 def membership_shrunk(centers, radii, labels, counts, param=(10, 1.0), floor=1e-3):
     """Evidence-shrunk agreement: m_i = ((n_i - 1) + lam * a_i) / ((n_i - 1) + lam), a_i = T7's
     agreement, param = (k, lam). A single-point ball has no evidence of its own and takes the
@@ -202,9 +233,18 @@ def membership_gapvote(centers, radii, labels, counts, param=(10, 1.0), floor=1e
     if n < 2:
         return np.ones(n, dtype=np.float64)
     k_nn = min(int(k_nn), n - 1)
-    gap = _gaps(centers, radii)
-    nn = np.argsort(gap, axis=1)[:, :k_nn]
-    g = np.take_along_axis(gap, nn, axis=1)
+    if n > GAP_DENSE_LIMIT:
+        nn, g = _gap_neighbours(centers, radii, k_nn)
+    elif TIE_BREAK:
+        dist = _pairwise_distances(centers)
+        gap = np.maximum(0.0, dist - radii[:, None] - radii[None, :])
+        np.fill_diagonal(gap, np.inf)
+        nn = np.lexsort((dist, gap), axis=1)[:, :k_nn]
+        g = np.take_along_axis(gap, nn, axis=1)
+    else:
+        gap = _gaps(centers, radii)
+        nn = np.argsort(gap, axis=1)[:, :k_nn]
+        g = np.take_along_axis(gap, nn, axis=1)
     w = counts[nn] * np.exp(-(g / (g[:, -1:] + EPS)) ** 2)
     agree = np.sum(w * (labels[nn] == labels[:, None]), axis=1) / (np.sum(w, axis=1) + EPS)
     return np.clip(agree ** float(gamma), floor, 1.0)
