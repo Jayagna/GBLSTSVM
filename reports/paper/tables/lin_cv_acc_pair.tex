@@ -1,0 +1,19 @@
+\begin{table}[!t]
+\centering
+\caption{RF-GBLSTSVM against each baseline, linear kernel, cross-validated tuning: mean difference in ACC (percentage points), [win, tie, loss] over the 35 datasets and, in parentheses, the $p$-value of the Wilcoxon signed-rank test.}
+\label{tab:lin-cv-acc-pair}
+\footnotesize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccc}
+\toprule
+Baseline & 0\% & 5\% & 10\% & 15\% & 20\% & 30\% \\
+\midrule
+SVM & \shortstack{-1.82 [8, 1, 26]\\(0.004)} & \shortstack{+1.26 [22, 2, 11]\\(0.036)} & \shortstack{+1.79 [19, 1, 15]\\(0.106)} & \shortstack{+2.80 [21, 0, 14]\\(0.008)} & \shortstack{+3.50 [25, 0, 10]\\(0.008)} & \shortstack{+1.56 [19, 1, 15]\\(0.309)} \\[4pt]
+TSVM & \shortstack{-0.52 [14, 0, 21]\\(0.235)} & \shortstack{+1.91 [27, 0, 8]\\($<$0.001)} & \shortstack{+1.87 [26, 0, 9]\\($<$0.001)} & \shortstack{+3.78 [26, 0, 9]\\($<$0.001)} & \shortstack{+4.78 [30, 0, 5]\\($<$0.001)} & \shortstack{+8.25 [31, 0, 4]\\($<$0.001)} \\[4pt]
+GBSVM & \shortstack{+12.84 [29, 0, 6]\\($<$0.001)} & \shortstack{+10.76 [29, 0, 6]\\($<$0.001)} & \shortstack{+10.86 [30, 0, 5]\\($<$0.001)} & \shortstack{+14.63 [31, 0, 4]\\($<$0.001)} & \shortstack{+16.67 [32, 0, 3]\\($<$0.001)} & \shortstack{+21.26 [30, 0, 5]\\($<$0.001)} \\[4pt]
+LSTSVM & \shortstack{+0.39 [16, 0, 19]\\(0.974)} & \shortstack{+1.62 [24, 0, 11]\\(0.007)} & \shortstack{+2.13 [26, 0, 9]\\(0.002)} & \shortstack{+2.95 [22, 2, 11]\\(0.005)} & \shortstack{+4.47 [29, 0, 6]\\($<$0.001)} & \shortstack{+7.72 [33, 0, 2]\\($<$0.001)} \\[4pt]
+GBLSTSVM & \shortstack{+3.17 [25, 0, 10]\\(0.005)} & \shortstack{+3.25 [29, 2, 4]\\($<$0.001)} & \shortstack{+3.20 [27, 0, 8]\\(0.005)} & \shortstack{+4.46 [28, 0, 7]\\($<$0.001)} & \shortstack{+7.44 [30, 0, 5]\\($<$0.001)} & \shortstack{+9.70 [29, 0, 6]\\($<$0.001)} \\[4pt]
+LS-GBLSTSVM & \shortstack{-0.05 [17, 0, 18]\\(1.000)} & \shortstack{-0.07 [18, 0, 17]\\(0.376)} & \shortstack{-0.41 [25, 0, 10]\\(0.085)} & \shortstack{+1.30 [24, 0, 11]\\(0.041)} & \shortstack{+2.79 [27, 0, 8]\\(0.003)} & \shortstack{+3.73 [28, 0, 7]\\(0.004)} \\[4pt]
+\bottomrule
+\end{tabular}}
+\end{table}

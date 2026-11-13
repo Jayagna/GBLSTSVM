@@ -1,0 +1,19 @@
+\begin{table}[!t]
+\centering
+\caption{RF-GBLSTSVM against each baseline, Gaussian kernel, test-set tuning: mean difference in ACC (percentage points), [win, tie, loss] over the 35 datasets and, in parentheses, the $p$-value of the Wilcoxon signed-rank test.}
+\label{tab:ker-oracle-pair}
+\footnotesize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccc}
+\toprule
+Baseline & 0\% & 10\% & 20\% \\
+\midrule
+SVM & \shortstack{+1.09 [32, 0, 3]\\($<$0.001)} & \shortstack{+1.12 [31, 1, 3]\\($<$0.001)} & \shortstack{+1.55 [32, 1, 2]\\($<$0.001)} \\[4pt]
+TSVM & \shortstack{+1.13 [31, 0, 4]\\($<$0.001)} & \shortstack{+1.95 [30, 0, 5]\\($<$0.001)} & \shortstack{+3.66 [34, 0, 1]\\($<$0.001)} \\[4pt]
+GBSVM & \shortstack{+12.89 [35, 0, 0]\\($<$0.001)} & \shortstack{+10.13 [35, 0, 0]\\($<$0.001)} & \shortstack{+9.53 [35, 0, 0]\\($<$0.001)} \\[4pt]
+LSTSVM & \shortstack{+1.10 [30, 1, 4]\\($<$0.001)} & \shortstack{+2.16 [34, 0, 1]\\($<$0.001)} & \shortstack{+3.44 [33, 2, 0]\\($<$0.001)} \\[4pt]
+GBLSTSVM & \shortstack{+1.55 [31, 2, 2]\\($<$0.001)} & \shortstack{+1.27 [29, 3, 3]\\($<$0.001)} & \shortstack{+1.38 [30, 1, 4]\\($<$0.001)} \\[4pt]
+LS-GBLSTSVM & \shortstack{+0.99 [28, 3, 4]\\($<$0.001)} & \shortstack{+0.61 [19, 11, 5]\\(0.006)} & \shortstack{+0.47 [25, 4, 6]\\(0.006)} \\[4pt]
+\bottomrule
+\end{tabular}}
+\end{table}

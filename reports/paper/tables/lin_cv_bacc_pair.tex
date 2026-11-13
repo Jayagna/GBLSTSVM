@@ -1,0 +1,19 @@
+\begin{table}[!t]
+\centering
+\caption{RF-GBLSTSVM against each baseline, linear kernel, cross-validated tuning: mean difference in BACC (percentage points), [win, tie, loss] over the 35 datasets and, in parentheses, the $p$-value of the Wilcoxon signed-rank test.}
+\label{tab:lin-cv-bacc-pair}
+\footnotesize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccc}
+\toprule
+Baseline & 0\% & 5\% & 10\% & 15\% & 20\% & 30\% \\
+\midrule
+SVM & \shortstack{-2.97 [6, 0, 29]\\($<$0.001)} & \shortstack{-1.65 [14, 0, 21]\\(0.009)} & \shortstack{-1.25 [13, 0, 22]\\(0.033)} & \shortstack{-1.48 [11, 0, 24]\\(0.015)} & \shortstack{+0.04 [17, 0, 18]\\(0.909)} & \shortstack{+0.55 [20, 0, 15]\\(0.413)} \\[4pt]
+TSVM & \shortstack{-2.29 [12, 0, 23]\\(0.003)} & \shortstack{-0.54 [16, 0, 19]\\(0.432)} & \shortstack{-0.38 [13, 0, 22]\\(0.326)} & \shortstack{-0.09 [17, 0, 18]\\(0.961)} & \shortstack{+0.72 [19, 0, 16]\\(0.291)} & \shortstack{+1.71 [21, 0, 14]\\(0.055)} \\[4pt]
+GBSVM & \shortstack{+11.04 [32, 0, 3]\\($<$0.001)} & \shortstack{+8.29 [30, 0, 5]\\($<$0.001)} & \shortstack{+8.26 [29, 0, 6]\\($<$0.001)} & \shortstack{+7.93 [29, 0, 6]\\($<$0.001)} & \shortstack{+9.70 [33, 0, 2]\\($<$0.001)} & \shortstack{+10.62 [28, 0, 7]\\($<$0.001)} \\[4pt]
+LSTSVM & \shortstack{-2.41 [8, 1, 26]\\($<$0.001)} & \shortstack{-1.06 [14, 0, 21]\\(0.036)} & \shortstack{-0.43 [14, 0, 21]\\(0.110)} & \shortstack{-1.00 [10, 0, 25]\\(0.038)} & \shortstack{+0.94 [22, 1, 12]\\(0.122)} & \shortstack{+1.58 [24, 0, 11]\\(0.015)} \\[4pt]
+GBLSTSVM & \shortstack{+3.86 [28, 0, 7]\\($<$0.001)} & \shortstack{+3.03 [27, 0, 8]\\($<$0.001)} & \shortstack{+3.35 [29, 0, 6]\\($<$0.001)} & \shortstack{+3.04 [26, 0, 9]\\(0.001)} & \shortstack{+5.27 [28, 0, 7]\\($<$0.001)} & \shortstack{+6.59 [29, 0, 6]\\($<$0.001)} \\[4pt]
+LS-GBLSTSVM & \shortstack{+1.10 [20, 0, 15]\\(0.238)} & \shortstack{+0.31 [17, 0, 18]\\(0.896)} & \shortstack{+1.02 [23, 0, 12]\\(0.057)} & \shortstack{+0.78 [19, 0, 16]\\(0.326)} & \shortstack{+2.41 [27, 0, 8]\\(0.001)} & \shortstack{+2.30 [26, 0, 9]\\(0.008)} \\[4pt]
+\bottomrule
+\end{tabular}}
+\end{table}

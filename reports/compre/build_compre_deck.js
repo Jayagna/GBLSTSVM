@@ -664,12 +664,12 @@ s.addNotes("The paper we follow compares against six models, and so will we. SVM
 // ===================================================================================== 15. Next steps
 s = content("Work in progress", "Where we stand and what comes next");
 three(s, [
-  ["✓", "Done", "Model defined and coded, now on top of LS-GBLSTSVM. Novelty checked. Wrong-label detection test. All six competitors, 35 datasets, six noise levels, both tuning methods, linear and Gaussian kernel. Ablation of the three parts. Sensitivity of k and γ.", C.accent1],
-  ["→", "Next", "Large-scale NDC datasets with training times (needs a faster neighbour search for big data). Friedman and win-tie-loss tables in the paper's layout.", C.accent3],
-  ["✎", "Then", "Write the paper draft in the structure of the GBLSTSVM paper, with the evaluation findings (two tuning methods, what deletion removes) as analysis sections.", C.accent5],
+  ["✓", "Done", "Model defined and coded, now on top of LS-GBLSTSVM. Novelty checked. Wrong-label detection test. All six competitors, 35 datasets, six noise levels, both tuning methods, linear and Gaussian kernel. Ablation of the three parts. Sensitivity of k and γ. First full paper draft in LaTeX (29 pages, layout of the GBLSTSVM paper, both tuning methods reported).", C.accent1],
+  ["→", "Next", "Review of the draft. Complete the author block and four recent references. Choose the target journal.", C.accent3],
+  ["✎", "Then", "Large-scale NDC datasets with training times (needs a faster neighbour search for big data), then add them to the paper.", C.accent5],
 ]);
 takeaway(s, "This deck is updated with every new result; dropped ideas are recorded in the post-midsem deck.");
-s.addNotes("Where we are. The model, the novelty check and the first three tests are done on twenty-one datasets. Running now are the four remaining competitors from the GBLSTSVM paper, fourteen more datasets, and the two missing noise levels for cross-validation. After that come the kernel version, the large-scale datasets, the statistical tests and the sensitivity analysis, and then the draft of the paper.");
+s.addNotes("Where we are. All experiments on the thirty-five datasets are done, and the first full draft of the paper is written. Next is the review of the draft, the author details and the choice of journal. The large-scale test on the NDC datasets is the one experiment still missing.");
 
 // ===================================================================================== 16. References
 s = content("References", "References");

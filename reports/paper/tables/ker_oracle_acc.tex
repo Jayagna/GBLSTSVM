@@ -1,0 +1,20 @@
+\begin{table}[!t]
+\centering
+\caption{Gaussian kernel, test-set tuning: average ACC (\%) and average rank over 35 datasets.}
+\label{tab:ker-oracle}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llccccccc}
+\toprule
+ & Noise & SVM & TSVM & GBSVM & LSTSVM & GBLSTSVM & LS-GBLSTSVM & \textbf{RF-GBLSTSVM} \\
+\midrule
+Average ACC & 0\% & 90.77 & 90.74 & 78.97 & 90.76 & 90.31 & 90.88 & \textbf{91.87} \\
+ & 10\% & 89.94 & 89.10 & 80.92 & 88.90 & 89.79 & 90.45 & \textbf{91.06} \\
+ & 20\% & 88.64 & 86.53 & 80.65 & 86.75 & 88.81 & 89.72 & \textbf{90.18} \\
+\midrule
+Average rank & 0\% & 4.63 & 4.17 & 6.90 & 3.87 & 3.84 & 3.01 & \textbf{1.57} \\
+ & 10\% & 3.84 & 4.56 & 6.77 & 5.09 & 3.54 & 2.50 & \textbf{1.70} \\
+ & 20\% & 3.86 & 5.29 & 6.59 & 5.10 & 3.54 & 2.14 & \textbf{1.49} \\
+\bottomrule
+\end{tabular}}
+\end{table}

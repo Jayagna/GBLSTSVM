@@ -1,0 +1,20 @@
+\begin{table}[!t]
+\centering
+\caption{Ablation of the three components (linear kernel, average ACC in \% over 35 datasets). Keep: single-point balls are retained. Fuzzy: radius-aware membership. Reg.: regularisation term of LS-GBLSTSVM. The first row is GBLSTSVM, the fourth is LS-GBLSTSVM and the last is the proposed RF-GBLSTSVM.}
+\label{tab:ablation}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{ccccccccccc}
+\toprule
+ & & & \multicolumn{4}{c}{Test-set tuning} & \multicolumn{4}{c}{CV tuning} \\ \cmidrule(lr){4-7}\cmidrule(lr){8-11}
+Keep & Fuzzy & Reg. & 0\% & 10\% & 20\% & 30\% & 0\% & 10\% & 20\% & 30\% \\
+\midrule
+ &  &  & 88.08 & 87.93 & 87.06 & 85.56 & 78.23 & 76.40 & 70.49 & 64.06 \\
+\checkmark &  &  & 88.95 & 88.27 & 87.49 & 86.08 & 79.72 & 76.68 & 71.74 & 64.97 \\
+\checkmark & \checkmark &  & 89.53 & 89.17 & 88.61 & 87.68 & 78.52 & 76.00 & 73.69 & 66.46 \\
+ &  & \checkmark & 89.50 & 89.20 & 88.66 & 87.41 & 81.45 & 80.01 & 75.13 & 70.03 \\
+\checkmark &  & \checkmark & 89.33 & 88.84 & 88.14 & 86.62 & 80.96 & 77.55 & 73.81 & 68.96 \\
+\checkmark & \checkmark & \checkmark & 89.98 & 89.53 & 89.08 & 88.10 & 81.40 & 79.60 & 77.92 & 73.76 \\
+\bottomrule
+\end{tabular}}
+\end{table}

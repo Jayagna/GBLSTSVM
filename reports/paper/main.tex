@@ -1,0 +1,342 @@
+\documentclass[preprint,12pt]{elsarticle}
+
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{hyperref}
+\usepackage{float}
+
+\journal{a journal (to be decided)}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\RF}{RF-GBLSTSVM}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+\begin{document}
+
+\begin{frontmatter}
+
+\title{Radius-aware fuzzy granular-ball least squares twin support vector machine that keeps boundary information under label noise}
+
+% TODO before submission: confirm author names, order, affiliations and e-mail addresses.
+\author[inst1]{Jayagna Patel}
+\author[inst1]{[Supervisor name]}
+\address[inst1]{[Department], Birla Institute of Technology and Science, Pilani, India}
+
+\begin{abstract}
+The granular-ball least squares twin support vector machine (GBLSTSVM) trains on balls that summarise groups of samples instead of on the samples themselves, which makes it fast and is meant to make it robust to label noise. Its ball generation step deletes every ball that holds a single sample. We measure what this step removes. At 20\% label noise it removes 85\% of the mislabelled samples, but it also removes 52\% of the correctly labelled samples and 65\% of the correctly labelled minority samples, most of which lie near the class boundary. We propose the radius-aware fuzzy GBLSTSVM (\RF{}), which keeps every ball and gives each ball a fuzzy membership instead of a keep-or-delete decision. The membership is a vote among the neighbouring balls. Neighbours are found by the gap between ball surfaces rather than between centres, each vote is weighted by the size of the voting ball and by a smooth function of the gap, and the membership is the share of the vote that agrees with the label of the ball. The membership scales the error term of each ball in a regularised least squares twin formulation, so training still needs only two small linear systems. On 35 UCI and KEEL datasets with 0\% to 30\% label noise, we compare \RF{} with SVM, TSVM, GBSVM, LSTSVM, GBLSTSVM and LS-GBLSTSVM under two tuning protocols. Under the protocol that is common in this literature, in which the hyperparameters are chosen by the test score, \RF{} has the best average accuracy and the best average rank at every noise level with both the linear and the Gaussian kernel, and the difference to each baseline is significant. Under five-fold cross-validation on the training part, which is the stricter protocol, \RF{} is the most accurate linear model from 15\% noise upwards and its advantage over LS-GBLSTSVM grows from 1.3 points at 15\% noise to 3.7 points at 30\%, while the point-based SVM remains ahead on clean data. We report both protocols and the cases where the proposed model does not win.
+\end{abstract}
+
+\begin{keyword}
+Granular-ball computing \sep Least squares twin support vector machine \sep Fuzzy membership \sep Label noise \sep Model selection
+\end{keyword}
+
+\end{frontmatter}
+
+%% ---------------------------------------------------------------------------
+\section{Introduction}
+\label{sec:intro}
+
+The support vector machine (SVM) \cite{cortes1995} finds the hyperplane with the largest margin between two classes by solving one quadratic programming problem. The twin support vector machine (TSVM) \cite{jayadeva2007} replaces it by two smaller problems and two non-parallel hyperplanes, each close to one class and far from the other. The least squares twin support vector machine (LSTSVM) \cite{kumar2009} goes one step further: it uses a squared loss and equality constraints, in the spirit of the least squares SVM \cite{suykens1999}, so that each hyperplane is the solution of one system of linear equations. LSTSVM is simple and fast, but the squared loss gives a large weight to samples that are far from where their label says they should be. Mislabelled samples are of this kind, and label noise is common in real data \cite{frenay2014}.
+
+Granular-ball computing \cite{xia2019} offers a different way of dealing with noise and with large data. The training set is split recursively by $k$-means until each group is almost pure, and each group is replaced by a ball with a centre, a radius and a label. A classifier is then trained on the balls. Since there are far fewer balls than samples, training is cheaper, and since a ball takes the label of the majority of its samples, a few mislabelled samples inside a ball are outvoted. This idea was applied to the SVM (GBSVM) \cite{xia2022gbsvm}, to the twin SVM (GBTSVM) \cite{quadir2024gbtsvm} and to the LSTSVM, giving the GBLSTSVM and its regularised large-scale variant LS-GBLSTSVM \cite{tanveer2024gblstsvm}.
+
+This paper starts from a detail of the ball generation step of GBLSTSVM. Splitting continues until a ball is pure enough or holds a single sample, and afterwards every ball that holds a single sample is deleted. The reasoning is that an isolated sample is probably noise. We measured this on 21 benchmark datasets (Section~\ref{sec:motivation}). The step does remove most mislabelled samples, 85\% of them at 20\% label noise. However, it also removes 52\% of the correctly labelled samples and 65\% of the correctly labelled samples of the minority class. A sample ends up alone in a ball when its close neighbours carry the other label, which is the case for a mislabelled sample, but also for a correct sample that lies in the region where the classes meet. The deletion therefore discards much of the information that determines where the boundary should be.
+
+A fuzzy membership is the natural replacement for a hard deletion: every ball is kept, and each ball receives a weight between 0 and 1 that says how far its label can be trusted \cite{lin2002}. Existing fuzzy granular-ball SVMs \cite{xia2024gbfsvm,lang2025gbftsvm,liu2026rgbiftsvm} compute the membership of a ball from the distance of its centre to the centre of its class, sometimes combined with its purity. We show that such a membership is a weak detector of mislabelled samples (area under the ROC curve of 0.65 at 20\% noise), because a mislabelled sample can be close to the centre of the wrong class. A vote among neighbouring balls is a much better detector. The usual way of finding neighbours, by the distance between centres, ignores that balls have very different sizes: two large balls can touch although their centres are far apart, and a single-sample ball next to a large ball is closer to it than the centre distance suggests.
+
+We propose a radius-aware fuzzy membership that measures closeness by the gap between the surfaces of two balls, and we build a GBLSTSVM around it. The contributions are the following.
+\begin{enumerate}
+\item We quantify what the deletion of single-sample balls in GBLSTSVM removes, and show that it discards more than half of the correctly labelled samples at 20\% label noise, in particular boundary and minority samples.
+\item We propose a radius-aware fuzzy membership for granular balls. Neighbours are chosen by the surface gap, each neighbour votes with a weight that depends on its size and on the gap, with a bandwidth that adapts to the local density, and the membership is the share of the vote that agrees with the label of the ball.
+\item We propose \RF{}, which keeps all balls, weights the error term of each ball by this membership and includes the regularisation term of LS-GBLSTSVM. Each hyperplane is the solution of one linear system, for the linear and for the Gaussian kernel.
+\item We compare \RF{} with six baselines on 35 UCI and KEEL datasets at six noise levels under two tuning protocols: the test-score tuning that is common in this literature, and cross-validation on the training part. We show that the choice of protocol changes the ranking of the models, and we report the results of both, including the settings in which \RF{} is not the best model.
+\end{enumerate}
+
+The rest of the paper is organised as follows. Section~\ref{sec:related} reviews the related models. Section~\ref{sec:motivation} analyses the deletion step. Section~\ref{sec:method} presents the proposed membership and model. Section~\ref{sec:experiments} describes the experiments and Section~\ref{sec:discussion} discusses the findings and limitations. Section~\ref{sec:conclusion} concludes.
+
+%% ---------------------------------------------------------------------------
+\section{Related work}
+\label{sec:related}
+
+Throughout the paper, the training set is $T=\{(x_i,y_i)\}_{i=1}^{n}$ with $x_i\in\R^{d}$ and $y_i\in\{+1,-1\}$. The matrices $A\in\R^{n_1\times d}$ and $B\in\R^{n_2\times d}$ hold the samples of class $+1$ and class $-1$ as rows, and $e$ denotes a vector of ones of suitable length.
+
+\subsection{Least squares twin support vector machine}
+
+LSTSVM \cite{kumar2009} looks for two hyperplanes $w_1^{\top}x+b_1=0$ and $w_2^{\top}x+b_2=0$. The first is the solution of
+\begin{equation}
+\min_{w_1,b_1,\xi}\ \frac{1}{2}\lVert Aw_1+eb_1\rVert^{2}+\frac{c_1}{2}\lVert\xi\rVert^{2}
+\quad\text{s.t.}\quad -(Bw_1+eb_1)+\xi=e ,
+\label{eq:lstsvm}
+\end{equation}
+and the second is obtained by exchanging the roles of the classes. The first term keeps the plane close to class $+1$, and the second asks every sample of class $-1$ to be at distance one on the other side, with a squared penalty $\xi$ for deviations. Substituting the constraint into the objective and setting the gradient to zero gives, with $H=[A\ \ e]$ and $G=[B\ \ e]$,
+\begin{equation}
+\begin{bmatrix}w_1\\ b_1\end{bmatrix}=-\Bigl(G^{\top}G+\tfrac{1}{c_1}H^{\top}H\Bigr)^{-1}G^{\top}e ,\qquad
+\begin{bmatrix}w_2\\ b_2\end{bmatrix}=\Bigl(H^{\top}H+\tfrac{1}{c_2}G^{\top}G\Bigr)^{-1}H^{\top}e .
+\end{equation}
+A new sample is assigned to the class whose hyperplane is nearer.
+
+\subsection{Granular balls}
+
+A granular ball \cite{xia2019} is a set of samples $GB_j=\{x_1,\dots,x_{n_j}\}$ described by its centre, its radius and its label,
+\begin{equation}
+c_j=\frac{1}{n_j}\sum_{x\in GB_j}x,\qquad r_j=\frac{1}{n_j}\sum_{x\in GB_j}\lVert x-c_j\rVert ,
+\end{equation}
+where the label $y_j$ is the majority label of the samples in the ball and the purity is the fraction of samples that carry this label. Generation starts from one ball that holds the whole training set. A ball whose purity is below a threshold is split by $k$-means into smaller balls, and this is repeated until every ball reaches the threshold or holds a single sample. A single-sample ball has radius zero.
+
+\subsection{GBSVM, GBLSTSVM and LS-GBLSTSVM}
+
+GBSVM \cite{xia2022gbsvm} asks every ball, and not only its centre, to be on the correct side of the margin:
+\begin{equation}
+\min_{w,b,\xi}\ \frac{1}{2}\lVert w\rVert^{2}+C\sum_{j}\xi_j\quad\text{s.t.}\quad y_j(w^{\top}c_j+b)-r_j\lVert w\rVert\ge 1-\xi_j,\ \ \xi_j\ge 0 .
+\label{eq:gbsvm}
+\end{equation}
+GBLSTSVM \cite{tanveer2024gblstsvm} applies the same idea to \eqref{eq:lstsvm}. Let $C^{+}$ and $C^{-}$ hold the centres of the balls of the two classes as rows and $R^{+}$, $R^{-}$ the corresponding radii. The first problem is
+\begin{equation}
+\min_{w_1,b_1,\xi}\ \frac{1}{2}\lVert C^{+}w_1+eb_1\rVert^{2}+\frac{c_1}{2}\lVert\xi\rVert^{2}
+\quad\text{s.t.}\quad -(C^{-}w_1+eb_1)+\xi=e+R^{-} ,
+\end{equation}
+so a ball of the other class has to stay at distance one plus its radius. LS-GBLSTSVM adds the regularisation term $\frac{c_3}{2}(\lVert w_1\rVert^{2}+b_1^{2})$ to the objective, which implements structural risk minimisation and makes the system matrix positive definite. In both models, balls that hold a single sample are deleted before training.
+
+\subsection{Fuzzy memberships and their use on granular balls}
+
+The fuzzy SVM \cite{lin2002} multiplies the penalty of each sample by a membership in $(0,1]$, so that doubtful samples influence the solution less. Memberships have been derived from the distance to the class centre \cite{lin2002}, with corrections for class imbalance \cite{batuwita2010}, and from pairs of membership and non-membership degrees in intuitionistic fuzzy twin SVMs \cite{rezvani2019}. The fuzzy $k$-nearest-neighbour rule \cite{keller1985} assigns a sample a degree of membership in each class from the labels of its neighbours, and distance-weighted voting among neighbours goes back to Dudani \cite{dudani1976}; Hechenbichler and Schliep \cite{hechenbichler2004} scale the distances by the distance to the $(k+1)$-th neighbour before applying a kernel.
+
+On granular balls, GBFSVM \cite{xia2024gbfsvm}, GBFTSVM \cite{lang2025gbftsvm} and RGBIFTSVM \cite{liu2026rgbiftsvm} define the membership of a ball by the distance of its centre to the centre of its class, in the last two cases together with a non-membership degree derived from the purity. None of them uses the neighbours of a ball. The closest work to ours is the granular-ball fuzzy random vector functional link network of \cite{quadir2026gbfrvfl}, whose non-membership contains the fraction of the $k$ nearest balls that carry a different label. This is an unweighted count: neither the distance, nor the size of the neighbour, nor any radius enters. The gap between ball surfaces, $\lVert c_i-c_j\rVert-r_i-r_j$, has been used as a similarity for merging balls in unsupervised clustering \cite{xia2024gbct}, and the distance from a sample to the surface of a ball is used at prediction time by granular-ball $k$-nearest-neighbour classifiers \cite{xia2019}. To the best of our knowledge, a membership for granular balls that combines a surface-gap neighbourhood with a size- and gap-weighted vote on the labels has not been proposed, and no fuzzy membership has been used in GBLSTSVM.
+
+%% ---------------------------------------------------------------------------
+\section{What the deletion of single-sample balls removes}
+\label{sec:motivation}
+
+We generated granular balls as in GBLSTSVM (purity threshold 0.985) on the training part of 21 benchmark datasets after flipping the labels of 10\%, 20\% and 30\% of the training samples, and recorded which samples ended up in single-sample balls. Figure~\ref{fig:diagnostics}(a) shows the result, averaged over datasets and splits. At 20\% noise, the deletion step removes 85.4\% of the mislabelled samples. This is the intended effect. It also removes 52.0\% of the correctly labelled samples and 65.3\% of the correctly labelled minority samples. At 30\% noise, 60.2\% of the correct samples are removed. The price for the noise filter is thus more than half of the clean data, and the removed clean samples are not a random half: a correct sample becomes a single-sample ball when it is surrounded by samples of the other label, which happens near the class boundary and around mislabelled samples.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/diagnostics.pdf}
+\caption{(a) Share of mislabelled, correctly labelled, and correctly labelled minority training samples that end up in single-sample balls and are deleted by GBLSTSVM. (b) Area under the ROC curve when a membership is used as a score for detecting mislabelled samples (each sample inherits the membership of its ball; all balls are kept). The dashed line is a random score. Averages over 21 datasets.}
+\label{fig:diagnostics}
+\end{figure}
+
+A membership can only replace the deletion if it gives low values to mislabelled samples. Figure~\ref{fig:diagnostics}(b) treats each membership as a detector of mislabelled samples and reports the area under the ROC curve (AUC). The centre-distance membership used by existing fuzzy granular-ball SVMs reaches 0.70, 0.65 and 0.60 at 10\%, 20\% and 30\% noise. An entropy-based membership is below 0.5, because a mislabelled sample in its own ball has purity one and zero entropy. A plain count of agreeing neighbouring balls reaches 0.885, 0.868 and 0.821. The radius-aware membership proposed in the next section reaches 0.886, 0.877 and 0.854; its advantage over the plain count grows with the noise level.
+
+%% ---------------------------------------------------------------------------
+\section{Proposed model}
+\label{sec:method}
+
+\subsection{Radius-aware fuzzy membership}
+
+Let $\{(c_i,r_i,y_i,n_i)\}_{i=1}^{m}$ be the balls generated from the training set, where $n_i$ is the number of samples in ball $i$. No ball is deleted. The \emph{surface gap} between two balls is
+\begin{equation}
+g_{ij}=\max\bigl(0,\ \lVert c_i-c_j\rVert-r_i-r_j\bigr),
+\label{eq:gap}
+\end{equation}
+which is zero when the balls touch or overlap (Figure~\ref{fig:gap}). Let $N_k(i)$ be the $k$ balls with the smallest gap to ball $i$, and let $s_i=\max_{j\in N_k(i)}g_{ij}$ be the gap to the $k$-th of them. Ball $j\in N_k(i)$ votes with the weight
+\begin{equation}
+v_{ij}=n_j\exp\!\bigl(-(g_{ij}/s_i)^{2}\bigr),
+\label{eq:vote}
+\end{equation}
+and the membership of ball $i$ is the share of the vote cast by balls of its own label, raised to a power $\gamma>0$:
+\begin{equation}
+m_i=\max\!\left(\epsilon,\ \Biggl(\frac{\sum_{j\in N_k(i)}v_{ij}\,[\,y_j=y_i\,]}{\sum_{j\in N_k(i)}v_{ij}}\Biggr)^{\!\gamma}\right),\qquad \epsilon=10^{-3}.
+\label{eq:membership}
+\end{equation}
+Here $[\cdot]$ is one if the condition holds and zero otherwise.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.5\textwidth]{figures/gap.pdf}
+\caption{The surface gap. Ball $GB_1$ is large and almost touches $GB_i$, so it is a close neighbour although its centre (dotted line) is farther away than those of the other balls.}
+\label{fig:gap}
+\end{figure}
+
+The three ingredients have the following purposes.
+\begin{itemize}
+\item \emph{Surface gap.} Balls differ strongly in size, from single samples to balls that cover a large part of a class. The centre distance treats a large ball as far away even when its surface is next to ball $i$. The gap \eqref{eq:gap} measures how far apart the regions covered by the two balls are.
+\item \emph{Size and gap weights.} A neighbour that summarises many samples is stronger evidence than a single-sample ball, hence the factor $n_j$. The exponential factor lets touching balls count fully and lets the influence fade with the gap. Dividing by $s_i$ makes the weight independent of the scale of the data and adapts it to the local density, so that there is no bandwidth to tune.
+\item \emph{Sharpness $\gamma$.} A value above one pushes the membership of balls with mixed neighbourhoods towards zero, a value below one flattens the membership.
+\end{itemize}
+A mislabelled sample that became a single-sample ball lies among balls of the other label, so its membership is close to $\epsilon$. A correct boundary sample has neighbours of both labels and receives an intermediate membership: it stays in the training set with reduced influence, instead of being deleted. A ball inside its class has membership one. The membership has two parameters, $k$ and $\gamma$; Section~\ref{sec:sensitivity} shows that the model is not sensitive to them.
+
+\subsection{Linear \RF{}}
+
+Let $C^{+}\in\R^{m_1\times d}$ and $C^{-}\in\R^{m_2\times d}$ hold the centres of the balls with label $+1$ and $-1$, $R^{+}$ and $R^{-}$ their radii, and $S^{+}=\operatorname{diag}(m_i)_{y_i=+1}$, $S^{-}=\operatorname{diag}(m_i)_{y_i=-1}$ their memberships. The two hyperplanes of the linear \RF{} are the solutions of
+\begin{align}
+\min_{w_1,b_1,\xi_1}\ & \frac{c_3}{2}\bigl(\lVert w_1\rVert^{2}+b_1^{2}\bigr)+\frac{1}{2}\lVert C^{+}w_1+eb_1\rVert^{2}+\frac{c_1}{2}\,\xi_1^{\top}S^{-}\xi_1 \nonumber\\
+\text{s.t.}\ & -(C^{-}w_1+eb_1)+\xi_1=e+R^{-}, \label{eq:rf1}\\[4pt]
+\min_{w_2,b_2,\xi_2}\ & \frac{c_4}{2}\bigl(\lVert w_2\rVert^{2}+b_2^{2}\bigr)+\frac{1}{2}\lVert C^{-}w_2+eb_2\rVert^{2}+\frac{c_2}{2}\,\xi_2^{\top}S^{+}\xi_2 \nonumber\\
+\text{s.t.}\ & (C^{+}w_2+eb_2)+\xi_2=e+R^{+}. \label{eq:rf2}
+\end{align}
+In \eqref{eq:rf1}, the first term is the regulariser of LS-GBLSTSVM, the second keeps the first plane close to the balls of class $+1$, and the third penalises balls of class $-1$ that are not at distance one plus their radius from it. The penalty of each ball is multiplied by its membership, so a ball whose label is contradicted by its neighbours is allowed to lie on the wrong side at almost no cost. With $S^{\pm}=I$ and single-sample balls deleted, the problems reduce to LS-GBLSTSVM; with $c_3=c_4=0$ in addition, to GBLSTSVM.
+
+Substituting the constraint of \eqref{eq:rf1} into the objective gives an unconstrained strictly convex quadratic in $z_1=[w_1^{\top}\ b_1]^{\top}$. With $H=[C^{+}\ \ e]$ and $G=[C^{-}\ \ e]$,
+\[
+L(z_1)=\frac{c_3}{2}\lVert z_1\rVert^{2}+\frac{1}{2}\lVert Hz_1\rVert^{2}+\frac{c_1}{2}\,(Gz_1+e+R^{-})^{\top}S^{-}(Gz_1+e+R^{-}),
+\]
+and setting $\nabla L=0$ yields
+\begin{equation}
+z_1=-\Bigl(G^{\top}S^{-}G+\tfrac{1}{c_1}H^{\top}H+\tfrac{c_3}{c_1}I\Bigr)^{-1}G^{\top}S^{-}(e+R^{-}).
+\label{eq:sol1}
+\end{equation}
+In the same way,
+\begin{equation}
+z_2=\Bigl(H^{\top}S^{+}H+\tfrac{1}{c_2}G^{\top}G+\tfrac{c_4}{c_2}I\Bigr)^{-1}H^{\top}S^{+}(e+R^{+}).
+\label{eq:sol2}
+\end{equation}
+Both matrices are of size $(d+1)\times(d+1)$ and positive definite for $c_3,c_4>0$, so the solution is unique. A new sample $x$ is assigned to the class of the nearer plane,
+\begin{equation}
+\operatorname{class}(x)=\argmin_{l\in\{1,2\}}\ \frac{\lvert w_l^{\top}x+b_l\rvert}{\lVert w_l\rVert},
+\label{eq:decision}
+\end{equation}
+where $l=1$ stands for class $+1$ and $l=2$ for class $-1$. For imbalanced data, the diagonal entries that belong to the minority class can optionally be multiplied by the ratio of majority to minority samples; whether this is done is treated as a hyperparameter for every model in the experiments.
+
+\subsection{Gaussian kernel \RF{}}
+
+For the non-linear model we use the kernel-generated surfaces $K(x^{\top},D^{\top})u_l+b_l=0$, where $D=[C^{+};C^{-}]\in\R^{m\times d}$ holds all ball centres and $K(x,z)=\exp(-\mu\lVert x-z\rVert^{2})$. Since $D$ contains the $m$ ball centres rather than the $n$ training samples, the kernel matrix is small. The problems are \eqref{eq:rf1} and \eqref{eq:rf2} with $C^{+}$ and $C^{-}$ replaced by $K(C^{+},D^{\top})$ and $K(C^{-},D^{\top})$ and $w_l$ replaced by $u_l$, and the solutions are \eqref{eq:sol1} and \eqref{eq:sol2} with $H=[K(C^{+},D^{\top})\ \ e]$ and $G=[K(C^{-},D^{\top})\ \ e]$. The radii and the memberships are computed in the input space, as in the kernel GBLSTSVM \cite{tanveer2024gblstsvm}. The decision rule is \eqref{eq:decision} with $w_l^{\top}x$ replaced by $K(x^{\top},D^{\top})u_l$.
+
+\subsection{Algorithm and complexity}
+
+\begin{algorithm}[t]
+\caption{Training of \RF{}}
+\label{alg:rf}
+\begin{algorithmic}[1]
+\Require training set $T$; purity threshold; clusters per split; $k$, $\gamma$; $c_1,c_2,c_3,c_4$
+\State Generate granular balls from $T$ by recursive $k$-means splitting until every ball reaches the purity threshold or holds one sample. Keep all balls.
+\State Compute the surface gaps $g_{ij}$ by \eqref{eq:gap}.
+\For{each ball $i$}
+\State Find the $k$ balls with the smallest gap and compute $m_i$ by \eqref{eq:vote} and \eqref{eq:membership}.
+\EndFor
+\State Form $H$, $G$, $S^{+}$, $S^{-}$ (with the kernel map for the Gaussian model).
+\State Compute $z_1$ and $z_2$ by \eqref{eq:sol1} and \eqref{eq:sol2}.
+\Ensure $(w_1,b_1)$ and $(w_2,b_2)$; predict with \eqref{eq:decision}.
+\end{algorithmic}
+\end{algorithm}
+
+Algorithm~\ref{alg:rf} summarises the training. With $m$ balls in $d$ dimensions, computing all gaps costs $O(m^{2}d)$ time and selecting the neighbours $O(m^{2})$. The linear model then needs $O(md^{2}+d^{3})$ for forming and solving the two systems, the same as LS-GBLSTSVM, and the kernel model $O(m^{3})$. Because all balls are kept, $m$ is larger than in GBLSTSVM; in exchange, no training sample is discarded. The quadratic cost of the gap computation is not a concern for the datasets used here. For very large data it can be reduced with a spatial index, which we leave for future work (Section~\ref{sec:discussion}).
+
+%% ---------------------------------------------------------------------------
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Setup}
+\label{sec:setup}
+
+\paragraph{Datasets and noise} We use 35 binary datasets from the UCI \cite{uci} and KEEL \cite{keel} repositories (Table~\ref{tab:datasets}); the minority class is taken as the positive class. Each dataset is split at random into 70\% for training and 30\% for testing, stratified by class, and the features are standardised with the mean and standard deviation of the training part. Label noise is added by flipping the labels of 5\%, 10\%, 15\%, 20\% or 30\% of the training samples chosen at random; test labels are never changed. Every experiment is repeated over 10 random splits for the linear models and 5 for the Gaussian kernel, and the scores of a dataset are averaged over its splits. All models see exactly the same splits and the same flipped labels.
+
+\input{tables/datasets}
+
+\paragraph{Models} \RF{} is compared with SVM \cite{cortes1995}, TSVM \cite{jayadeva2007}, GBSVM \cite{xia2022gbsvm}, LSTSVM \cite{kumar2009}, GBLSTSVM and LS-GBLSTSVM \cite{tanveer2024gblstsvm}, the baselines of \cite{tanveer2024gblstsvm}. All granular-ball models use the same ball generation with purity threshold 0.985; GBSVM, GBLSTSVM and LS-GBLSTSVM delete single-sample balls as in their original versions. The GBSVM problem \eqref{eq:gbsvm} is a second-order cone programme, and we solve it to optimality with an interior-point solver \cite{diamond2016,goulart2024} rather than with particle swarm optimisation.
+
+\paragraph{Hyperparameters} The penalty parameters $c_1,c_2$ of LSTSVM and GBLSTSVM, $c_1=c_2$ and $c_3=c_4$ of LS-GBLSTSVM and \RF{}, and $C$ of SVM and GBSVM are taken from $\{10^{-3},10^{-2},\dots,10^{3}\}$, and those of TSVM from $\{2^{-5},\dots,2^{5}\}$. The number of clusters per split in the ball generation is taken from $\{2,\dots,6\}$ for the linear models and $\{2,4,6\}$ for the Gaussian kernel. The Gaussian kernel parameter is $\mu=q/d$ with $q\in\{0.25,1,4\}$. Every model can switch the class weighting for imbalanced data on or off. \RF{} has in addition $k\in\{5,10\}$ and $\gamma\in\{1,3\}$.
+
+\paragraph{Two tuning protocols} The way the hyperparameters are chosen matters for the conclusions, so we report two protocols.
+\begin{itemize}
+\item \emph{Test-set tuning.} For each split, the reported score is the best test score over the grid. This is the protocol of \cite{tanveer2024gblstsvm} and of most papers on granular-ball SVMs. It measures what a model can reach with ideal settings. It is optimistic, and it favours models with a larger grid, because the maximum over more settings can only be higher \cite{cawley2010}.
+\item \emph{Cross-validation (CV) tuning.} For each split, the hyperparameters are chosen by five-fold cross-validation on the (noisy) training part, by the mean balanced accuracy over the folds, and the model with these settings is trained on the whole training part and scored once on the test part. This measures what a user obtains in practice, where test labels are not available for tuning.
+\end{itemize}
+
+\paragraph{Scores and tests} We report the accuracy (ACC) and the balanced accuracy (BACC, the mean of the recalls of the two classes), both in per cent. Following \cite{demsar2006}, models are compared by their average rank over the datasets, by the Friedman test with the Iman--Davenport correction \cite{iman1980}, and \RF{} is compared with each baseline by the Wilcoxon signed-rank test and by counting wins, ties and losses over the datasets.
+
+\subsection{Linear kernel, test-set tuning}
+
+Table~\ref{tab:lin-oracle} gives the average ACC and the average rank. \RF{} has the highest average ACC and the best average rank at every noise level, from 89.98\% on clean data to 88.10\% at 30\% noise, followed by LS-GBLSTSVM. Table~\ref{tab:lin-oracle-pair} shows that the difference to every baseline is significant at every noise level. The gain over LS-GBLSTSVM, the strongest baseline, is between 0.3 and 0.7 points with 23 to 28 wins out of 35 datasets ($p\le 0.002$); the gains over the other five baselines are between 1.2 and 5.1 points. From clean data to 30\% noise, \RF{} loses 1.9 points, LS-GBLSTSVM 2.1, GBLSTSVM 2.5, LSTSVM 2.9, SVM 3.1 and TSVM 3.3. The Friedman test rejects the hypothesis that all models perform equally in every setting (Table~\ref{tab:friedman}). The per-dataset scores at 0\% and 20\% noise are given in \ref{app:per-dataset}.
+
+\input{tables/lin_oracle_acc}
+\input{tables/lin_oracle_pair}
+
+\subsection{Linear kernel, CV tuning}
+
+Tables~\ref{tab:lin-cv-acc} to \ref{tab:lin-cv-bacc-pair} give the results when the hyperparameters are chosen by cross-validation on the training part. All scores are clearly lower than under test-set tuning, by 5 to 20 points for most models, and the ranking changes.
+
+\emph{Accuracy.} On clean data, SVM is the best model (83.2\%) and is significantly ahead of \RF{} (81.4\%, $p=0.004$); \RF{}, LS-GBLSTSVM, TSVM and LSTSVM are within about one point of each other. With label noise the picture turns. From 5\% noise upwards \RF{} has the best average rank, and from 15\% upwards the best average ACC. At 20\% noise it reaches 77.9\%, against 75.1\% for LS-GBLSTSVM, 74.4\% for SVM and 73.5\% for LSTSVM. Compared with LS-GBLSTSVM, \RF{} is level up to 10\% noise (differences below half a point, not significant) and ahead by 1.3, 2.8 and 3.7 points at 15\%, 20\% and 30\% ($p=0.041$, $0.003$, $0.004$). Compared with GBLSTSVM it is ahead by 3.2 to 9.7 points at every noise level.
+
+\emph{Balanced accuracy.} BACC is the harder score for the granular-ball models, because many of the datasets are strongly imbalanced. SVM has the highest average BACC up to 15\% noise, and SVM, LSTSVM and TSVM are significantly ahead of \RF{} on clean data (by 2.3 to 3.0 points). \RF{} catches up as the noise grows: at 20\% and 30\% it has the highest average BACC (75.3\% and 70.3\%), although its differences to SVM at these levels are not significant. Among the granular-ball models \RF{} is the best at every noise level; it is ahead of GBLSTSVM by 3.0 to 6.6 points (always significant) and of LS-GBLSTSVM by 0.3 to 2.4 points (significant at 20\% and 30\%).
+
+Figure~\ref{fig:noise-linear} shows both protocols side by side.
+
+\input{tables/lin_cv_acc}
+\input{tables/lin_cv_acc_pair}
+\input{tables/lin_cv_bacc}
+\input{tables/lin_cv_bacc_pair}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/noise_linear.pdf}
+\caption{Linear kernel: average score over 35 datasets against the label noise level, under test-set tuning and under CV tuning.}
+\label{fig:noise-linear}
+\end{figure}
+
+\subsection{Gaussian kernel}
+
+Tables~\ref{tab:ker-oracle} to \ref{tab:ker-cv-bacc-pair} and Figure~\ref{fig:noise-kernel} give the results with the Gaussian kernel at 0\%, 10\% and 20\% noise. Under test-set tuning, \RF{} is again first at every noise level (91.9\%, 91.1\% and 90.2\% ACC) with an average rank between 1.5 and 1.7, and it is significantly better than each of the six baselines; the gain over LS-GBLSTSVM is 0.5 to 1.0 points. Under CV tuning the point-based models are stronger than in the linear case. TSVM and SVM have the highest ACC, and SVM has the highest BACC at every noise level. \RF{} has the second-highest BACC (81.9\%, 78.8\% and 73.9\%). It is the best of the five twin and granular-ball models, significantly ahead of GBLSTSVM and TSVM at every level, of LS-GBLSTSVM at 0\% and 10\%, and of LSTSVM at 10\% and 20\%, and it is behind SVM by 0.8 to 1.8 points (significant at 10\% and 20\%).
+
+\input{tables/ker_oracle_acc}
+\input{tables/ker_oracle_pair}
+\input{tables/ker_cv_acc}
+\input{tables/ker_cv_bacc}
+\input{tables/ker_cv_bacc_pair}
+\input{tables/friedman}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/noise_kernel.pdf}
+\caption{Gaussian kernel: average score over 35 datasets against the label noise level, under test-set tuning and under CV tuning.}
+\label{fig:noise-kernel}
+\end{figure}
+
+\subsection{Ablation}
+
+\RF{} differs from GBLSTSVM in three components: single-sample balls are kept, the error terms are weighted by the radius-aware membership, and the regularisation term is added. Table~\ref{tab:ablation} shows the linear model with each combination that we ran. Three observations can be made. First, keeping the balls without a membership is not enough. Added to GBLSTSVM it helps by 0.3 to 1.5 points, but added to LS-GBLSTSVM it lowers the accuracy under both protocols (for example from 75.1\% to 73.8\% at 20\% noise under CV tuning), because the mislabelled single-sample balls return to the training set with full weight. Second, the membership repairs this: with the membership on top, the model gains 4.1 points at 20\% noise and 4.8 points at 30\% under CV tuning, and ends above LS-GBLSTSVM. Third, the regularisation term matters most under CV tuning, where it adds about 3 to 7 points to the model with kept balls and membership. The full model is the best row under test-set tuning at every noise level and under CV tuning at 20\% and 30\% noise; on clean data and at 10\% noise under CV tuning it is level with LS-GBLSTSVM.
+
+\input{tables/ablation}
+
+\subsection{Sensitivity to $k$ and $\gamma$}
+\label{sec:sensitivity}
+
+Figure~\ref{fig:sensitivity} shows the BACC of the linear \RF{} under CV tuning for every combination of $k\in\{3,5,10,15,20\}$ and $\gamma\in\{0.5,1,2,3,5\}$ on 21 datasets, where all other hyperparameters are chosen by cross-validation for each combination. Over the 25 combinations, the BACC varies between 77.7\% and 79.4\% on clean data and between 74.8\% and 76.9\% at 20\% noise, a range of about two points. The membership therefore does not require careful tuning, and the small grid $k\in\{5,10\}$, $\gamma\in\{1,3\}$ used in the comparisons is sufficient.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/sensitivity.pdf}
+\caption{Sensitivity of the linear \RF{} to the number of voting neighbours $k$ and the sharpness $\gamma$: average BACC over 21 datasets under CV tuning.}
+\label{fig:sensitivity}
+\end{figure}
+
+%% ---------------------------------------------------------------------------
+\section{Discussion}
+\label{sec:discussion}
+
+\paragraph{The tuning protocol changes the ranking} Under test-set tuning the three granular-ball least squares models have the three best average ranks among the linear models and the point-based SVM and LSTSVM are near the bottom, in line with the results reported for GBLSTSVM \cite{tanveer2024gblstsvm}. Under CV tuning on the same splits, GBLSTSVM is below LSTSVM at every noise level, by 1.1 to 3.0 points of ACC, and below SVM by 1.4 to 8.1 points. A plausible reason is that the granular-ball models have more hyperparameters, and some of them (the number of clusters per split) change the training set itself, so their best-case score over a grid is further above what cross-validation can find. We therefore recommend that granular-ball classifiers be reported under cross-validation, at least in addition to test-set tuning. For \RF{} the two protocols agree on the comparison with the other granular-ball models, and they disagree on the comparison with SVM on clean data.
+
+\paragraph{Where the proposed model helps and where it does not} The membership is designed for label noise, and this is where the gains are: the advantage of \RF{} over LS-GBLSTSVM and over the point-based models under CV tuning grows with the noise level. On clean data the membership has little to correct. There, a soft-margin SVM on the samples is the better choice under CV tuning, by 1.8 points of ACC and 3.0 points of BACC with the linear kernel. We also note that under test-set tuning the grid of \RF{} is four times as large as that of LS-GBLSTSVM because of $k$ and $\gamma$, which favours \RF{} in that protocol; the CV results are not affected by this, since a larger grid is no advantage when the settings are chosen without the test labels.
+
+\paragraph{GBSVM solved exactly} GBSVM is the weakest model in our tables under both protocols. We checked the solver: with all radii set to zero it reproduces the linear SVM. With the radii, the constraint in \eqref{eq:gbsvm} asks each ball to be at distance $r_j$ beyond the margin, and on several datasets the optimum is $w=0$, which assigns every sample to one class. The published GBSVM results were obtained with particle swarm optimisation, which does not need to reach this optimum. This behaviour of the exact solution deserves a separate study.
+
+\paragraph{Limitations} The experiments cover small and medium datasets with up to 1484 samples. We have not yet run large-scale experiments such as the NDC datasets used in \cite{tanveer2024gblstsvm}; the present implementation computes all pairwise gaps, which is quadratic in the number of balls, and a neighbour search with a spatial index is needed first. The noise in our experiments is uniform label flipping; feature noise and class-dependent label noise were not studied. The diagnostic and sensitivity analyses use 21 of the 35 datasets.
+
+%% ---------------------------------------------------------------------------
+\section{Conclusion}
+\label{sec:conclusion}
+
+The deletion of single-sample balls in GBLSTSVM removes most mislabelled samples, but also more than half of the correctly labelled ones at 20\% label noise. We proposed to keep all balls and to weight each ball by a radius-aware fuzzy membership: a vote among the balls with the smallest surface gap, weighted by ball size and by the gap. The resulting model, \RF{}, is still trained by solving two linear systems. On 35 datasets it is the best of seven models under test-set tuning at every noise level, with the linear and the Gaussian kernel. Under cross-validation it is the best granular-ball model, and the best linear model overall in ACC from 15\% label noise upwards, while SVM remains better on clean data. Future work includes a faster neighbour search for large-scale data, other noise models, and the use of the membership in other granular-ball classifiers.
+
+\section*{Code availability}
+The code and the result files of all experiments are available at \url{https://github.com/Jayagna/GBLSTSVM}.
+
+\appendix
+\section{Per-dataset results}
+\label{app:per-dataset}
+
+Tables~\ref{tab:per-oracle-0} to \ref{tab:per-cv-20} give the ACC of the linear models on every dataset at 0\% and 20\% label noise under both tuning protocols.
+
+\input{tables/per_oracle_0}
+\input{tables/per_oracle_20}
+\input{tables/per_cv_0}
+\input{tables/per_cv_20}
+
+\clearpage
+\bibliographystyle{elsarticle-num}
+\bibliography{refs}
+
+\end{document}

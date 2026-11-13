@@ -1,0 +1,19 @@
+\begin{table}[!t]
+\centering
+\caption{RF-GBLSTSVM against each baseline, Gaussian kernel, cross-validated tuning: mean difference in BACC (percentage points), [win, tie, loss] over the 35 datasets and, in parentheses, the $p$-value of the Wilcoxon signed-rank test.}
+\label{tab:ker-cv-bacc-pair}
+\footnotesize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccc}
+\toprule
+Baseline & 0\% & 10\% & 20\% \\
+\midrule
+SVM & \shortstack{-0.77 [14, 0, 21]\\(0.055)} & \shortstack{-1.43 [7, 0, 28]\\(0.013)} & \shortstack{-1.81 [7, 0, 28]\\(0.001)} \\[4pt]
+TSVM & \shortstack{+3.49 [26, 0, 9]\\(0.003)} & \shortstack{+1.59 [23, 0, 12]\\(0.049)} & \shortstack{+2.81 [24, 0, 11]\\($<$0.001)} \\[4pt]
+GBSVM & \shortstack{+28.66 [35, 0, 0]\\($<$0.001)} & \shortstack{+16.98 [33, 0, 2]\\($<$0.001)} & \shortstack{+16.44 [33, 0, 2]\\($<$0.001)} \\[4pt]
+LSTSVM & \shortstack{+0.60 [20, 0, 15]\\(0.385)} & \shortstack{+3.92 [26, 0, 9]\\($<$0.001)} & \shortstack{+4.38 [30, 0, 5]\\($<$0.001)} \\[4pt]
+GBLSTSVM & \shortstack{+4.27 [27, 2, 6]\\($<$0.001)} & \shortstack{+4.61 [30, 0, 5]\\($<$0.001)} & \shortstack{+3.61 [29, 0, 6]\\($<$0.001)} \\[4pt]
+LS-GBLSTSVM & \shortstack{+3.06 [24, 0, 11]\\(0.001)} & \shortstack{+2.52 [21, 0, 14]\\(0.008)} & \shortstack{+1.57 [18, 0, 17]\\(0.219)} \\[4pt]
+\bottomrule
+\end{tabular}}
+\end{table}

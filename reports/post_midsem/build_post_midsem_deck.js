@@ -1168,6 +1168,22 @@ s = content(BK, "Sensitivity: the two weight settings hardly matter", "Results, 
 takeaway(s, "Still open: the large NDC datasets with timing, which need a faster neighbour search first.");
 s.addNotes("The sensitivity analysis. We varied the two settings of the fuzzy weight, the number of voting neighbours and the sharpness, over twenty-five combinations, and chose everything else by cross-validation each time. The scores move by about two points at most, with no clear best corner. So the model is not sensitive to these two settings. What is still open on the experimental side is the large-scale test on the NDC datasets with training times.");
 
+// ---- Paper draft, 13 Nov
+s = content(BK, "First full draft of the paper is written", "Progress, 13 Nov (paper draft)");
+[
+  ["1", "What it is", "A 29-page LaTeX draft in the Elsevier style, laid out like the GBLSTSVM paper: introduction, related work, what deletion removes, the radius-aware weight and model (linear and Gaussian), experiments, discussion, conclusion, per-dataset appendix. Working name of the model: RF-GBLSTSVM.", C.accent3],
+  ["2", "What it reports", "Both tuning methods on 35 datasets and six noise levels. Best of seven models at every noise level when tuned on the test score. Under cross-validation: best granular-ball model, best linear model from 15% noise up, SVM still ahead on clean data. Ablation, sensitivity and statistical tests included.", C.accent1],
+  ["3", "Where it is", "reports/paper in the repository (main.tex, refs.bib, tables, figures; make_assets.py rebuilds every table and figure from the result files). PDF copy in Desktop/FUZZY. Four recent references still need full author names.", C.accent5],
+].forEach(([n, h, t, color], i) => {
+  const x = 0.6 + i * 4.1, w = 3.9;
+  card(s, x, 1.6, w, 4.3);
+  badge(s, x + 0.25, 1.85, n, color, 0.55, 18);
+  s.addText(h, tx({ x: x + 0.95, y: 1.85, w: w - 1.2, h: 0.55, fontSize: 17, bold: true, color: C.text2, valign: "middle" }));
+  s.addText(t, tx({ x: x + 0.25, y: 2.65, w: w - 0.5, h: 3.1, fontSize: 15 }));
+});
+takeaway(s, "Still open: author details, reference check, target journal, and the large NDC datasets.");
+s.addNotes("The first full draft of the paper is written in LaTeX. It follows the layout of the GBLSTSVM paper and reports both tuning methods openly, including the cases where the proposed model does not win. Every table and figure is generated from the result files by one script, so the draft can be rebuilt when new results arrive. What is still open: the author block, a check of the reference list, the choice of journal, and the large-scale NDC test.");
+
 // =====================================================================================
 // 31. References
 // =====================================================================================

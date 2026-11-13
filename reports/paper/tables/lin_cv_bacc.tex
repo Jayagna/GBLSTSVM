@@ -1,0 +1,26 @@
+\begin{table}[!t]
+\centering
+\caption{Linear kernel, cross-validated tuning: average balanced accuracy (BACC, \%) and average rank over 35 datasets.}
+\label{tab:lin-cv-bacc}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llccccccc}
+\toprule
+ & Noise & SVM & TSVM & GBSVM & LSTSVM & GBLSTSVM & LS-GBLSTSVM & \textbf{RF-GBLSTSVM} \\
+\midrule
+Average BACC & 0\% & \textbf{81.01} & 80.32 & 66.99 & 80.45 & 74.17 & 76.93 & 78.03 \\
+ & 5\% & \textbf{79.79} & 78.68 & 69.85 & 79.20 & 75.11 & 77.83 & 78.14 \\
+ & 10\% & \textbf{78.75} & 77.87 & 69.24 & 77.93 & 74.15 & 76.48 & 77.50 \\
+ & 15\% & \textbf{76.85} & 75.46 & 67.44 & 76.37 & 72.33 & 74.59 & 75.37 \\
+ & 20\% & 75.21 & 74.53 & 65.56 & 74.32 & 69.99 & 72.85 & \textbf{75.26} \\
+ & 30\% & 69.72 & 68.56 & 59.65 & 68.69 & 63.68 & 67.96 & \textbf{70.27} \\
+\midrule
+Average rank & 0\% & \textbf{2.31} & 2.64 & 6.31 & 2.77 & 5.49 & 4.51 & 3.96 \\
+ & 5\% & \textbf{2.67} & 3.57 & 6.00 & 2.99 & 5.40 & 3.74 & 3.63 \\
+ & 10\% & \textbf{2.80} & 3.11 & 5.87 & 3.04 & 5.40 & 4.23 & 3.54 \\
+ & 15\% & \textbf{2.60} & 3.71 & 5.83 & 2.71 & 5.26 & 4.09 & 3.80 \\
+ & 20\% & \textbf{2.66} & 3.11 & 6.11 & 3.39 & 5.51 & 4.40 & 2.81 \\
+ & 30\% & 3.14 & 3.37 & 5.71 & 3.63 & 5.20 & 4.17 & \textbf{2.77} \\
+\bottomrule
+\end{tabular}}
+\end{table}

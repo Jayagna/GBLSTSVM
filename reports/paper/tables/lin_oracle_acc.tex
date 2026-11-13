@@ -1,0 +1,26 @@
+\begin{table}[!t]
+\centering
+\caption{Linear kernel, test-set tuning: average ACC (\%) and average rank over 35 datasets. Best value in each row in bold.}
+\label{tab:lin-oracle}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llccccccc}
+\toprule
+ & Noise & SVM & TSVM & GBSVM & LSTSVM & GBLSTSVM & LS-GBLSTSVM & \textbf{RF-GBLSTSVM} \\
+\midrule
+Average ACC & 0\% & 88.53 & 88.59 & 84.96 & 88.21 & 88.08 & 89.50 & \textbf{89.98} \\
+ & 5\% & 87.91 & 88.61 & 85.11 & 88.05 & 87.98 & 89.30 & \textbf{89.83} \\
+ & 10\% & 87.08 & 88.23 & 84.87 & 87.56 & 87.93 & 89.20 & \textbf{89.53} \\
+ & 15\% & 86.47 & 87.59 & 84.58 & 87.14 & 87.52 & 88.87 & \textbf{89.33} \\
+ & 20\% & 86.17 & 87.07 & 83.97 & 86.79 & 87.06 & 88.66 & \textbf{89.08} \\
+ & 30\% & 85.39 & 85.33 & 83.09 & 85.27 & 85.56 & 87.41 & \textbf{88.10} \\
+\midrule
+Average rank & 0\% & 4.94 & 4.27 & 5.40 & 5.31 & 4.16 & 2.46 & \textbf{1.46} \\
+ & 5\% & 5.44 & 3.96 & 5.30 & 5.51 & 3.86 & 2.43 & \textbf{1.50} \\
+ & 10\% & 5.56 & 4.20 & 5.27 & 5.47 & 3.84 & 2.14 & \textbf{1.51} \\
+ & 15\% & 5.67 & 4.34 & 5.57 & 5.31 & 3.49 & 2.26 & \textbf{1.36} \\
+ & 20\% & 5.66 & 4.37 & 5.70 & 5.00 & 3.61 & 2.21 & \textbf{1.44} \\
+ & 30\% & 5.43 & 4.70 & 5.90 & 4.69 & 3.59 & 2.29 & \textbf{1.41} \\
+\bottomrule
+\end{tabular}}
+\end{table}

@@ -1,0 +1,36 @@
+\begin{table}[!t]
+\centering
+\caption{Friedman test over the seven models. $\chi^2_F$ has 6 degrees of freedom; $F_F$ is the Iman--Davenport statistic. Every $p$-value is below $10^{-6}$, so the hypothesis that all models perform equally is rejected in every setting.}
+\label{tab:friedman}
+\small
+\begin{tabular}{lllccc}
+\toprule
+Kernel & Tuning & Score & Noise & $\chi^2_F$ & $F_F$ \\
+\midrule
+Linear & Test-set & ACC & 0\% & 101.41 & 31.75 \\
+Linear & Test-set & ACC & 10\% & 119.24 & 44.67 \\
+Linear & Test-set & ACC & 20\% & 124.88 & 49.88 \\
+Linear & Test-set & BACC & 0\% & 92.49 & 26.76 \\
+Linear & Test-set & BACC & 10\% & 114.01 & 40.38 \\
+Linear & Test-set & BACC & 20\% & 126.58 & 51.60 \\
+Linear & CV & ACC & 0\% & 44.52 & 9.15 \\
+Linear & CV & ACC & 10\% & 48.59 & 10.23 \\
+Linear & CV & ACC & 20\% & 68.59 & 16.49 \\
+Linear & CV & BACC & 0\% & 105.17 & 34.11 \\
+Linear & CV & BACC & 10\% & 66.48 & 15.75 \\
+Linear & CV & BACC & 20\% & 84.71 & 22.99 \\
+Gaussian & Test-set & ACC & 0\% & 118.09 & 43.68 \\
+Gaussian & Test-set & ACC & 10\% & 127.08 & 52.10 \\
+Gaussian & Test-set & ACC & 20\% & 146.62 & 78.65 \\
+Gaussian & Test-set & BACC & 0\% & 127.40 & 52.44 \\
+Gaussian & Test-set & BACC & 10\% & 124.44 & 49.45 \\
+Gaussian & Test-set & BACC & 20\% & 158.23 & 103.93 \\
+Gaussian & CV & ACC & 0\% & 93.63 & 27.36 \\
+Gaussian & CV & ACC & 10\% & 72.51 & 17.93 \\
+Gaussian & CV & ACC & 20\% & 60.59 & 13.79 \\
+Gaussian & CV & BACC & 0\% & 103.53 & 33.06 \\
+Gaussian & CV & BACC & 10\% & 92.95 & 27.00 \\
+Gaussian & CV & BACC & 20\% & 98.98 & 30.31 \\
+\bottomrule
+\end{tabular}
+\end{table}

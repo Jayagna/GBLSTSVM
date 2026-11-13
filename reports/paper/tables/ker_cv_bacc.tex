@@ -1,0 +1,20 @@
+\begin{table}[!t]
+\centering
+\caption{Gaussian kernel, cross-validated tuning: average BACC (\%) and average rank over 35 datasets.}
+\label{tab:ker-cv-bacc}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llccccccc}
+\toprule
+ & Noise & SVM & TSVM & GBSVM & LSTSVM & GBLSTSVM & LS-GBLSTSVM & \textbf{RF-GBLSTSVM} \\
+\midrule
+Average BACC & 0\% & \textbf{82.63} & 78.37 & 53.20 & 81.26 & 77.58 & 78.80 & 81.86 \\
+ & 10\% & \textbf{80.25} & 77.23 & 61.83 & 74.90 & 74.21 & 76.30 & 78.82 \\
+ & 20\% & \textbf{75.71} & 71.08 & 57.46 & 69.52 & 70.28 & 72.33 & 73.90 \\
+\midrule
+Average rank & 0\% & \textbf{2.33} & 4.30 & 6.80 & 3.00 & 4.80 & 3.97 & 2.80 \\
+ & 10\% & \textbf{1.97} & 3.54 & 6.40 & 4.83 & 4.67 & 3.59 & 3.00 \\
+ & 20\% & \textbf{1.83} & 4.09 & 6.51 & 4.69 & 4.51 & 3.40 & 2.97 \\
+\bottomrule
+\end{tabular}}
+\end{table}
