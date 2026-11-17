@@ -1,0 +1,387 @@
+{
+ "dataset": "vehicle2",
+ "noise": 0.2,
+ "repeats": [
+  {
+   "repeat": 0,
+   "cv_folds": 5,
+   "methods": {
+    "LS-keep": {
+     "cv_balanced_accuracy": 91.92104192104192,
+     "cv_accuracy": 91.73228346456693,
+     "cv_config": [
+      4,
+      false,
+      1.0,
+      1.0
+     ],
+     "cv_score": 0.7358339029391662,
+     "oracle_balanced_accuracy": 93.45950345950347,
+     "oracle_accuracy": 94.09448818897637,
+     "n_configs": 490
+    },
+    "LS-keep+gapvote": {
+     "cv_balanced_accuracy": 93.74847374847374,
+     "cv_accuracy": 93.7007874015748,
+     "cv_config": [
+      4,
+      true,
+      1.0,
+      0.1,
+      [
+       5,
+       1.0
+      ]
+     ],
+     "cv_score": 0.746058327637275,
+     "oracle_balanced_accuracy": 96.08058608058607,
+     "oracle_accuracy": 96.45669291338582,
+     "n_configs": 1960
+    }
+   }
+  },
+  {
+   "repeat": 1,
+   "cv_folds": 5,
+   "methods": {
+    "LS-keep": {
+     "cv_balanced_accuracy": 93.988603988604,
+     "cv_accuracy": 93.30708661417323,
+     "cv_config": [
+      4,
+      false,
+      0.001,
+      1.0
+     ],
+     "cv_score": 0.7154818865345182,
+     "oracle_balanced_accuracy": 94.46886446886447,
+     "oracle_accuracy": 94.88188976377953,
+     "n_configs": 490
+    },
+    "LS-keep+gapvote": {
+     "cv_balanced_accuracy": 86.8986568986569,
+     "cv_accuracy": 92.51968503937007,
+     "cv_config": [
+      3,
+      true,
+      1.0,
+      0.001,
+      [
+       5,
+       1.0
+      ]
+     ],
+     "cv_score": 0.7196001367053999,
+     "oracle_balanced_accuracy": 98.41269841269842,
+     "oracle_accuracy": 97.63779527559055,
+     "n_configs": 1960
+    }
+   }
+  },
+  {
+   "repeat": 2,
+   "cv_folds": 5,
+   "methods": {
+    "LS-keep": {
+     "cv_balanced_accuracy": 83.24379324379323,
+     "cv_accuracy": 88.58267716535433,
+     "cv_config": [
+      6,
+      false,
+      1.0,
+      1.0
+     ],
+     "cv_score": 0.7248462064251538,
+     "oracle_balanced_accuracy": 92.16117216117216,
+     "oracle_accuracy": 92.51968503937007,
+     "n_configs": 490
+    },
+    "LS-keep+gapvote": {
+     "cv_balanced_accuracy": 91.44078144078145,
+     "cv_accuracy": 92.51968503937007,
+     "cv_config": [
+      3,
+      true,
+      1.0,
+      1.0,
+      [
+       5,
+       1.0
+      ]
+     ],
+     "cv_score": 0.7303713830029619,
+     "oracle_balanced_accuracy": 94.01302401302401,
+     "oracle_accuracy": 95.2755905511811,
+     "n_configs": 1960
+    }
+   }
+  },
+  {
+   "repeat": 3,
+   "cv_folds": 5,
+   "methods": {
+    "LS-keep": {
+     "cv_balanced_accuracy": 95.26251526251525,
+     "cv_accuracy": 93.7007874015748,
+     "cv_config": [
+      6,
+      false,
+      1.0,
+      10.0
+     ],
+     "cv_score": 0.7308042834358625,
+     "oracle_balanced_accuracy": 95.76719576719577,
+     "oracle_accuracy": 94.88188976377953,
+     "n_configs": 490
+    },
+    "LS-keep+gapvote": {
+     "cv_balanced_accuracy": 95.28693528693528,
+     "cv_accuracy": 94.48818897637796,
+     "cv_config": [
+      6,
+      true,
+      1.0,
+      1.0,
+      [
+       5,
+       1.0
+      ]
+     ],
+     "cv_score": 0.7390635680109364,
+     "oracle_balanced_accuracy": 97.61904761904762,
+     "oracle_accuracy": 96.8503937007874,
+     "n_configs": 1960
+    }
+   }
+  },
+  {
+   "repeat": 4,
+   "cv_folds": 5,
+   "methods": {
+    "LS-keep": {
+     "cv_balanced_accuracy": 87.95278795278796,
+     "cv_accuracy": 85.8267716535433,
+     "cv_config": [
+      2,
+      false,
+      1.0,
+      1.0
+     ],
+     "cv_score": 0.7177318295739349,
+     "oracle_balanced_accuracy": 93.6996336996337,
+     "oracle_accuracy": 94.48818897637796,
+     "n_configs": 490
+    },
+    "LS-keep+gapvote": {
+     "cv_balanced_accuracy": 93.988603988604,
+     "cv_accuracy": 93.30708661417323,
+     "cv_config": [
+      3,
+      true,
+      1.0,
+      1.0,
+      [
+       5,
+       3.0
+      ]
+     ],
+     "cv_score": 0.7311859193438142,
+     "oracle_balanced_accuracy": 96.05616605616606,
+     "oracle_accuracy": 95.2755905511811,
+     "n_configs": 1960
+    }
+   }
+  },
+  {
+   "repeat": 5,
+   "cv_folds": 5,
+   "methods": {
+    "LS-keep": {
+     "cv_balanced_accuracy": 91.94546194546194,
+     "cv_accuracy": 92.51968503937007,
+     "cv_config": [
+      5,
+      false,
+      0.1,
+      0.1
+     ],
+     "cv_score": 0.7113408521303258,
+     "oracle_balanced_accuracy": 94.30199430199431,
+     "oracle_accuracy": 96.45669291338582,
+     "n_configs": 490
+    },
+    "LS-keep+gapvote": {
+     "cv_balanced_accuracy": 97.11436711436711,
+     "cv_accuracy": 96.45669291338582,
+     "cv_config": [
+      5,
+      true,
+      1.0,
+      0.1,
+      [
+       10,
+       1.0
+      ]
+     ],
+     "cv_score": 0.7224994303941672,
+     "oracle_balanced_accuracy": 98.43711843711844,
+     "oracle_accuracy": 98.4251968503937,
+     "n_configs": 1960
+    }
+   }
+  },
+  {
+   "repeat": 6,
+   "cv_folds": 5,
+   "methods": {
+    "LS-keep": {
+     "cv_balanced_accuracy": 88.26617826617826,
+     "cv_accuracy": 87.79527559055119,
+     "cv_config": [
+      6,
+      false,
+      1.0,
+      10.0
+     ],
+     "cv_score": 0.7328206880838459,
+     "oracle_balanced_accuracy": 90.11803011803012,
+     "oracle_accuracy": 92.51968503937007,
+     "n_configs": 490
+    },
+    "LS-keep+gapvote": {
+     "cv_balanced_accuracy": 91.44078144078145,
+     "cv_accuracy": 92.51968503937007,
+     "cv_config": [
+      5,
+      false,
+      1.0,
+      1.0,
+      [
+       10,
+       3.0
+      ]
+     ],
+     "cv_score": 0.7327865117338802,
+     "oracle_balanced_accuracy": 92.73911273911274,
+     "oracle_accuracy": 93.7007874015748,
+     "n_configs": 1960
+    }
+   }
+  },
+  {
+   "repeat": 7,
+   "cv_folds": 5,
+   "methods": {
+    "LS-keep": {
+     "cv_balanced_accuracy": 90.14245014245014,
+     "cv_accuracy": 91.33858267716536,
+     "cv_config": [
+      3,
+      false,
+      1.0,
+      10.0
+     ],
+     "cv_score": 0.7070802005012531,
+     "oracle_balanced_accuracy": 91.44078144078145,
+     "oracle_accuracy": 93.30708661417323,
+     "n_configs": 490
+    },
+    "LS-keep+gapvote": {
+     "cv_balanced_accuracy": 91.31868131868131,
+     "cv_accuracy": 88.58267716535433,
+     "cv_config": [
+      2,
+      false,
+      1.0,
+      0.1,
+      [
+       10,
+       1.0
+      ]
+     ],
+     "cv_score": 0.7293062200956938,
+     "oracle_balanced_accuracy": 96.10500610500611,
+     "oracle_accuracy": 96.45669291338582,
+     "n_configs": 1960
+    }
+   }
+  },
+  {
+   "repeat": 8,
+   "cv_folds": 5,
+   "methods": {
+    "LS-keep": {
+     "cv_balanced_accuracy": 94.46886446886447,
+     "cv_accuracy": 92.51968503937007,
+     "cv_config": [
+      5,
+      true,
+      0.01,
+      10.0
+     ],
+     "cv_score": 0.7315675552517659,
+     "oracle_balanced_accuracy": 94.46886446886447,
+     "oracle_accuracy": 93.30708661417323,
+     "n_configs": 490
+    },
+    "LS-keep+gapvote": {
+     "cv_balanced_accuracy": 92.4013024013024,
+     "cv_accuracy": 90.94488188976378,
+     "cv_config": [
+      5,
+      true,
+      1.0,
+      10.0,
+      [
+       10,
+       1.0
+      ]
+     ],
+     "cv_score": 0.7369332421964001,
+     "oracle_balanced_accuracy": 97.13878713878714,
+     "oracle_accuracy": 97.24409448818898,
+     "n_configs": 1960
+    }
+   }
+  },
+  {
+   "repeat": 9,
+   "cv_folds": 5,
+   "methods": {
+    "LS-keep": {
+     "cv_balanced_accuracy": 90.06919006919007,
+     "cv_accuracy": 88.9763779527559,
+     "cv_config": [
+      6,
+      true,
+      1.0,
+      1.0
+     ],
+     "cv_score": 0.7142971064023695,
+     "oracle_balanced_accuracy": 94.54212454212454,
+     "oracle_accuracy": 95.2755905511811,
+     "n_configs": 490
+    },
+    "LS-keep+gapvote": {
+     "cv_balanced_accuracy": 90.50468050468051,
+     "cv_accuracy": 94.88188976377953,
+     "cv_config": [
+      5,
+      false,
+      1.0,
+      1.0,
+      [
+       5,
+       1.0
+      ]
+     ],
+     "cv_score": 0.7185919343814081,
+     "oracle_balanced_accuracy": 95.6003256003256,
+     "oracle_accuracy": 96.8503937007874,
+     "n_configs": 1960
+    }
+   }
+  }
+ ],
+ "elapsed_sec": 94.53521227836609
+}
