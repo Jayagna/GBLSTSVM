@@ -1,0 +1,36 @@
+\begin{table}[!t]
+\centering
+\caption{NDC datasets (32 features, 70\% of the samples for training), linear kernel: test ACC (\%, upper line) and training time in seconds (lower line, one CPU thread; for granular-ball models it includes ball generation and, for RF-GBLSTSVM, the membership). Settings chosen by five-fold CV on a random subsample of 10{,}000 training samples. a: not run, the solver needs the $n\times n$ kernel or dual matrix. b: did not finish within one hour.}
+\label{tab:ndc}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llccccccc}
+\toprule
+Dataset & Noise & SVM & TSVM & GBSVM & LSTSVM & GBLSTSVM & LS-GBLSTSVM & \textbf{RF-GBLSTSVM} \\
+\midrule
+NDC-10k & 0\% & 81.73 & \textbf{82.33} & 47.53 & 82.03 & 79.77 & 82.07 & 82.00 \\
+ & & 0.6 & 0.0 & 2.1 & 0.0 & 0.9 & 1.0 & 1.6 \\[2pt]
+NDC-10k & 20\% & \textbf{81.90} & 81.47 & 52.47 & 81.30 & 80.97 & 81.53 & 81.57 \\
+ & & 1.6 & 0.0 & 4.9 & 0.0 & 2.4 & 4.6 & 3.6 \\[2pt]
+NDC-50k & 0\% & 83.35 & 83.30 & 53.21 & \textbf{83.36} & 81.41 & 82.71 & 82.53 \\
+ & & 32.2 & 0.1 & 8.2 & 0.0 & 3.5 & 8.4 & 9.3 \\[2pt]
+NDC-50k & 20\% & 83.21 & 83.29 & 53.21 & 83.35 & 83.25 & 83.23 & \textbf{83.40} \\
+ & & 139 & 0.1 & 26.1 & 0.0 & 24.4 & 25.1 & 30.4 \\[2pt]
+NDC-100k & 0\% & \textbf{83.18} & 83.09 & 53.20 & 83.14 & 81.93 & 81.93 & 82.28 \\
+ & & 135 & 0.2 & 13.4 & 0.1 & 6.7 & 6.9 & 10.5 \\[2pt]
+NDC-100k & 20\% & 83.15 & 83.12 & 53.20 & \textbf{83.18} & 83.10 & 83.17 & 83.06 \\
+ & & 165 & 0.2 & 52.8 & 0.1 & 26.6 & 26.6 & 108 \\[2pt]
+NDC-300k & 0\% & a & a & 53.24 & \textbf{83.59} & 82.07 & 82.08 & 82.33 \\
+ & &  &  & 34.1 & 0.2 & 15.8 & 16.0 & 34.8 \\[2pt]
+NDC-300k & 20\% & a & a & 53.24 & 83.56 & 83.50 & 83.58 & \textbf{83.64} \\
+ & &  &  & 172 & 0.2 & 70.5 & 66.1 & 722 \\[2pt]
+NDC-500k & 0\% & a & a & 53.18 & \textbf{83.68} & 81.62 & 81.40 & 81.64 \\
+ & &  &  & 54.7 & 0.4 & 20.9 & 20.2 & 72.1 \\[2pt]
+NDC-500k & 20\% & a & a & 53.18 & \textbf{83.65} & 83.51 & 83.64 & 83.62 \\
+ & &  &  & 294 & 0.3 & 116 & 146 & 2,464 \\[2pt]
+NDC-1m & 0\% & a & a & 53.09 & \textbf{83.72} & 82.10 & 82.00 & 82.26 \\
+ & &  &  & 114 & 0.8 & 54.0 & 52.0 & 228 \\[2pt]
+NDC-1m & 20\% & -- & -- & -- & -- & -- & -- & -- \\
+ & & -- & -- & -- & -- & -- & -- & -- \\[2pt]
+\bottomrule
+\end{tabular}}
+\end{table}

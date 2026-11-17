@@ -1,0 +1,205 @@
+{
+ "dataset": "NDC32-300k",
+ "noise": 0.2,
+ "n": 300000,
+ "n_train": 210000,
+ "fixed": {
+  "SVM": {
+   "status": "not run (n x n solver)"
+  },
+  "TSVM": {
+   "status": "not run (n x n solver)"
+  },
+  "GBSVM": {
+   "status": "ok",
+   "train_sec": 160.78080263999982,
+   "accuracy": 53.23777777777777,
+   "balanced_accuracy": 50.0,
+   "balls": 36986,
+   "config": {
+    "k": 2,
+    "imb": false,
+    "C": 1e-05,
+    "c1": 1e-05,
+    "c2": 1e-05,
+    "c3": 1e-05,
+    "p": [
+     10,
+     1.0
+    ]
+   },
+   "cv_balanced_accuracy": null,
+   "tuning_sec": 0.0
+  },
+  "LSTSVM": {
+   "status": "ok",
+   "train_sec": 0.18279505100008464,
+   "accuracy": 83.52333333333334,
+   "balanced_accuracy": 83.62425281275914,
+   "config": {
+    "k": 2,
+    "imb": false,
+    "C": 1e-05,
+    "c1": 1e-05,
+    "c2": 1e-05,
+    "c3": 1e-05,
+    "p": [
+     10,
+     1.0
+    ]
+   },
+   "cv_balanced_accuracy": null,
+   "tuning_sec": 0.0
+  },
+  "GBLSTSVM": {
+   "status": "ok",
+   "train_sec": 150.50299612900017,
+   "accuracy": 83.42444444444445,
+   "balanced_accuracy": 83.52227412564018,
+   "balls": 36986,
+   "config": {
+    "k": 2,
+    "imb": false,
+    "C": 1e-05,
+    "c1": 1e-05,
+    "c2": 1e-05,
+    "c3": 1e-05,
+    "p": [
+     10,
+     1.0
+    ]
+   },
+   "cv_balanced_accuracy": null,
+   "tuning_sec": 0.0
+  },
+  "LS-GBLSTSVM": {
+   "status": "ok",
+   "train_sec": 152.07562102099973,
+   "accuracy": 83.42444444444445,
+   "balanced_accuracy": 83.52227412564018,
+   "balls": 36986,
+   "config": {
+    "k": 2,
+    "imb": false,
+    "C": 1e-05,
+    "c1": 1e-05,
+    "c2": 1e-05,
+    "c3": 1e-05,
+    "p": [
+     10,
+     1.0
+    ]
+   },
+   "cv_balanced_accuracy": null,
+   "tuning_sec": 0.0
+  },
+  "RF-GBLSTSVM": {
+   "status": "ok",
+   "train_sec": 686.0212366310006,
+   "accuracy": 83.65222222222222,
+   "balanced_accuracy": 83.65151785883478,
+   "balls": 127419,
+   "membership_sec": 526.19154772,
+   "config": {
+    "k": 2,
+    "imb": false,
+    "C": 1e-05,
+    "c1": 1e-05,
+    "c2": 1e-05,
+    "c3": 1e-05,
+    "p": [
+     10,
+     1.0
+    ]
+   },
+   "cv_balanced_accuracy": null,
+   "tuning_sec": 0.0
+  }
+ },
+ "cv": {
+  "SVM": {
+   "status": "not run (n x n solver)"
+  },
+  "TSVM": {
+   "status": "not run (n x n solver)"
+  },
+  "GBSVM": {
+   "status": "ok",
+   "train_sec": 172.27394096699936,
+   "accuracy": 53.23777777777777,
+   "balanced_accuracy": 50.0,
+   "balls": 36986,
+   "config": {
+    "k": 2,
+    "imb": false,
+    "C": 0.001
+   },
+   "cv_balanced_accuracy": 0.5,
+   "tuning_sec": 69.73473077699964
+  },
+  "LSTSVM": {
+   "status": "ok",
+   "train_sec": 0.22082267299992964,
+   "accuracy": 83.55666666666667,
+   "balanced_accuracy": 83.64732199278035,
+   "config": {
+    "k": 2,
+    "imb": true,
+    "c1": 0.001,
+    "c2": 0.01
+   },
+   "cv_balanced_accuracy": 0.7065606519124422,
+   "tuning_sec": 1.9234424690002925
+  },
+  "GBLSTSVM": {
+   "status": "ok",
+   "train_sec": 70.4656229559987,
+   "accuracy": 83.5,
+   "balanced_accuracy": 83.57126950299886,
+   "balls": 24478,
+   "config": {
+    "k": 6,
+    "imb": true,
+    "c1": 1.0,
+    "c2": 1.0
+   },
+   "cv_balanced_accuracy": 0.7055432083311137,
+   "tuning_sec": 58.35387071700006
+  },
+  "LS-GBLSTSVM": {
+   "status": "ok",
+   "train_sec": 66.08700687000055,
+   "accuracy": 83.58,
+   "balanced_accuracy": 83.55507557259101,
+   "balls": 24478,
+   "config": {
+    "k": 6,
+    "imb": false,
+    "c1": 1.0,
+    "c3": 100.0
+   },
+   "cv_balanced_accuracy": 0.7067242430640653,
+   "tuning_sec": 57.86161898899991
+  },
+  "RF-GBLSTSVM": {
+   "status": "ok",
+   "train_sec": 722.2273476589999,
+   "accuracy": 83.64333333333333,
+   "balanced_accuracy": 83.6438921041172,
+   "balls": 127419,
+   "membership_sec": 554.6779519850006,
+   "config": {
+    "k": 2,
+    "imb": false,
+    "c1": 0.001,
+    "c3": 100.0,
+    "p": [
+     5,
+     1.0
+    ]
+   },
+   "cv_balanced_accuracy": 0.7063263042368071,
+   "tuning_sec": 137.4098156600012
+  }
+ }
+}

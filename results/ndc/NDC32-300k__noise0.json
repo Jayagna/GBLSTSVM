@@ -1,0 +1,205 @@
+{
+ "dataset": "NDC32-300k",
+ "noise": 0.0,
+ "n": 300000,
+ "n_train": 210000,
+ "fixed": {
+  "SVM": {
+   "status": "not run (n x n solver)"
+  },
+  "TSVM": {
+   "status": "not run (n x n solver)"
+  },
+  "GBSVM": {
+   "status": "ok",
+   "train_sec": 34.497596600999714,
+   "accuracy": 53.23777777777777,
+   "balanced_accuracy": 50.0,
+   "balls": 11337,
+   "config": {
+    "k": 2,
+    "imb": false,
+    "C": 1e-05,
+    "c1": 1e-05,
+    "c2": 1e-05,
+    "c3": 1e-05,
+    "p": [
+     10,
+     1.0
+    ]
+   },
+   "cv_balanced_accuracy": null,
+   "tuning_sec": 0.0
+  },
+  "LSTSVM": {
+   "status": "ok",
+   "train_sec": 0.1983496410002772,
+   "accuracy": 83.36555555555556,
+   "balanced_accuracy": 83.46725571422357,
+   "config": {
+    "k": 2,
+    "imb": false,
+    "C": 1e-05,
+    "c1": 1e-05,
+    "c2": 1e-05,
+    "c3": 1e-05,
+    "p": [
+     10,
+     1.0
+    ]
+   },
+   "cv_balanced_accuracy": null,
+   "tuning_sec": 0.0
+  },
+  "GBLSTSVM": {
+   "status": "ok",
+   "train_sec": 31.16412246500022,
+   "accuracy": 82.10888888888888,
+   "balanced_accuracy": 82.11187339917743,
+   "balls": 11337,
+   "config": {
+    "k": 2,
+    "imb": false,
+    "C": 1e-05,
+    "c1": 1e-05,
+    "c2": 1e-05,
+    "c3": 1e-05,
+    "p": [
+     10,
+     1.0
+    ]
+   },
+   "cv_balanced_accuracy": null,
+   "tuning_sec": 0.0
+  },
+  "LS-GBLSTSVM": {
+   "status": "ok",
+   "train_sec": 32.027697090999936,
+   "accuracy": 82.10888888888888,
+   "balanced_accuracy": 82.11187339917743,
+   "balls": 11337,
+   "config": {
+    "k": 2,
+    "imb": false,
+    "C": 1e-05,
+    "c1": 1e-05,
+    "c2": 1e-05,
+    "c3": 1e-05,
+    "p": [
+     10,
+     1.0
+    ]
+   },
+   "cv_balanced_accuracy": null,
+   "tuning_sec": 0.0
+  },
+  "RF-GBLSTSVM": {
+   "status": "ok",
+   "train_sec": 57.60077522500069,
+   "accuracy": 82.29777777777778,
+   "balanced_accuracy": 82.2821937237814,
+   "balls": 23554,
+   "membership_sec": 21.29991230899941,
+   "config": {
+    "k": 2,
+    "imb": false,
+    "C": 1e-05,
+    "c1": 1e-05,
+    "c2": 1e-05,
+    "c3": 1e-05,
+    "p": [
+     10,
+     1.0
+    ]
+   },
+   "cv_balanced_accuracy": null,
+   "tuning_sec": 0.0
+  }
+ },
+ "cv": {
+  "SVM": {
+   "status": "not run (n x n solver)"
+  },
+  "TSVM": {
+   "status": "not run (n x n solver)"
+  },
+  "GBSVM": {
+   "status": "ok",
+   "train_sec": 34.149990908999825,
+   "accuracy": 53.23777777777777,
+   "balanced_accuracy": 50.0,
+   "balls": 11337,
+   "config": {
+    "k": 2,
+    "imb": false,
+    "C": 0.001
+   },
+   "cv_balanced_accuracy": 0.5,
+   "tuning_sec": 30.24011480099989
+  },
+  "LSTSVM": {
+   "status": "ok",
+   "train_sec": 0.22237203599979694,
+   "accuracy": 83.59333333333333,
+   "balanced_accuracy": 83.66037162715722,
+   "config": {
+    "k": 2,
+    "imb": true,
+    "c1": 1.0,
+    "c2": 1.0
+   },
+   "cv_balanced_accuracy": 0.8377517641574641,
+   "tuning_sec": 1.8611193560000174
+  },
+  "GBLSTSVM": {
+   "status": "ok",
+   "train_sec": 15.790901706000113,
+   "accuracy": 82.06666666666666,
+   "balanced_accuracy": 82.10950187445864,
+   "balls": 10399,
+   "config": {
+    "k": 4,
+    "imb": true,
+    "c1": 1.0,
+    "c2": 1.0
+   },
+   "cv_balanced_accuracy": 0.8258302390252528,
+   "tuning_sec": 21.00817268000037
+  },
+  "LS-GBLSTSVM": {
+   "status": "ok",
+   "train_sec": 15.963377014999878,
+   "accuracy": 82.08111111111111,
+   "balanced_accuracy": 82.1203222101402,
+   "balls": 10399,
+   "config": {
+    "k": 4,
+    "imb": true,
+    "c1": 1.0,
+    "c3": 100.0
+   },
+   "cv_balanced_accuracy": 0.8287915320441723,
+   "tuning_sec": 21.057223853999858
+  },
+  "RF-GBLSTSVM": {
+   "status": "ok",
+   "train_sec": 34.761315414998535,
+   "accuracy": 82.33333333333334,
+   "balanced_accuracy": 82.21631044426726,
+   "balls": 24153,
+   "membership_sec": 18.329335275999256,
+   "config": {
+    "k": 4,
+    "imb": false,
+    "c1": 1.0,
+    "c3": 10.0,
+    "p": [
+     10,
+     3.0
+    ]
+   },
+   "cv_balanced_accuracy": 0.8294758965456271,
+   "tuning_sec": 57.73820226299904
+  }
+ }
+}

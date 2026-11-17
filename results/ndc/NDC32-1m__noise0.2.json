@@ -1,0 +1,122 @@
+{
+ "dataset": "NDC32-1m",
+ "noise": 0.2,
+ "n": 1000000,
+ "n_train": 700000,
+ "fixed": {
+  "SVM": {
+   "status": "not run (n x n solver)"
+  },
+  "TSVM": {
+   "status": "not run (n x n solver)"
+  },
+  "GBSVM": {
+   "status": "ok",
+   "train_sec": 620.6530544360012,
+   "accuracy": 53.08533333333333,
+   "balanced_accuracy": 50.0,
+   "balls": 123279,
+   "config": {
+    "k": 2,
+    "imb": false,
+    "C": 1e-05,
+    "c1": 1e-05,
+    "c2": 1e-05,
+    "c3": 1e-05,
+    "p": [
+     10,
+     1.0
+    ]
+   },
+   "cv_balanced_accuracy": null,
+   "tuning_sec": 0.0
+  },
+  "LSTSVM": {
+   "status": "ok",
+   "train_sec": 0.664543266999317,
+   "accuracy": 83.63333333333334,
+   "balanced_accuracy": 83.652870061097,
+   "config": {
+    "k": 2,
+    "imb": false,
+    "C": 1e-05,
+    "c1": 1e-05,
+    "c2": 1e-05,
+    "c3": 1e-05,
+    "p": [
+     10,
+     1.0
+    ]
+   },
+   "cv_balanced_accuracy": null,
+   "tuning_sec": 0.0
+  },
+  "GBLSTSVM": {
+   "status": "ok",
+   "train_sec": 574.9269794089996,
+   "accuracy": 83.62033333333333,
+   "balanced_accuracy": 83.62204286666359,
+   "balls": 123279,
+   "config": {
+    "k": 2,
+    "imb": false,
+    "C": 1e-05,
+    "c1": 1e-05,
+    "c2": 1e-05,
+    "c3": 1e-05,
+    "p": [
+     10,
+     1.0
+    ]
+   },
+   "cv_balanced_accuracy": null,
+   "tuning_sec": 0.0
+  },
+  "LS-GBLSTSVM": {
+   "status": "ok",
+   "train_sec": 558.3371255420006,
+   "accuracy": 83.62033333333333,
+   "balanced_accuracy": 83.62204286666359,
+   "balls": 123279,
+   "config": {
+    "k": 2,
+    "imb": false,
+    "C": 1e-05,
+    "c1": 1e-05,
+    "c2": 1e-05,
+    "c3": 1e-05,
+    "p": [
+     10,
+     1.0
+    ]
+   },
+   "cv_balanced_accuracy": null,
+   "tuning_sec": 0.0
+  },
+  "RF-GBLSTSVM": {
+   "status": "killed (exit -9)",
+   "config": {
+    "k": 2,
+    "imb": false,
+    "C": 1e-05,
+    "c1": 1e-05,
+    "c2": 1e-05,
+    "c3": 1e-05,
+    "p": [
+     10,
+     1.0
+    ]
+   },
+   "cv_balanced_accuracy": null,
+   "tuning_sec": 0.0
+  }
+ },
+ "cv": {
+  "SVM": {
+   "status": "not run (n x n solver)"
+  },
+  "TSVM": {
+   "status": "not run (n x n solver)"
+  }
+ }
+}
