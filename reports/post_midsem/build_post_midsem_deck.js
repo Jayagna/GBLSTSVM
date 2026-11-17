@@ -1184,6 +1184,22 @@ s = content(BK, "First full draft of the paper is written", "Progress, 13 Nov (p
 takeaway(s, "Still open: author details, reference check, target journal, and the large NDC datasets.");
 s.addNotes("The first full draft of the paper is written in LaTeX. It follows the layout of the GBLSTSVM paper and reports both tuning methods openly, including the cases where the proposed model does not win. Every table and figure is generated from the result files by one script, so the draft can be rebuilt when new results arrive. What is still open: the author block, a check of the reference list, the choice of journal, and the large-scale NDC test.");
 
+// ---- NDC large-scale test, 17 Nov
+s = content(BK, "Large data (NDC): accuracy level, ball models slower", "Results, 13-17 Nov (NDC)");
+[
+  ["1", "Setup", "Own Python version of the NDC generator (original site not reachable; repo NDC files have 10 features, the paper uses 32). 10k to 1m points, 32 features, one 70/30 split, 0 and 20% noise. Settings: the paper's fixed 1e-5, and 5-fold CV on a 10k subsample. Time on one CPU core.", C.accent3],
+  ["2", "Result", "All twin models 82-84% at every size; plain LSTSVM as good or better and under 1 s even at 1m. Ball models need 20-150 s for ball building; ours adds the neighbour vote (228 s at 1m clean, 2,464 s at 500k with 20% noise). The fixed 1e-5 setting makes SVM and GBSVM predict one class.", C.accent1],
+  ["3", "Side fixes", "Neighbour search made exact and 15x faster (blocked search; a k-d tree did not help because the gap subtracts the radius). Ties between touching balls now broken by centre distance: about 4% of ball weights change on the 35 sets, so our model's benchmark runs are being redone.", C.accent5],
+].forEach(([n, h, t, color], i) => {
+  const x = 0.6 + i * 4.1, w = 3.9;
+  card(s, x, 1.6, w, 4.3);
+  badge(s, x + 0.25, 1.85, n, color, 0.55, 18);
+  s.addText(h, tx({ x: x + 0.95, y: 1.85, w: w - 1.2, h: 0.55, fontSize: 17, bold: true, color: C.text2, valign: "middle" }));
+  s.addText(t, tx({ x: x + 0.25, y: 2.65, w: w - 0.5, h: 3.1, fontSize: 15 }));
+});
+takeaway(s, "The paper's speed claim for ball models does not hold in our code; our model helps on noisy small and medium data.");
+s.addNotes("The large-scale test. We built NDC data from ten thousand to one million points. All twin models reach about eighty-three percent. Plain LSTSVM is by far the fastest because it solves one small system; the ball models spend their time building balls and our model also runs the neighbour vote. The neighbour search was made fifteen times faster with the same result, and ties between touching balls are now broken by centre distance, so the benchmark runs of our model are being repeated.");
+
 // =====================================================================================
 // 31. References
 // =====================================================================================
