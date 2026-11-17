@@ -181,13 +181,15 @@ def _gaps(centers, radii):
     return gap
 
 
-def _gap_neighbours(centers, radii, k_nn, chunk=512):
+def _gap_neighbours(centers, radii, k_nn, chunk=None):
     """The k_nn balls with the smallest surface gap to each ball, and those gaps, without the m x m
     matrix: rows are processed in blocks against all balls (one matrix product per block). Ties
     (e.g. overlapping balls, gap 0) are broken by centre distance, then index, as in the dense path.
     A k-d tree does not help here: the gap subtracts the neighbour's radius, so with a few large balls
     the search radius covers almost every ball."""
     n = len(radii)
+    if chunk is None:  # about 64 MB per n-wide block, so memory stays small for any number of balls
+        chunk = int(max(8, min(512, 8_000_000 // max(n, 1))))
     sq = np.sum(centers ** 2, axis=1)
     nn = np.empty((n, k_nn), dtype=int)
     gaps = np.empty((n, k_nn))
