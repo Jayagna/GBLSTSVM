@@ -119,7 +119,7 @@ We generated granular balls as in GBLSTSVM (purity threshold 0.985) on the train
 \label{fig:diagnostics}
 \end{figure}
 
-A membership can only replace the deletion if it gives low values to mislabelled samples. Figure~\ref{fig:diagnostics}(b) treats each membership as a detector of mislabelled samples and reports the area under the ROC curve (AUC). The centre-distance membership used by existing fuzzy granular-ball SVMs reaches 0.70, 0.65 and 0.60 at 10\%, 20\% and 30\% noise. An entropy-based membership is below 0.5, because a mislabelled sample in its own ball has purity one and zero entropy. A plain count of agreeing neighbouring balls reaches 0.885, 0.868 and 0.821. The radius-aware membership proposed in the next section reaches 0.886, 0.877 and 0.854; its advantage over the plain count grows with the noise level.
+A membership can only replace the deletion if it gives low values to mislabelled samples. Figure~\ref{fig:diagnostics}(b) treats each membership as a detector of mislabelled samples and reports the area under the ROC curve (AUC). The centre-distance membership used by existing fuzzy granular-ball SVMs reaches 0.70, 0.65 and 0.60 at 10\%, 20\% and 30\% noise. An entropy-based membership is below 0.5, because a mislabelled sample in its own ball has purity one and zero entropy. The radius-aware membership proposed in the next section, which is computed from the neighbouring balls, reaches 0.886, 0.877 and 0.854, far above the centre-distance membership at every noise level.
 
 %% ---------------------------------------------------------------------------
 \section{Proposed model}

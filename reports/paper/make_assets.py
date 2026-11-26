@@ -173,16 +173,16 @@ def fig_diagnostics():
     a.set_ylabel("Removed by deleting\nsingle-point balls (%)")
     a.legend(fontsize=7)
     a.set_title("(a) What the deletion step removes", fontsize=10)
-    series = (("auc_T1", "Centre distance", "#7f7f7f", d), ("auc_T2", "Entropy", "#bcbd22", d), ("auc_T7", "Neighbour count", "#1f77b4", d), ("auc_gapvote", "Radius-aware (ours)", "#00897b", probe))
-    w = 0.2
+    series = (("auc_T1", "Centre distance", "#7f7f7f", d), ("auc_T2", "Entropy", "#bcbd22", d), ("auc_gapvote", "Radius-aware (ours)", "#00897b", probe))
+    w = 0.26
     for i, (k, lab, c, src) in enumerate(series):
-        b.bar(x + (i - 1.5) * w, src[k], w, label=lab, color=c)
+        b.bar(x + (i - 1) * w, src[k], w, label=lab, color=c)
     b.axhline(0.5, color="k", lw=0.8, ls="--")
     b.set_xticks(x, ["10%", "20%", "30%"])
     b.set_xlabel("Label noise")
     b.set_ylabel("AUC of detecting\nmislabelled points")
-    b.set_ylim(0.2, 1.0)
-    b.legend(fontsize=7, ncol=2, loc="lower center")
+    b.set_ylim(0.2, 1.12)
+    b.legend(fontsize=7, ncol=3, loc="upper center")
     b.set_title("(b) How well a membership flags label noise", fontsize=10)
     fig.tight_layout()
     fig.savefig(F / "diagnostics.pdf")
@@ -269,7 +269,7 @@ def main():
     sens = fig_sensitivity()
     fig_gap()
     print("deletion", {k: d[k] for k in ("deleted_flipped", "deleted_clean", "deleted_clean_minority")})
-    print("auc", d["auc_T1"], d["auc_T2"], d["auc_T7"], probe["auc_gapvote"])
+    print("auc", d["auc_T1"], d["auc_T2"], probe["auc_gapvote"])
     print("sensitivity", sens)
 
 
