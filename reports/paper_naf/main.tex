@@ -98,7 +98,7 @@ This section examines the deletion step of GBLSTSVM on the datasets and noise mo
 \subsection{What the deletion of single-sample balls removes}
 \label{sec:deletion}
 
-For every dataset, noise model, noise level and split, we generated the balls on the noisy training part for $k\in\{2,4,6\}$ and recorded which samples ended up in a single-sample ball and are therefore deleted by GBLSTSVM. We split the correctly labelled samples into \emph{boundary} samples, the quarter of each class that is closest to the other class (by the true labels), and \emph{interior} samples, the remaining three quarters. Table~\ref{tab:deletion} and Figure~\ref{fig:deletion} give the results.
+For every dataset, noise model, noise level and split, we generated the balls on the noisy training part with $k=4$ clusters per split and recorded which samples ended up in a single-sample ball and are therefore deleted by GBLSTSVM. We split the correctly labelled samples into \emph{boundary} samples, the quarter of each class that is closest to the other class (by the true labels), and \emph{interior} samples, the remaining three quarters. Table~\ref{tab:deletion} and Figure~\ref{fig:deletion} give the results.
 
 \tableorpending{deletion}
 

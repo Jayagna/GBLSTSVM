@@ -159,7 +159,7 @@ def deletion_table(diag):
     cols = [("deleted_flipped", "Mislabelled"), ("deleted_clean", "Correct"), ("deleted_clean_boundary", "Correct, boundary"),
             ("deleted_clean_interior", "Correct, interior"), ("deleted_clean_minority", "Correct, minority"), ("kept_after_delete_flipped_share", "Noise left")]
     lines = [r"\begin{table}[!t]", r"\centering",
-             r"\caption{What GBLSTSVM's deletion of single-sample balls removes (35 datasets, 5 splits, $k\in\{2,4,6\}$ clusters per split): share (\%) of each group of training samples that ends up in a single-sample ball. Boundary: the quarter of each class closest to the other class (by true labels); interior: the rest. Noise left: share of mislabelled samples among the samples that survive the deletion, to be compared with the noise level.}",
+             r"\caption{What GBLSTSVM's deletion of single-sample balls removes (35 datasets, 5 splits, $k=4$ clusters per split): share (\%) of each group of training samples that ends up in a single-sample ball. Boundary: the quarter of each class closest to the other class (by true labels); interior: the rest. Noise left: share of mislabelled samples among the samples that survive the deletion, to be compared with the noise level.}",
              r"\label{tab:deletion}", r"\small", r"\resizebox{\textwidth}{!}{%", r"\begin{tabular}{ll" + "c" * len(cols) + "}", r"\toprule",
              "Noise model & Level & " + " & ".join(c[1] for c in cols) + r" \\", r"\midrule"]
     for kind, kname in KINDS:
