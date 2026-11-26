@@ -55,7 +55,22 @@ def auc_low(flipped, score):
     return roc_auc_score(flipped, -score) if 0 < flipped.sum() < len(flipped) else np.nan
 
 
-def run_dataset(path, noise_levels, repeats, k_values):
+def run_dataset(path, noise_levels, repeats, k_values, cache_dir=None):
+    """Rows for one dataset; cached as <cache_dir>/<dataset>.csv so an interrupted run can resume."""
+    if cache_dir is not None:
+        cached = Path(cache_dir) / f"{path.stem}.csv"
+        if cached.exists():
+            return pd.read_csv(cached).to_dict("records")
+    rows = _run_dataset(path, noise_levels, repeats, k_values)
+    if cache_dir is not None:
+        Path(cache_dir).mkdir(parents=True, exist_ok=True)
+        tmp = cached.with_suffix(".tmp")
+        pd.DataFrame(rows).to_csv(tmp, index=False)
+        tmp.replace(cached)
+    return rows
+
+
+def _run_dataset(path, noise_levels, repeats, k_values):
     data, meta = load_binary_dataset(path, minority_positive=True)
     rows = []
     for noise in noise_levels:
@@ -118,7 +133,7 @@ def main():
         exact = [p for p in files if p.stem.lower() == name.lower()]
         selected += exact if exact else select_datasets(files, [name])
     rows = []
-    job = partial(run_dataset, noise_levels=args.noise, repeats=args.repeats, k_values=args.k_values)
+    job = partial(run_dataset, noise_levels=args.noise, repeats=args.repeats, k_values=args.k_values, cache_dir=Path(args.out) / "parts")
     with Pool(args.jobs) as pool:
         for part in pool.imap_unordered(job, list(dict.fromkeys(selected))):
             rows += part
