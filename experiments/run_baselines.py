@@ -59,8 +59,9 @@ from gbftsvm import twin_planes_over_grid  # noqa: E402
 from gbsvm import GBSVMProblem  # noqa: E402
 from GBLSTSVM import gb_decision_scores, solve_gb_planes  # noqa: E402
 
-METHODS = ["SVM", "TSVM", "GBSVM", "LS-GBLSTSVM", "LS-keep", "LS-keep+gapvote", "LSTSVM", "GBLSTSVM"]
+METHODS = ["SVM", "TSVM", "GBSVM", "LS-GBLSTSVM", "LS-keep", "LS-keep+gapvote", "LSTSVM", "GBLSTSVM", "T7-agree"]
 GAMMA_GRID = [0.25, 1.0, 4.0]  # Gaussian kernel exp(-gamma ||x - z||^2) with gamma = g / n_features (--kernel)
+AGREE = rfc.METHOD_INDEX["T7-agree"]  # NAF-GBLSTSVM: all balls kept + neighbour-agreement weight
 GAPVOTE = rfc.METHOD_INDEX["Keep+gapvote"]  # (name, ball set, membership(ball set, param), grid)
 C_GRID = rfc.C_GRID
 
@@ -142,16 +143,19 @@ def lsgb_scores(bs, k, Xs, memberships=None):
     return out
 
 
-def lsfam_scores(bs, k, Xs):
-    """LSTSVM (bs = samples) or GBLSTSVM (bs = balls): c1 and c2 free, fixed tiny ridge, as in run_fuzzy_cv."""
+def lsfam_scores(bs, k, Xs, memberships=None):
+    """LSTSVM (bs = samples) or GBLSTSVM (bs = balls): c1 and c2 free, fixed tiny ridge, as in run_fuzzy_cv.
+    memberships = {param: per-ball weight} multiplies the slack terms (NAF-GBLSTSVM on the kept balls)."""
     out = {}
-    ones = np.ones(len(bs["labels"]))
-    for imb, _, c1, c2 in rfc.method_configs([None]):
-        try:
-            planes = rfc.fit_planes(bs, ones, c1, c2, imb)
-        except np.linalg.LinAlgError:
-            continue
-        out[(k, imb, c1, c2)] = [gb_decision_scores(Z, *planes) for Z in Xs]
+    memberships = memberships or {None: np.ones(len(bs["labels"]))}
+    for p, w in memberships.items():
+        for imb, _, c1, c2 in rfc.method_configs([None]):
+            try:
+                planes = rfc.fit_planes(bs, w, c1, c2, imb)
+            except np.linalg.LinAlgError:
+                continue
+            key = (k, imb, c1, c2) if p is None else (k, imb, c1, c2, p)
+            out[key] = [gb_decision_scores(Z, *planes) for Z in Xs]
     return out
 
 
@@ -183,6 +187,8 @@ def all_scores(train, k_values, Xs, methods, gammas=(None,)):
                 new["GBLSTSVM"].update(lsfam_scores(bk, k, Xb))
             if bs is not None and "LS-GBLSTSVM" in methods:
                 new["LS-GBLSTSVM"].update(lsgb_scores(bk, k, Xb))
+            if bs_all is not None and "T7-agree" in methods:  # NAF-GBLSTSVM; weight from the balls in the input space
+                new["T7-agree"].update(lsfam_scores(ak, k, Xa, {p: AGREE[2](bs_all, p) for p in AGREE[3]}))
             if bs_all is not None and "LS-keep" in methods:  # single-point balls kept, no weight
                 new["LS-keep"].update(lsgb_scores(ak, k, Xa))
             if bs_all is not None and "LS-keep+gapvote" in methods:  # kept balls + radius-aware weight + regulariser
