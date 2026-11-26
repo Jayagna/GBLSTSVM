@@ -1200,6 +1200,32 @@ s = content(BK, "Large data (NDC): accuracy level, ball models slower", "Results
 takeaway(s, "The paper's speed claim for ball models does not hold in our code; our model helps on noisy small and medium data.");
 s.addNotes("The large-scale test. We built NDC data from ten thousand to one million points. All twin models reach about eighty-three percent. Plain LSTSVM is by far the fastest because it solves one small system; the ball models spend their time building balls and our model also runs the neighbour vote. The neighbour search was made fifteen times faster with the same result, and ties between touching balls are now broken by centre distance, so the benchmark runs of our model are being repeated.");
 
+// ---- Second paper, 26 Nov
+const triple = (items) => items.forEach(([n, h, t, color], i) => {
+  const x = 0.6 + i * 4.1, w = 3.9;
+  card(s, x, 1.6, w, 4.3);
+  badge(s, x + 0.25, 1.85, n, color, 0.55, 18);
+  s.addText(h, tx({ x: x + 0.95, y: 1.85, w: w - 1.2, h: 0.55, fontSize: 17, bold: true, color: C.text2, valign: "middle" }));
+  s.addText(t, tx({ x: x + 0.25, y: 2.65, w: w - 0.5, h: 3.1, fontSize: 14 }));
+});
+s = content(BK, "A second paper: keep+T7, now called NAF-GBLSTSVM", "Direction, 26 Nov");
+triple([
+  ["1", "The request", "Write two papers: RF-GBLSTSVM (unchanged) and one on keep+T7 (all balls kept + neighbour-agreement weight on the original GBLSTSVM). Name chosen: NAF-GBLSTSVM, Neighbour-Agreement Fuzzy GBLSTSVM (alternatives KA-FGBLSTSVM, NV-GBLSTSVM).", C.accent3],
+  ["2", "The risk", "Same base model and datasets; the RF paper already contains the deletion analysis and keep+T7 as its 'plain neighbour count' row; T7 itself is in SDAP-GBRVFL. Two 'new model beats all' papers could be judged duplicate publication.", C.accent2],
+  ["3", "The plan (recommended)", "Paper 2 = analysis paper: what deletion removes under 3 noise models, which weights spot wrong labels, how the tuning method flips the ranking, NAF as the simple fix. RF paper trimmed to the method, cites paper 2. Decision card sent; RF draft untouched until answered.", C.accent1],
+]);
+takeaway(s, "New experiments for paper 2 only: boundary-targeted and class-dependent label noise, deletion analysis on all 35 datasets.");
+s.addNotes("On 26 November the plan grew to two papers. The second one is about keep plus T7, now named NAF-GBLSTSVM. Because the two papers share so much, we proposed that the second be an analysis paper with its own new experiments, so that each paper has a separate contribution.");
+
+s = content(BK, "Keep+T7 on 35 datasets: strong with the papers' tuning, modest with fair CV", "Results, 26 Nov");
+triple([
+  ["1", "Published-style tuning", "Best average rank of 7 models at every noise level (0-30%). Mean accuracy equal to LS-GBLSTSVM (89.5 vs 89.5 clean, 88.7 vs 88.7 at 20%). +1.2 to +1.9 over GBLSTSVM (p < 0.001), +0.6 to +1.4 over keeping balls without the weight.", C.accent5],
+  ["2", "Fair CV", "Accuracy 79.0 / 77.4 / 76.4 / 75.6 / 72.6 / 67.5 at 0-30% noise. Beats GBLSTSVM at 20% and 30% (+2.1, +3.4); balanced accuracy +1.3 to +4.7 over GBLSTSVM. Behind SVM, LSTSVM and LS-GBLSTSVM on clean and mildly noisy data.", C.accent1],
+  ["3", "Tuning flips the ranking", "GBLSTSVM ranks above SVM, TSVM and LSTSVM with test-set tuning and below all three with fair CV, at every noise level. Test tuning adds ~10 points for GB models on clean data vs ~5 for SVM (more settings to choose from).", C.accent4],
+]);
+takeaway(s, "Paper 2 draft (24 pages) written around these results; new-noise sections wait on runs in progress.");
+s.addNotes("Keep plus T7 on all 35 datasets. With the published tuning it is ranked first and ties LS-GBLSTSVM. With fair cross-validation it improves the original GBLSTSVM mainly on the rare class and at high noise, but the point-based models are better on clean data. The biggest finding for paper 2 is that the tuning method flips the ranking between granular-ball and point-based models.");
+
 // =====================================================================================
 // 31. References
 // =====================================================================================

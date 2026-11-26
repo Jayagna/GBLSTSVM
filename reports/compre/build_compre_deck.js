@@ -821,7 +821,7 @@ takeaway(s, "Name: NAF-GBLSTSVM = Neighbour-Agreement Fuzzy GBLSTSVM (other opti
 s.addNotes("You asked for two papers. That is possible, but the two models share a lot: both keep the single-point balls and both use a neighbour vote. If both papers were written as 'here is a new model that beats everything', on the same datasets and with overlapping tables, a reviewer or editor could treat it as publishing the same work twice. The plan is to give each paper its own claim. Paper 1 is the method paper about the new radius-aware weight. Paper 2 becomes the analysis paper: what the deletion step really does, which weights detect wrong labels, and how the tuning method changes which model looks best, with keep plus T7 as the simple fix. Paper 2 also gets experiments that paper 1 does not have: boundary-targeted and class-dependent label noise.");
 
 s = content("Paper 2: NAF-GBLSTSVM", "The NAF weight of a ball, symbol by symbol");
-fcard(s, 0.6, 1.55, 6.2, 2.0, "The formula", [
+fcard(s, 0.6, 1.55, 6.2, 1.95, "The formula", [
   "a_i = Σ_{j ∈ N_k(i)} n_j · [y_j = y_i]  /  Σ_{j ∈ N_k(i)} n_j",
   "s_i = max( a_i^γ , 0.001 )",
 ], { fs: 15 });
@@ -835,7 +835,7 @@ table(s, mt([
   [td("a_i"), td("agreement: share of the neighbours' points that carry ball i's label (0 to 1)")],
   [td("γ (gamma)"), td("sharpness, a setting (1 or 3): with γ = 3, a = 0.5 becomes 0.125")],
   [td("s_i"), td("the fuzzy weight of ball i; 0.001 is a floor so no ball is fully switched off")],
-]), { x: 0.6, y: 3.7, w: 6.2, colW: [1.3, 4.9], fontSize: 11.5, rowH: 0.27 });
+]), { x: 0.6, y: 3.65, w: 6.2, colW: [1.3, 4.9], fontSize: 10.5, rowH: 0.24 });
 card(s, 7.0, 1.55, 5.7, 4.5);
 s.addText("Worked example (k = 5, γ = 1)", tx({ x: 7.2, y: 1.7, w: 5.3, h: 0.35, fontSize: 16, bold: true, color: C.text2 }));
 s.addText(bullets([
