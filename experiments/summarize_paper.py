@@ -54,7 +54,8 @@ def merge(*parts):
 
 
 def linear_data(res):
-    cv_family = load(res / "paper_cv", {"accuracy": "accuracy", "balanced_accuracy": "balanced_accuracy"})
+    cv_family = merge(load(res / "paper_cv", {"accuracy": "accuracy", "balanced_accuracy": "balanced_accuracy"}),
+                      load(res / "paper_cv_fknn", {"accuracy": "accuracy", "balanced_accuracy": "balanced_accuracy"}))
     for methods in cv_family.values():  # run_fuzzy_cv stores balanced accuracy as a fraction
         for d in methods.values():
             if "balanced_accuracy" in d:
@@ -73,9 +74,19 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=None)
     ap.add_argument("--kernel", action="store_true", help="Gaussian-kernel runs (results/kernel) instead of the linear ones")
+    ap.add_argument("--root", default=None, help="folder holding paper_cv/test_tuning/baselines (default: results)")
+    ap.add_argument("--ours", default=None, help="proposed model column (default: the RF-GBLSTSVM row)")
+    ap.add_argument("--main", nargs="+", default=None, help="ranked models (default: MAIN)")
+    ap.add_argument("--extra", nargs="+", default=None, help="unranked comparison rows (default: EXTRA)")
     args = ap.parse_args()
+    global OURS, MAIN, EXTRA
+    if args.ours:
+        OURS = args.ours
+        LABEL[OURS] = "Proposed"
+    MAIN = args.main or MAIN
+    EXTRA = args.extra if args.extra is not None else EXTRA
     args.out = args.out or str(ROOT / "results" / ("paper_tables_kernel" if args.kernel else "paper_tables"))
-    res = ROOT / "results"
+    res = Path(args.root) if args.root else ROOT / "results"
     orc = {"accuracy": "oracle_accuracy", "balanced_accuracy": "oracle_balanced_accuracy"}
     cvf = {"accuracy": "cv_accuracy", "balanced_accuracy": "cv_balanced_accuracy"}
     if args.kernel:

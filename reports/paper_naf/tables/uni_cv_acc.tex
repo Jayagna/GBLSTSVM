@@ -1,0 +1,26 @@
+\begin{table}[!t]
+\centering
+\caption{Uniform label noise, cross-validated tuning: average ACC (\%) and average rank over 35 datasets (10 splits).}
+\label{tab:uni-cv-acc}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llccccccc}
+\toprule
+ & Noise & SVM & TSVM & GBSVM & LSTSVM & GBLSTSVM & LS-GBLSTSVM & \textbf{NAF-GBLSTSVM} \\
+\midrule
+Average ACC & 0\% & \textbf{83.22} & 81.92 & 68.56 & 81.01 & 78.23 & 81.45 & 79.03 \\
+ & 5\% & 79.76 & 79.11 & 70.26 & 79.41 & 77.77 & \textbf{81.10} & 77.44 \\
+ & 10\% & 77.82 & 77.74 & 68.74 & 77.47 & 76.40 & \textbf{80.01} & 76.38 \\
+ & 15\% & 75.98 & 74.99 & 64.15 & 75.82 & 74.32 & \textbf{77.47} & 75.61 \\
+ & 20\% & 74.42 & 73.14 & 61.26 & 73.46 & 70.49 & \textbf{75.13} & 72.63 \\
+ & 30\% & \textbf{72.20} & 65.52 & 52.50 & 66.05 & 64.06 & 70.03 & 67.48 \\
+\midrule
+Average rank & 0\% & \textbf{2.63} & 3.27 & 5.63 & 3.66 & 4.81 & 3.41 & 4.59 \\
+ & 5\% & 3.53 & 3.63 & 5.54 & 3.40 & 4.80 & \textbf{2.61} & 4.49 \\
+ & 10\% & 3.63 & 3.36 & 5.57 & 3.60 & 4.83 & \textbf{2.79} & 4.23 \\
+ & 15\% & 3.73 & 3.99 & 5.34 & 3.44 & 4.66 & \textbf{2.91} & 3.93 \\
+ & 20\% & 3.10 & 3.63 & 5.71 & 3.47 & 4.91 & \textbf{3.07} & 4.10 \\
+ & 30\% & \textbf{2.26} & 3.99 & 5.89 & 4.24 & 4.77 & 3.10 & 3.76 \\
+\bottomrule
+\end{tabular}}
+\end{table}

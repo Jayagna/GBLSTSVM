@@ -1,0 +1,19 @@
+\begin{table}[!t]
+\centering
+\caption{Where the gain of NAF-GBLSTSVM comes from (linear kernel, uniform noise, average ACC in \% over 35 datasets). The last two rows train on the samples instead of the balls; FKNN-LSTSVM gives every sample the neighbour-agreement membership of \eqref{eq:agree} computed among samples, i.e.\ NAF-GBLSTSVM with every sample as its own ball.}
+\label{tab:ablation}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llcccccccc}
+\toprule
+ & & \multicolumn{4}{c}{Test-set tuning} & \multicolumn{4}{c}{CV tuning} \\ \cmidrule(lr){3-6}\cmidrule(lr){7-10}
+Model & Trained on & 0\% & 10\% & 20\% & 30\% & 0\% & 10\% & 20\% & 30\% \\
+\midrule
+GBLSTSVM & balls, single-sample balls deleted & 88.08 & 87.93 & 87.06 & 85.56 & 78.23 & 76.40 & 70.49 & 64.06 \\
+GBLSTSVM, all balls kept & balls, all kept & 88.95 & 88.27 & 87.49 & 86.08 & 79.72 & 76.68 & 71.74 & 64.97 \\
+NAF-GBLSTSVM & balls, all kept, NAF membership & 89.50 & 89.16 & 88.67 & 87.46 & 79.03 & 76.38 & 72.63 & 67.48 \\
+LSTSVM & samples & 88.21 & 87.56 & 86.79 & 85.27 & 81.01 & 77.47 & 73.46 & 66.05 \\
+FKNN-LSTSVM & samples, fuzzy $k$-NN membership & 88.87 & 88.54 & 87.94 & 86.64 & -- & -- & -- & -- \\
+\bottomrule
+\end{tabular}}
+\end{table}

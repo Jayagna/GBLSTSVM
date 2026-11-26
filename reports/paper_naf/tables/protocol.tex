@@ -1,0 +1,22 @@
+\begin{table}[!t]
+\centering
+\caption{How much each model gains when its hyperparameters are chosen on the test set instead of by cross-validation on the training part (linear kernel, uniform noise, 35 datasets). Gap: average test-tuned ACC minus average CV-tuned ACC, in points. Rank: average rank among the seven models under test-set tuning $\to$ under CV tuning. Settings: number of hyperparameter combinations searched per split.}
+\label{tab:protocol}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrcccccccc}
+\toprule
+ & & \multicolumn{2}{c}{0\% noise} & \multicolumn{2}{c}{10\% noise} & \multicolumn{2}{c}{20\% noise} & \multicolumn{2}{c}{30\% noise} \\
+\cmidrule(lr){3-4} \cmidrule(lr){5-6} \cmidrule(lr){7-8} \cmidrule(lr){9-10}
+Model & Settings & Gap & Rank & Gap & Rank & Gap & Rank & Gap & Rank \\
+\midrule
+SVM & 14 & 5.3 & 4.8 $\to$ 2.6 & 9.3 & 5.5 $\to$ 3.6 & 11.7 & 5.6 $\to$ 3.1 & 13.2 & 5.4 $\to$ 2.3 \\
+TSVM & 242 & 6.7 & 4.2 $\to$ 3.3 & 10.5 & 4.2 $\to$ 3.4 & 13.9 & 4.4 $\to$ 3.6 & 19.8 & 4.7 $\to$ 4.0 \\
+GBSVM & 70 & 16.4 & 5.4 $\to$ 5.6 & 16.1 & 5.2 $\to$ 5.6 & 22.7 & 5.7 $\to$ 5.7 & 30.6 & 5.8 $\to$ 5.9 \\
+LSTSVM & 98 & 7.2 & 5.2 $\to$ 3.7 & 10.1 & 5.4 $\to$ 3.6 & 13.3 & 5.0 $\to$ 3.5 & 19.2 & 4.7 $\to$ 4.2 \\
+GBLSTSVM & 490 & 9.9 & 4.1 $\to$ 4.8 & 11.5 & 3.9 $\to$ 4.8 & 16.6 & 3.5 $\to$ 4.9 & 21.5 & 3.6 $\to$ 4.8 \\
+LS-GBLSTSVM & 490 & 8.1 & 2.2 $\to$ 3.4 & 9.2 & 2.0 $\to$ 2.8 & 13.5 & 2.1 $\to$ 3.1 & 17.4 & 2.1 $\to$ 3.1 \\
+\textbf{NAF-GBLSTSVM} & 1960 & 10.5 & 2.1 $\to$ 4.6 & 12.8 & 1.8 $\to$ 4.2 & 16.0 & 1.7 $\to$ 4.1 & 20.0 & 1.8 $\to$ 3.8 \\
+\bottomrule
+\end{tabular}}
+\end{table}

@@ -1,0 +1,307 @@
+\documentclass[preprint,12pt]{elsarticle}
+
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{xcolor}
+
+\journal{a journal (to be decided)}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\NAF}{NAF-GBLSTSVM}
+\newcommand{\XX}[1]{\textcolor{red}{[#1]}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newcommand{\tableorpending}[1]{\IfFileExists{tables/#1.tex}{\input{tables/#1}}{\XX{Table #1 pending: runs still in progress.}}}
+
+\begin{document}
+
+\begin{frontmatter}
+
+\title{What granular-ball twin support vector machines throw away: single-sample ball deletion, label noise, tuning protocols, and a neighbour-agreement fuzzy GBLSTSVM}
+
+% TODO before submission: confirm author names, order, affiliations and e-mail addresses.
+\author[inst1]{Jayagna Patel}
+\author[inst1]{[Supervisor name]}
+\address[inst1]{[Department], Birla Institute of Technology and Science, Pilani, India}
+
+\begin{abstract}
+Granular-ball classifiers replace the training samples by balls produced by recursive $k$-means splitting, and are reported to be faster and more robust to label noise than their sample-based counterparts. We take a close look at one of them, the granular-ball least squares twin support vector machine (GBLSTSVM), and ask two questions: what does its ball generation actually do to noisy training data, and do its reported gains survive a strict evaluation protocol? First, GBLSTSVM deletes every ball that holds a single sample. On 35 UCI and KEEL datasets we show that this step works as a hidden noise filter that is both strong and indiscriminate: \XX{numbers from the deletion table}. Second, we treat ball memberships as detectors of mislabelled samples and find that the share of a ball's neighbours that carry its label is a far better detector than the centre-distance, entropy, overlap and density memberships used so far. This leads to a minimal fix, the neighbour-agreement fuzzy GBLSTSVM (\NAF{}), which keeps every ball and scales the error term of each ball by this agreement; training still consists of two small linear systems. Third, we compare \NAF{} with SVM, TSVM, GBSVM, LSTSVM, GBLSTSVM and LS-GBLSTSVM under two tuning protocols. When the hyperparameters are chosen by the test score, granular-ball models dominate the ranking and \NAF{} has the best average rank at every noise level, 1.2 to 1.9 points ahead of GBLSTSVM. When they are chosen by five-fold cross-validation on the training part, the ranking changes: the sample-based SVM and LSTSVM overtake GBLSTSVM at every noise level, and \NAF{} improves on GBLSTSVM mainly at high noise (3.4 points of accuracy and 4.7 points of balanced accuracy at 30\% noise). We repeat the comparison under boundary-targeted and class-dependent label noise. We conclude with recommendations for evaluating granular-ball classifiers.
+\end{abstract}
+
+\begin{keyword}
+Granular-ball computing \sep Least squares twin support vector machine \sep Label noise \sep Fuzzy membership \sep Model selection \sep Evaluation protocol
+\end{keyword}
+
+\end{frontmatter}
+
+%% ---------------------------------------------------------------------------
+\section{Introduction}
+\label{sec:intro}
+
+Label noise, i.e.\ training samples that carry the wrong class label, is common in real data and harms most classifiers \cite{frenay2014}. Support vector machines (SVMs) \cite{cortes1995} are affected because a mislabelled sample near the boundary becomes a support vector with a large slack. Twin SVMs (TSVM) \cite{jayadeva2007} and least squares twin SVMs (LSTSVM) \cite{kumar2009}, which fit two non-parallel hyperplanes, share this weakness, and LSTSVM in particular uses a squared loss that grows quickly with the error of a sample.
+
+Granular-ball computing \cite{xia2019} is a recent line of work that addresses noise and data size together. The training set is split recursively by $k$-means until every part is almost pure, each part is replaced by a ball with a centre, a radius and a majority label, and the classifier is trained on the balls. The idea has been applied to the SVM (GBSVM) \cite{xia2022gbsvm}, the twin SVM \cite{quadir2024gbtsvm} and the least squares twin SVM (GBLSTSVM and LS-GBLSTSVM) \cite{tanveer2024gblstsvm}, and fuzzy versions weight each ball by a membership \cite{xia2024gbfsvm,lang2025gbftsvm,liu2026rgbiftsvm}. The papers that introduce these models report clear gains over the sample-based models, in particular under label noise.
+
+This paper examines GBLSTSVM closely instead of proposing yet another variant. Two observations motivated it. First, GBLSTSVM deletes every ball that holds a single sample after the splitting has ended. The usual justification is that an isolated sample is probably noise. But a correctly labelled sample also ends up alone when its closest neighbours carry the other label, which is the normal situation near the class boundary, and the boundary is exactly the region that a twin SVM needs to see. Second, the hyperparameters of granular-ball models are often chosen by the score on the test set \cite{xia2024gbfsvm,lang2025gbftsvm}, which is known to inflate the reported scores \cite{cawley2010,varma2006}, and granular-ball models have more hyperparameters than their sample-based counterparts because the ball generation adds its own.
+
+The contributions are as follows.
+\begin{enumerate}
+\item \emph{Deletion analysis.} We measure on 35 datasets and under three label-noise models (uniform, boundary-targeted and class-dependent) what the deletion of single-sample balls removes. It removes most mislabelled samples, but also a large part of the correctly labelled samples, most of all the boundary and minority samples (Section~\ref{sec:deletion}).
+\item \emph{Membership analysis.} We evaluate the ball memberships used in the literature as detectors of mislabelled samples and show that a vote among neighbouring balls is the only one that is clearly better than random under all three noise models (Section~\ref{sec:detection}).
+\item \emph{A minimal fix.} We propose \NAF{}, which keeps every ball and weights the error term of each ball by the agreement of its neighbours. It changes GBLSTSVM in two places only and keeps its closed-form training (Section~\ref{sec:method}).
+\item \emph{Protocol analysis.} We compare seven models under test-set tuning and under cross-validation (CV) tuning, and show that the protocol reverses the ranking of granular-ball and sample-based models. We report both and identify where \NAF{} helps and where it does not (Sections~\ref{sec:experiments} and \ref{sec:discussion}).
+\end{enumerate}
+
+A companion manuscript \cite{patel2026rf} builds a different membership, a radius-aware vote with a regularised formulation, on the same observation about deleted balls. The present paper is about the deletion step and the evaluation protocol themselves, and uses the simplest neighbour-based membership as the fix.
+
+%% ---------------------------------------------------------------------------
+\section{Background and related work}
+\label{sec:related}
+
+The training set is $T=\{(x_i,y_i)\}_{i=1}^{n}$ with $x_i\in\R^{d}$ and $y_i\in\{+1,-1\}$; the minority class is $+1$. $e$ is a vector of ones of suitable length.
+
+\subsection{LSTSVM}
+
+LSTSVM \cite{kumar2009} fits two hyperplanes $w_1^{\top}x+b_1=0$ and $w_2^{\top}x+b_2=0$. With $A$ and $B$ holding the samples of class $+1$ and $-1$ as rows, the first hyperplane solves
+\begin{equation}
+\min_{w_1,b_1,\xi}\ \frac{1}{2}\lVert Aw_1+eb_1\rVert^{2}+\frac{c_1}{2}\lVert\xi\rVert^{2}
+\quad\text{s.t.}\quad -(Bw_1+eb_1)+\xi=e ,
+\label{eq:lstsvm}
+\end{equation}
+so it stays close to class $+1$ and asks every sample of class $-1$ to be at distance one on the other side, with a squared penalty $\xi$ on deviations. The second hyperplane exchanges the roles of the classes. Each problem reduces to one $(d+1)\times(d+1)$ linear system. A new sample is assigned to the class of the nearer hyperplane.
+
+\subsection{Granular balls and GBLSTSVM}
+
+A granular ball is a group of training samples with centre $c_j=\frac{1}{n_j}\sum_{x\in GB_j}x$, radius $r_j=\frac{1}{n_j}\sum_{x\in GB_j}\lVert x-c_j\rVert$, label $y_j$ equal to the majority label, and purity equal to the share of samples that carry $y_j$ \cite{xia2019}. Generation starts from one ball holding all samples; every ball whose purity is below a threshold (0.985 here) is split by $k$-means into $k$ balls, until every ball is pure enough or holds one sample. In GBLSTSVM \cite{tanveer2024gblstsvm} the balls that hold a single sample are then deleted, and the model is trained on the centres and radii of the remaining balls. With $C^{\pm}$ the centres and $R^{\pm}$ the radii of the balls of each class, the first problem is
+\begin{equation}
+\min_{w_1,b_1,\xi}\ \frac{1}{2}\lVert C^{+}w_1+eb_1\rVert^{2}+\frac{c_1}{2}\lVert\xi\rVert^{2}
+\quad\text{s.t.}\quad -(C^{-}w_1+eb_1)+\xi=e+R^{-} ,
+\label{eq:gblstsvm}
+\end{equation}
+so a ball of class $-1$ must stay at distance one plus its radius. LS-GBLSTSVM adds the term $\frac{c_3}{2}(\lVert w_1\rVert^{2}+b_1^{2})$. GBSVM \cite{xia2022gbsvm} uses the ball constraint $y_j(w^{\top}c_j+b)-r_j\lVert w\rVert\ge 1-\xi_j$ in a standard SVM.
+
+\subsection{Fuzzy memberships and noise filters}
+
+A fuzzy SVM multiplies the penalty of each sample by a membership in $(0,1]$ \cite{lin2002}. Memberships have been computed from the distance to the class centre \cite{lin2002,batuwita2010}, from intuitionistic pairs of membership and non-membership \cite{rezvani2019}, and from the labels of the $k$ nearest neighbours, as in the fuzzy $k$-nearest-neighbour rule \cite{keller1985}. Deleting suspicious samples instead of down-weighting them is the idea of editing and filtering methods: Wilson's edited nearest neighbour rule removes samples misclassified by their neighbours \cite{wilson1972}, and classification filters remove samples misclassified by a committee \cite{brodley1999}.
+
+On granular balls, GBFSVM \cite{xia2024gbfsvm}, GBFTSVM \cite{lang2025gbftsvm} and RGBIFTSVM \cite{liu2026rgbiftsvm} compute the membership of a ball from the distance of its centre to its class centre, the latter two also with a non-membership from the purity. The granular-ball fuzzy RVFL network of \cite{quadir2026gbfrvfl} uses the share of differently labelled balls among the $k$ nearest balls inside a non-membership degree; this is the closest prior use of the quantity that we use in \NAF{}, there in a random vector functional link network and without keeping single-sample balls. None of these works analyses what the deletion step removes, and none compares tuning protocols.
+
+%% ---------------------------------------------------------------------------
+\section{Experimental setting shared by all analyses}
+\label{sec:setup}
+
+\paragraph{Datasets} We use the 35 binary UCI \cite{uci} and KEEL \cite{keel} datasets of Table~\ref{tab:datasets}, with 80 to 1484 samples, 3 to 60 features and imbalance ratios from 1.0 to 32.7. Each dataset is split 10 times at random (5 times for the boundary-targeted and class-dependent noise) into 70\% training and 30\% test data, stratified by class; the features are standardised with the statistics of the training part. Label noise is applied to the training part only; the test labels are always clean.
+
+\input{tables/datasets}
+
+\paragraph{Noise models} Let $q$ be the noise level.
+\begin{itemize}
+\item \emph{Uniform}: $\lfloor qn\rfloor$ training labels are flipped, spread over the classes in proportion to their size, with the samples chosen at random. This is the noise used in \cite{tanveer2024gblstsvm} and in most granular-ball papers; $q\in\{0.05,0.1,0.15,0.2,0.3\}$.
+\item \emph{Boundary-targeted}: the same number of flips per class as uniform noise, but sample $i$ is chosen with probability proportional to $\exp(-\delta_i/\tau)$, where $\delta_i$ is its distance to the nearest training sample of the other class and $\tau$ is half the median of $\delta$ in its class. Samples close to the other class are thus flipped much more often, as when annotators confuse borderline cases.
+\item \emph{Class-dependent}: a share $q$ of the majority-class samples is relabelled as minority; the minority class is untouched (noise rates $\rho_{\text{maj}}=q$, $\rho_{\text{min}}=0$ \cite{natarajan2013}).
+\end{itemize}
+
+\paragraph{Ball generation} All granular-ball models use the same generation with purity threshold 0.985 and $k\in\{2,\dots,6\}$ clusters per split, $k$ being a hyperparameter.
+
+%% ---------------------------------------------------------------------------
+\section{What the deletion of single-sample balls removes}
+\label{sec:deletion}
+
+For every dataset, noise model, noise level and split, we generated the balls on the noisy training part for $k\in\{2,4,6\}$ and recorded which samples ended up in a single-sample ball and are therefore deleted by GBLSTSVM. We split the correctly labelled samples into \emph{boundary} samples, the quarter of each class that is closest to the other class (by the true labels), and \emph{interior} samples, the remaining three quarters. Table~\ref{tab:deletion} and Figure~\ref{fig:deletion} give the results.
+
+\tableorpending{deletion}
+
+\begin{figure}[t]
+\centering
+\IfFileExists{figures/deletion.pdf}{\includegraphics[width=\textwidth]{figures/deletion.pdf}}{\XX{Figure pending.}}
+\caption{Share of training samples that end up in single-sample balls and are deleted by GBLSTSVM, by group and noise model (35 datasets).}
+\label{fig:deletion}
+\end{figure}
+
+\XX{Text to be written from Table~\ref{tab:deletion} once the 35-dataset diagnostics are complete. Points to make: (i) even on clean data the deletion removes X\% of the samples; (ii) under uniform noise it removes most mislabelled samples but also X\% of the correct ones, and the correct boundary samples at about Y times the rate of the interior ones; (iii) under boundary-targeted noise the filter is weaker for the mislabelled samples and removes even more correct boundary samples; (iv) under class-dependent noise the flipped majority samples form their own small balls ... ; (v) after deletion the share of noise among the remaining samples is ...}
+
+The mechanism is simple. A sample ends up alone when the $k$-means split that would put it with samples of its own label never happens, because its region is mixed. This is the case for a mislabelled sample inside the other class, and equally for a correct sample on the boundary or a minority sample surrounded by majority samples. The deletion step cannot tell these cases apart, because it uses only the size of the ball.
+
+%% ---------------------------------------------------------------------------
+\section{Which ball membership recognises a mislabelled sample?}
+\label{sec:detection}
+
+If the deletion is to be replaced by a soft weight, the weight must be low for mislabelled samples and high for correct ones. We therefore keep all balls, give every sample the membership of its ball (or 0 if its own label differs from the ball label), and measure the area under the ROC curve (AUC) of the membership as a detector of the flipped samples; 0.5 is a random score. We compare the memberships used for granular balls so far: the distance of the ball centre to the class centre \cite{xia2024gbfsvm,lang2025gbftsvm}, one minus the label entropy of the ball, the overlap of the ball with balls of the other class, and the local density of the ball. We also include the deletion itself as a 0/1 score and, as a reference, the fuzzy $k$-NN agreement computed among samples rather than balls \cite{keller1985}.
+
+\tableorpending{detection}
+
+\XX{Text from Table~\ref{tab:detection}. From the 21-dataset pilot: centre distance 0.70/0.65/0.60 at 10/20/30\% uniform noise, entropy below 0.5 (a flipped sample alone in its ball has zero entropy), neighbour agreement 0.885/0.868/0.821, close to the sample-level fuzzy $k$-NN. Add the boundary-targeted and class-dependent rows.}
+
+The reason is the same as for the deletion: a ball's own properties (size, purity, entropy, distance to its class centre) say little about whether its label is right, because a mislabelled sample forms a small, pure ball of its own. What gives it away is its surroundings: the balls around it carry the other label.
+
+%% ---------------------------------------------------------------------------
+\section{Neighbour-agreement fuzzy GBLSTSVM}
+\label{sec:method}
+
+\NAF{} makes two changes to GBLSTSVM: it keeps all balls, and it multiplies the error term of each ball by the agreement of its neighbours.
+
+\subsection{Membership}
+
+Let $\{(c_i,r_i,y_i,n_i)\}_{i=1}^{m}$ be all balls generated from the training set, including those with $n_i=1$, and let $N_k(i)$ be the $k$ balls whose centres are nearest to $c_i$. The agreement of ball $i$ is the share of the samples in these neighbouring balls that carry the label of ball $i$,
+\begin{equation}
+a_i=\frac{\sum_{j\in N_k(i)} n_j\,[y_j=y_i]}{\sum_{j\in N_k(i)} n_j}\in[0,1],
+\label{eq:agree}
+\end{equation}
+and its membership is
+\begin{equation}
+s_i=\max\bigl(a_i^{\gamma},\ \varepsilon\bigr),\qquad \varepsilon=10^{-3}.
+\label{eq:membership}
+\end{equation}
+Here $[\cdot]$ is 1 if the condition holds and 0 otherwise. Counting samples ($n_j$) rather than balls lets a large neighbouring ball weigh more than a single-sample one. The exponent $\gamma\ge 1$ sharpens the weight: with $\gamma=3$ a ball whose neighbours agree half of the time gets $0.125$ instead of $0.5$. The floor $\varepsilon$ keeps every ball in the problem. A ball inside its class has $s_i=1$, a mislabelled sample surrounded by the other class has $s_i\approx\varepsilon$, and a correct boundary ball receives an intermediate weight instead of being deleted. When every sample is its own ball, \eqref{eq:agree} is the fuzzy $k$-NN membership of \cite{keller1985}, and the model becomes a fuzzy LSTSVM on the samples (FKNN-LSTSVM in our experiments).
+
+\subsection{Model}
+
+Let $H=[C^{+}\ e]$ and $G=[C^{-}\ e]$ hold the centres of all balls of each class with a column of ones, $S^{\pm}=\mathrm{diag}(s^{\pm})$ their memberships, and $D^{+}=\theta I$ an optional weight of the minority class, with $\theta=1$ or $\theta=\sum_{j:y_j=-1}n_j/\sum_{j:y_j=+1}n_j$ (a hyperparameter). With $z_1=[w_1;b_1]$, the first hyperplane solves
+\begin{equation}
+\min_{z_1,\xi}\ \frac{1}{2}(Hz_1)^{\top}D^{+}(Hz_1)+\frac{c_1}{2}\xi^{\top}S^{-}\xi
+\quad\text{s.t.}\quad -Gz_1+\xi=e+R^{-},
+\label{eq:naf1}
+\end{equation}
+and the second
+\begin{equation}
+\min_{z_2,\eta}\ \frac{1}{2}(Gz_2)^{\top}(Gz_2)+\frac{c_2}{2}\eta^{\top}D^{+}S^{+}\eta
+\quad\text{s.t.}\quad Hz_2+\eta=e+R^{+}.
+\label{eq:naf2}
+\end{equation}
+The membership enters only the error terms: a ball whose label is contradicted by its neighbours may lie on the wrong side of the other class's hyperplane at almost no cost, while it still counts fully in no term that pulls a hyperplane towards its own class. Substituting the constraints and setting the gradients to zero gives
+\begin{align}
+z_1&=-\Bigl(G^{\top}S^{-}G+\tfrac{1}{c_1}H^{\top}D^{+}H+\delta I\Bigr)^{-1}G^{\top}S^{-}(e+R^{-}),\label{eq:sol1}\\
+z_2&=\Bigl(H^{\top}D^{+}S^{+}H+\tfrac{1}{c_2}G^{\top}G+\delta I\Bigr)^{-1}H^{\top}D^{+}S^{+}(e+R^{+}),\label{eq:sol2}
+\end{align}
+where $\delta=10^{-4}$ is a small ridge for numerical stability, used for all least squares twin models in our code. A test sample $x$ is assigned to class $+1$ if $|w_1^{\top}x+b_1|/\lVert w_1\rVert<|w_2^{\top}x+b_2|/\lVert w_2\rVert$ and to class $-1$ otherwise. With $S^{\pm}=I$ and single-sample balls deleted, \eqref{eq:naf1}--\eqref{eq:naf2} are GBLSTSVM.
+
+\subsection{Algorithm and cost}
+
+\begin{algorithm}[t]
+\caption{Training of \NAF{}}
+\label{alg:naf}
+\begin{algorithmic}[1]
+\Require training set $T$; clusters per split $k_{\text{split}}$; neighbours $k$; sharpness $\gamma$; $c_1,c_2$; class weight $\theta$
+\State Generate granular balls by recursive $k$-means splitting (purity threshold 0.985). Keep all balls, including single-sample ones.
+\For{each ball $i$}
+\State Find the $k$ nearest ball centres $N_k(i)$; compute $a_i$ by \eqref{eq:agree} and $s_i$ by \eqref{eq:membership}.
+\EndFor
+\State Form $H$, $G$, $S^{\pm}$, $D^{+}$, and compute $z_1$, $z_2$ by \eqref{eq:sol1}--\eqref{eq:sol2}.
+\Ensure $(w_1,b_1)$, $(w_2,b_2)$.
+\end{algorithmic}
+\end{algorithm}
+
+With $m$ balls in $d$ dimensions, the neighbour search costs $O(m^{2}d)$ by brute force or $O(m\log m)$ per query with a $k$-d tree in low dimension (our code switches to a tree above 1000 balls), and forming and solving the two systems costs $O(md^{2}+d^{3})$, as for GBLSTSVM. Because no ball is deleted, $m$ is larger than in GBLSTSVM; the ball generation, which is shared, dominates the run time in our experiments.
+
+%% ---------------------------------------------------------------------------
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Models, hyperparameters and protocols}
+
+\paragraph{Models} \NAF{} is compared with the baselines of \cite{tanveer2024gblstsvm}: SVM \cite{cortes1995}, TSVM \cite{jayadeva2007}, GBSVM \cite{xia2022gbsvm}, LSTSVM \cite{kumar2009}, GBLSTSVM and LS-GBLSTSVM \cite{tanveer2024gblstsvm}, all with the linear kernel. GBSVM, GBLSTSVM and LS-GBLSTSVM delete single-sample balls as in their original versions. GBSVM is solved to optimality as a second-order cone programme \cite{diamond2016,goulart2024}. Two further models isolate the parts of \NAF{}: GBLSTSVM with all balls kept but no membership, and FKNN-LSTSVM, i.e.\ LSTSVM on the samples with the membership \eqref{eq:agree}--\eqref{eq:membership} computed among samples.
+
+\paragraph{Hyperparameters and their meaning} $c_1,c_2$ (LSTSVM family) and $C$ (SVM, GBSVM) weigh the error terms against the closeness or margin terms and are taken from $\{10^{-3},10^{-2},\dots,10^{3}\}$; for LS-GBLSTSVM $c_1=c_2$ and the regularisation weight $c_3=c_4$ come from the same set; TSVM uses $\{2^{-5},\dots,2^{5}\}$. $k_{\text{split}}\in\{2,\dots,6\}$ is the number of clusters per split in the ball generation. For \NAF{} and FKNN-LSTSVM, the number of neighbours is $k\in\{5,10\}$ and the sharpness $\gamma\in\{1,3\}$. Every model may switch the minority-class weight $\theta$ on or off. The number of settings searched per split is therefore 14 for SVM, 242 for TSVM, 70 for GBSVM, 98 for LSTSVM, 490 for GBLSTSVM and LS-GBLSTSVM, 392 for FKNN-LSTSVM and 1960 for \NAF{}.
+
+\paragraph{Two tuning protocols}
+\begin{itemize}
+\item \emph{Test-set tuning}: for each split the reported score is the best test score over all settings. Several granular-ball papers choose their hyperparameters in this way \cite{xia2024gbfsvm,lang2025gbftsvm}. The GBLSTSVM paper states five-fold CV \cite{tanveer2024gblstsvm}; on the datasets we share with it, our test-tuned scores of GBLSTSVM are close to the published ones and our CV-tuned scores are several points lower.
+\item \emph{CV tuning}: the setting with the best mean balanced accuracy in five-fold CV on the (noisy) training part is chosen, the model is retrained on the whole training part and scored once on the test part. This is what a user can do in practice.
+\end{itemize}
+
+\paragraph{Scores and tests} We report accuracy (ACC) and balanced accuracy (BACC, the mean recall of the two classes) in per cent, averaged over the splits of each dataset. Models are compared by their average rank over the datasets with the Friedman test and the Iman--Davenport correction \cite{demsar2006,iman1980} (Table~\ref{tab:friedman}), and \NAF{} is compared with every other model by the Wilcoxon signed-rank test and win/tie/loss counts over the 35 datasets.
+
+\subsection{Uniform noise, test-set tuning}
+
+Table~\ref{tab:uni-oracle} gives the average ACC and rank. Under this protocol the three granular-ball least squares models occupy the first places. \NAF{} has the best average rank at every noise level (1.6 to 2.1). Its average ACC is the same as that of LS-GBLSTSVM to within 0.05 points (89.5\% on clean data, 88.7\% at 20\% noise, 87.5\% at 30\%), and the difference between the two is not significant at any level (Table~\ref{tab:uni-oracle-pair}). \NAF{} is 1.2 to 1.9 points ahead of GBLSTSVM, which it modifies, with 27 to 31 wins out of 35 ($p<0.001$ at every level), and 0.7 to 2.5 points ahead of SVM, TSVM and LSTSVM ($p<0.001$). Keeping the balls without a membership already gives part of the gain; the membership adds a further 0.6 to 1.4 points ($p<0.001$). \NAF{} is also 0.6 to 0.8 points ahead of FKNN-LSTSVM.
+
+\input{tables/uni_oracle_acc}
+\input{tables/uni_oracle_pair}
+
+\subsection{Uniform noise, CV tuning}
+
+Tables~\ref{tab:uni-cv-acc}--\ref{tab:uni-cv-bacc-pair} give the results under CV tuning. All scores drop, by 5 to 30 points, and the order changes.
+
+\emph{Accuracy.} On clean data SVM is best (83.2\%), followed by TSVM, LS-GBLSTSVM and LSTSVM (81.0 to 81.9\%); \NAF{} reaches 79.0\% and GBLSTSVM 78.2\%. LS-GBLSTSVM is the strongest model from 5\% to 20\% noise. Against GBLSTSVM, \NAF{} is level up to 10\% noise and ahead from 15\% upwards, by 1.3, 2.1 and 3.4 points at 15\%, 20\% and 30\% ($p=0.18$, $0.027$, $0.007$). At 30\% noise it is ahead of LSTSVM (67.5\% against 66.0\%) and TSVM, but behind SVM (72.2\%) and LS-GBLSTSVM (70.0\%).
+
+\emph{Balanced accuracy.} Here \NAF{} improves on GBLSTSVM at every noise level, by 2.5 points on clean data and 4.7 points at 30\% noise ($p<0.001$ for both), because the deleted single-sample balls belong disproportionately to the minority class. It is level with LS-GBLSTSVM (no significant difference except at 5\% noise) and behind SVM, TSVM and LSTSVM up to 20\% noise, by 1.2 to 4.4 points; at 30\% noise these differences are no longer significant.
+
+\XX{FKNN-LSTSVM under CV tuning: pending (results/paper\_cv\_fknn).}
+
+\input{tables/uni_cv_acc}
+\input{tables/uni_cv_acc_pair}
+\input{tables/uni_cv_bacc}
+\input{tables/uni_cv_bacc_pair}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/noise_uniform.pdf}
+\caption{Uniform noise: average score over 35 datasets against the noise level under the two protocols.}
+\label{fig:noise-uniform}
+\end{figure}
+
+\subsection{How much the protocol matters}
+
+Table~\ref{tab:protocol} and Figure~\ref{fig:protocol} put the two protocols side by side. Every model gains from test-set tuning, but not equally. On clean data, SVM gains 5.3 points of ACC, LSTSVM 7.2, GBLSTSVM 9.9 and \NAF{} 10.5; GBSVM gains 16.4. The gain grows with the noise level and is larger for the granular-ball least squares models, which search five times more settings than LSTSVM, than for SVM, TSVM and LSTSVM. (GBSVM is a special case: under CV tuning its exact solution often collapses to one class, see \cite{patel2026rf}.) As a result, the ranks change: on clean data, GBLSTSVM is ranked above SVM, TSVM and LSTSVM under test-set tuning (4.1 against 4.8, 4.2 and 5.2) and below all three under CV tuning (4.8 against 2.6, 3.3 and 3.7), and the same reversal holds at 10\%, 20\% and 30\% noise. \NAF{} drops from rank 2.1 to 4.6 on clean data and from 1.8 to 3.8 at 30\% noise. A claim that a granular-ball model beats a sample-based one therefore depends on the protocol, and test-set tuning favours the models with more hyperparameters.
+
+\input{tables/protocol}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/protocol.pdf}
+\caption{Average rank (ACC) of the seven models under test-set tuning and CV tuning on the same splits.}
+\label{fig:protocol}
+\end{figure}
+
+\subsection{Where the gain comes from}
+
+Table~\ref{tab:ablation} separates keeping the balls from weighting them. \XX{Text: keeping all balls ... ; adding the membership ... ; FKNN-LSTSVM ...}
+
+\input{tables/ablation}
+
+\subsection{Boundary-targeted and class-dependent noise}
+
+\tableorpending{noisetypes}
+
+\XX{Text from Table~\ref{tab:noisetypes} and the pairwise tables (results/noise\_boundary, results/noise\_asymmetric).}
+
+\input{tables/friedman}
+
+%% ---------------------------------------------------------------------------
+\section{Discussion}
+\label{sec:discussion}
+
+\paragraph{The deletion step is a noise filter, and a blunt one} \XX{summarise Section~\ref{sec:deletion}.} Filters that delete samples misclassified by their neighbours have a long history \cite{wilson1972,brodley1999}; the deletion of single-sample balls is a filter of this kind that looks only at the size of the ball, and it pays for its noise removal with a large share of the boundary and minority samples. Replacing it by a weight that looks at the neighbours keeps those samples in the problem.
+
+\paragraph{When to use \NAF{}} Under test-set tuning, \NAF{} is the best-ranked of the seven models at every uniform noise level, level with LS-GBLSTSVM in mean ACC. Under CV tuning its gains over GBLSTSVM appear in balanced accuracy at every noise level and in accuracy from 15\% noise upwards; on clean or mildly noisy data the sample-based SVM, TSVM and LSTSVM and the regularised LS-GBLSTSVM are better choices. \NAF{} has more hyperparameters than GBLSTSVM; with CV tuning this costs four times more fits, but each fit is still two small linear systems, and the ball generation, which dominates the time, is shared.
+
+\paragraph{Recommendations for evaluating granular-ball classifiers} (i) Choose hyperparameters without the test labels, e.g.\ by CV on the training part, and state the protocol. (ii) Report the number of settings searched per model, since test-set tuning rewards larger grids. (iii) Include the sample-based counterpart (here LSTSVM) and a fuzzy $k$-NN version of it as baselines. (iv) Report balanced accuracy on imbalanced data. (v) Test more than uniform label noise.
+
+\paragraph{Limitations} All experiments use the linear kernel and binary datasets with at most 1484 samples. The boundary-targeted and class-dependent noise experiments use 5 splits instead of 10. The noise models are synthetic. The neighbour search uses centre distances; the companion work \cite{patel2026rf} studies a radius-aware alternative.
+
+%% ---------------------------------------------------------------------------
+\section{Conclusion}
+\label{sec:conclusion}
+
+We examined GBLSTSVM under label noise. Its deletion of single-sample balls removes most mislabelled samples, but also many correct boundary and minority samples. Of the ball memberships in use, only a vote among neighbouring balls recognises mislabelled samples well. Keeping all balls and weighting each by this vote gives \NAF{}, a two-line change to GBLSTSVM that keeps its closed-form training. Whether \NAF{}, or any granular-ball model, beats the sample-based models depends on the tuning protocol: under test-set tuning the granular-ball models lead, under CV tuning the sample-based ones lead on clean data and \NAF{} improves on GBLSTSVM mainly at higher noise. We recommend that granular-ball classifiers be evaluated with CV tuning, against sample-based and fuzzy $k$-NN baselines, and under more than one noise model.
+
+\section*{Code availability}
+The code and the result files of all experiments are available at \url{https://github.com/Jayagna/GBLSTSVM}.
+
+\bibliographystyle{elsarticle-num}
+\bibliography{refs}
+
+\appendix
+\section{Per-dataset results}
+\label{app:per-dataset}
+
+\input{tables/per_oracle_0}
+\input{tables/per_oracle_20}
+\input{tables/per_cv_0}
+\input{tables/per_cv_20}
+
+\end{document}

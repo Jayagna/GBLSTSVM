@@ -50,7 +50,8 @@ from run_fuzzy_cv import DEFAULT_DATASETS, ROOT, balanced_accuracy, ball_set_fro
 from run_gbftsvm_cv import TWIN_C_GRID, plane_distances, pos_weight
 
 sys.path.insert(0, str(ROOT))
-from addNoisy import recreat_data  # noqa: E402
+from addNoisy import recreat_data  # noqa: E402,F401
+from noise_models import make_noisy  # noqa: E402
 from dataset_utils import (  # noqa: E402
     discover_datasets, load_binary_dataset, standardize_train_test, stratified_train_test_split,
 )
@@ -209,9 +210,8 @@ def run_one(task):
     for r in repeats:
         train, test = stratified_train_test_split(data, test_size=0.30, random_state=r)
         train, test = standardize_train_test(train, test)
-        if noise > 0:
-            np.random.seed(r)
-            train = np.asarray(recreat_data(train, noise), dtype=np.float64)
+        if noise > 0:  # kind from GB_NOISE_TYPE (default uniform = recreat_data, unchanged)
+            train = make_noisy(train, noise, r)
         y_train = train[:, -1]
         n_min = int(min(np.sum(y_train == 1), np.sum(y_train == -1)))
         folds = max(2, min(n_folds, n_min))

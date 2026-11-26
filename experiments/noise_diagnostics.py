@@ -27,7 +27,8 @@ import pandas as pd
 from sklearn.metrics import roc_auc_score
 
 from run_fuzzy_cv import DEFAULT_DATASETS, ROOT, ball_set_from_balls, ball_set_from_samples  # noqa: E402
-from addNoisy import recreat_data  # noqa: E402
+from addNoisy import recreat_data  # noqa: E402,F401
+from noise_models import _nearest_enemy_distance, make_noisy  # noqa: E402
 from dataset_utils import (  # noqa: E402
     discover_datasets, load_binary_dataset, select_datasets, standardize_train_test, stratified_train_test_split,
 )
@@ -61,9 +62,17 @@ def run_dataset(path, noise_levels, repeats, k_values):
         for r in range(repeats):
             train, _ = stratified_train_test_split(data, test_size=0.30, random_state=r)
             train, _ = standardize_train_test(train, _)
-            np.random.seed(r)
-            noisy = np.asarray(recreat_data(train, noise), dtype=np.float64)
-            flipped = flipped_mask(train, noisy)
+            kind = os.environ.get("GB_NOISE_TYPE", "uniform")
+            noisy = make_noisy(train, noise, r) if noise > 0 else np.array(train, dtype=np.float64)
+            # uniform noise shuffles the rows (match by feature vector); the other kinds keep the row order
+            flipped = flipped_mask(train, noisy) if kind == "uniform" else noisy[:, -1] != train[:, -1]
+            # boundary points: the quarter of each clean-label class closest to the other clean class
+            d_enemy = _nearest_enemy_distance(noisy[:, :-1], np.where(flipped, -noisy[:, -1], noisy[:, -1]))
+            yc = np.where(flipped, -noisy[:, -1], noisy[:, -1])
+            near = np.zeros(len(noisy), dtype=bool)
+            for c in np.unique(yc):
+                idx = np.flatnonzero(yc == c)
+                near[idx[d_enemy[idx] <= np.quantile(d_enemy[idx], 0.25)]] = True
             y = noisy[:, -1]
             minority = y == 1  # positive class is the minority (load_binary_dataset(minority_positive=True))
             knn = compute_membership("agreement", *ball_set_from_samples(noisy).values(), (10, 1.0))
@@ -77,7 +86,11 @@ def run_dataset(path, noise_levels, repeats, k_values):
                 single = bs["counts"][ball_of] == 1
                 row = {"dataset": path.stem, "noise": noise, "repeat": r, "k": k, "n_train": len(noisy),
                        "n_flipped": int(flipped.sum()), "n_balls": len(balls), "n_single": int(np.sum(bs["counts"] == 1)),
-                       "deleted_flipped": single[flipped].mean(), "deleted_clean": single[~flipped].mean(),
+                       "deleted_flipped": single[flipped].mean() if flipped.any() else np.nan,
+                       "deleted_clean": single[~flipped].mean(),
+                       "deleted_clean_boundary": single[~flipped & near].mean(),
+                       "deleted_clean_interior": single[~flipped & ~near].mean(),
+                       "kept_after_delete_flipped_share": float(np.sum(flipped & ~single) / max(np.sum(~single), 1)),
                        "deleted_clean_minority": single[~flipped & minority].mean(),
                        "deleted_clean_majority": single[~flipped & ~minority].mean(),
                        "auc_singleton": auc_low(flipped, (~single).astype(float)),

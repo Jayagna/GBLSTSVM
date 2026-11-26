@@ -1,0 +1,20 @@
+\begin{table}[!t]
+\centering
+\caption{Friedman test over the seven models (35 datasets). $\chi^2_F$ has 6 degrees of freedom; $F_F$ is the Iman--Davenport statistic.}
+\label{tab:friedman}
+\small
+\begin{tabular}{lllccc}
+\toprule
+Noise model & Tuning & Level & $\chi^2_F$ & $F_F$ & $p$ \\
+\midrule
+Uniform & Test set & 0\% & 81.86 & 21.72 & $<$0.001 \\
+Uniform & Test set & 10\% & 109.07 & 36.74 & $<$0.001 \\
+Uniform & Test set & 20\% & 117.95 & 43.57 & $<$0.001 \\
+Uniform & Test set & 30\% & 111.61 & 38.57 & $<$0.001 \\
+Uniform & CV & 0\% & 48.98 & 10.34 & $<$0.001 \\
+Uniform & CV & 10\% & 40.45 & 8.11 & $<$0.001 \\
+Uniform & CV & 20\% & 44.06 & 9.03 & $<$0.001 \\
+Uniform & CV & 30\% & 60.88 & 13.88 & $<$0.001 \\
+\bottomrule
+\end{tabular}
+\end{table}

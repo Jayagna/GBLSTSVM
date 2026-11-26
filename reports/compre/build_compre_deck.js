@@ -1,5 +1,5 @@
-// Builds compre_presentation.pptx: ONLY the path we are going forward with (the radius-aware fuzzy
-// GBLSTSVM paper), in plain language, with the setup of every test spelled out.
+// Builds compre_presentation.pptx: ONLY the paths we are going forward with (paper 1: the radius-aware fuzzy
+// GBLSTSVM; paper 2: NAF-GBLSTSVM, section "Paper 2"), in plain language, with the setup of every test spelled out.
 // Dead ends live in ../post_midsem. Helpers copied from ../post_midsem/build_post_midsem_deck.js.
 // Run: PPTX_SKILL_DIR=<pptx skill dir> NODE_PATH=<dir with pptxgenjs> node build_compre_deck.js [out.pptx]
 // Data: data/*.csv (see data/README.md for the script behind each file).
@@ -773,6 +773,235 @@ three(s, [
 ]);
 takeaway(s, "This deck is updated with every new result; dropped ideas are recorded in the post-midsem deck.");
 s.addNotes("Where we are. All experiments on the thirty-five datasets are done, and the first full draft of the paper is written. Next is the review of the draft, the author details and the choice of journal. The large-scale test on the NDC datasets is the one experiment still missing.");
+
+// ===================================================================================== P2. Second paper: NAF-GBLSTSVM
+// Data: data/naf_*.csv, written by reports/paper_naf/make_assets.py. Slides whose runs are not finished show a "running" note.
+const optCsv = name => (fs.existsSync(path.join(__dirname, "data", name)) ? readCsv(name) : null);
+const NSUM = readCsv("naf_summary.csv"), NPAIR = readCsv("naf_pairwise.csv");
+const NB = optCsv("naf_boundary_summary.csv"), NA = optCsv("naf_asymmetric_summary.csv");
+const NBP = optCsv("naf_boundary_pairwise.csv"), NAP = optCsv("naf_asymmetric_pairwise.csv");
+const NDIAG = optCsv("naf_diagnostics.csv");
+const NAF = "T7-agree";
+const NMODELS = [["SVM", "SVM"], ["TSVM", "TSVM"], ["GBSVM", "GBSVM"], ["LSTSVM", "LSTSVM"], ["GBLSTSVM", "GBLSTSVM"], ["LS-GBLSTSVM", "LS-GBLSTSVM"], [NAF, "NAF-GBLSTSVM (ours)"]];
+const nfCell = (src, prot, metric, nz, m) => src.find(r => r.protocol === prot && r.metric === metric && Math.abs(r.noise - nz) < 1e-9 && r.model === m);
+const nfPair = (src, prot, metric, nz, m) => src.find(r => r.protocol === prot && r.metric === metric && Math.abs(r.noise - nz) < 1e-9 && r.model === m);
+const nfRng = (src, prot, metric, m, nzs) => { const d = nzs.map(n => nfPair(src, prot, metric, n, m).mean_diff); return `${sgn(Math.min(...d))} to ${sgn(Math.max(...d))}`; };
+function nafTable(src, prot, metric, nzs, x, y, w, o = {}) {
+  const best = nzs.map(n => Math.max(...NMODELS.map(([m]) => nfCell(src, prot, metric, n, m).mean)));
+  const rows = [[th("Model"), ...nzs.map(n => th(`${Math.round(n * 100)}%`, centre)), th("Avg rank", centre)]].concat(NMODELS.map(([m, label]) => [
+    td(label, { bold: m === NAF }),
+    ...nzs.map((n, i) => { const v = nfCell(src, prot, metric, n, m).mean; return td(f1(v), Object.assign({ bold: v > best[i] - 0.05, color: m === NAF ? HEX.accent4 : HEX.dk1 }, centre)); }),
+    td(f2(nzs.reduce((a, n) => a + nfCell(src, prot, metric, n, m).avg_rank, 0) / nzs.length), Object.assign({ bold: m === NAF }, centre)),
+  ]));
+  const mw = o.mw || 2.6, cw = (w - mw - 1.0) / nzs.length;
+  table(s, rows, { x, y, w, colW: [mw, ...nzs.map(() => cw), 1.0], fontSize: o.fs || 12.5, rowH: o.rowH || 0.36 });
+}
+const running = (x, y, w, h, what) => {
+  card(s, x, y, w, h, { fill: C.background1, line: C.accent5 });
+  s.addText(`Still running: ${what}. This slide fills in automatically when the runs finish.`, tx({ x: x + 0.3, y: y + 0.2, w: w - 0.6, h: h - 0.4, fontSize: 15, color: C.accent5, valign: "middle" }));
+};
+const NZU = [...new Set(NSUM.filter(r => r.protocol === "oracle").map(r => r.noise))].sort((a, b) => a - b);
+
+s = newSlide("TITLE", "Paper 2: NAF-GBLSTSVM");
+s.addText("Paper 2: NAF-GBLSTSVM", { placeholder: "title" });
+s.addText([
+  { text: "Keep every ball and weight it by how much its neighbours agree with it: what single-point-ball deletion throws away, and how the tuning method changes the verdict", options: { breakLine: true } },
+  { text: "Added 26 November 2026", options: { fontSize: 15, paraSpaceBefore: 14 } },
+], { placeholder: "body" });
+motif(s);
+s.addNotes("From here on, the deck covers the second paper. It uses the simpler model we called keep plus T7 earlier, now named NAF-GBLSTSVM, which stands for neighbour-agreement fuzzy GBLSTSVM. The first paper, RF-GBLSTSVM, is unchanged by this section.");
+
+s = content("Paper 2: NAF-GBLSTSVM", "Two papers from one project: how they stay separate");
+three(s, [
+  ["1", "Paper 1: RF-GBLSTSVM", "Method paper. New radius-aware vote (surface gaps, size- and distance-weighted) on top of LS-GBLSTSVM's regulariser. Claim: a new fuzzy membership and model that beats six baselines.", C.accent1],
+  ["2", "Paper 2: NAF-GBLSTSVM", "Analysis paper. What GBLSTSVM's deletion of single-point balls throws away (3 kinds of label noise), which ball weights spot wrong labels, how the tuning method flips the ranking, and the simplest fix: keep all balls + neighbour-agreement weight on the ORIGINAL GBLSTSVM.", C.accent4],
+  ["!", "The overlap risk", "Same base model and datasets. If both papers propose a model and show the same tables, an editor can call it duplicate publication. So: different main claim, different new experiments (new noise types), no shared result tables, each cites the other, and both editors are told. Your choice on the split is still open.", C.accent2],
+], { h: 4.3, fs: 14 });
+takeaway(s, "Name: NAF-GBLSTSVM = Neighbour-Agreement Fuzzy GBLSTSVM (other options were KA-FGBLSTSVM and NV-GBLSTSVM).");
+s.addNotes("You asked for two papers. That is possible, but the two models share a lot: both keep the single-point balls and both use a neighbour vote. If both papers were written as 'here is a new model that beats everything', on the same datasets and with overlapping tables, a reviewer or editor could treat it as publishing the same work twice. The plan is to give each paper its own claim. Paper 1 is the method paper about the new radius-aware weight. Paper 2 becomes the analysis paper: what the deletion step really does, which weights detect wrong labels, and how the tuning method changes which model looks best, with keep plus T7 as the simple fix. Paper 2 also gets experiments that paper 1 does not have: boundary-targeted and class-dependent label noise.");
+
+s = content("Paper 2: NAF-GBLSTSVM", "The NAF weight of a ball, symbol by symbol");
+fcard(s, 0.6, 1.55, 6.2, 2.0, "The formula", [
+  "a_i = Σ_{j ∈ N_k(i)} n_j · [y_j = y_i]  /  Σ_{j ∈ N_k(i)} n_j",
+  "s_i = max( a_i^γ , 0.001 )",
+], { fs: 15 });
+table(s, mt([
+  [th("Symbol"), th("Meaning")],
+  [td("i, j"), td("ball numbers; every ball is kept, also the single-point ones")],
+  [td("N_k(i)"), td("the k balls whose centres are nearest to the centre of ball i")],
+  [td("n_j"), td("number of training points in ball j (a big ball counts more)")],
+  [td("y_j"), td("label of ball j (+1 or −1, the majority label of its points)")],
+  [td("[y_j = y_i]"), td("1 if ball j has the same label as ball i, otherwise 0")],
+  [td("a_i"), td("agreement: share of the neighbours' points that carry ball i's label (0 to 1)")],
+  [td("γ (gamma)"), td("sharpness, a setting (1 or 3): with γ = 3, a = 0.5 becomes 0.125")],
+  [td("s_i"), td("the fuzzy weight of ball i; 0.001 is a floor so no ball is fully switched off")],
+]), { x: 0.6, y: 3.7, w: 6.2, colW: [1.3, 4.9], fontSize: 11.5, rowH: 0.27 });
+card(s, 7.0, 1.55, 5.7, 4.5);
+s.addText("Worked example (k = 5, γ = 1)", tx({ x: 7.2, y: 1.7, w: 5.3, h: 0.35, fontSize: 16, bold: true, color: C.text2 }));
+s.addText(bullets([
+  "Ball i holds 1 point with label +1 (it would be DELETED by GBLSTSVM).",
+  "Its 5 nearest balls: sizes 12, 8, 1, 6, 3 with labels −1, −1, +1, −1, −1.",
+  "Agreement a_i = 1 / (12 + 8 + 1 + 6 + 3) = 1/30 = 0.033 → weight 0.033: almost surely a flipped label, nearly ignored.",
+  "If instead the neighbours were sizes 12, 8, 1, 6, 3 with labels +1, −1, +1, +1, −1: a_i = (12 + 1 + 6)/30 = 0.63 → weight 0.63. A boundary point: kept with reduced say, not deleted.",
+  "A ball deep in its own class: a_i = 1 → weight 1.",
+], { space: 6, math: true }), tx({ x: 7.2, y: 2.15, w: 5.3, h: 3.8, fontSize: 13 }));
+takeaway(s, `This is the plain neighbour count; SDAP-GBRVFL ${R("sdap")} already uses it on balls in an RVFL. What is new here is where and how we use it.`);
+s.addNotes("This is the whole weight. For each ball we look at its k nearest balls and ask what share of their points carries the same label as our ball. That share is the agreement a. The weight s is a to the power gamma, with a small floor so no ball is completely switched off. The example on the right shows the two cases that matter: a single wrongly labelled point surrounded by the other class gets a weight near zero, while a correct point on the border keeps a medium weight instead of being deleted. The weight itself is not new. It appears inside the non-membership of the granular-ball fuzzy RVFL paper. Paper 2 is honest about this: the contribution is the analysis around it and its use in GBLSTSVM with all balls kept.");
+
+s = content("Paper 2: NAF-GBLSTSVM", "How the NAF weight enters GBLSTSVM");
+fcard(s, 0.6, 1.55, 12.1, 1.55, "Line 1 (close to class +1); line 2 swaps the roles of the classes", [
+  "minimise   ½ (H z_1)ᵀ D⁺ (H z_1)   +   (c_1 / 2) · Σ_j s_j · ξ_j²      subject to   −G z_1 + ξ = e + R⁻",
+  "solution:   z_1 = −( Gᵀ S⁻ G + (1/c_1) Hᵀ D⁺ H + δ I )^{−1} Gᵀ S⁻ (e + R⁻)          (one small linear system)",
+], { fs: 13.5 });
+table(s, mt([
+  [th("Symbol"), th("Meaning")],
+  [td("z_1 = [w_1; b_1]"), td("direction and offset of line 1, what training finds")],
+  [td("H, G"), td("centres of ALL class +1 / class −1 balls, each with a column of ones added")],
+  [td("R⁻"), td("radii of the class −1 balls: each must stay 1 + r_j beyond line 1")],
+  [td("ξ_j"), td("error of class −1 ball j (how far it is from that distance)")],
+  [td("S⁻ = diag(s_j)"), td("NAF weights of the class −1 balls: a doubtful ball's error counts less")],
+  [td("D⁺"), td("class weight θ on the +1 balls (θ = 1, or majority/minority size; a setting)")],
+  [td("c_1, c_2"), td("penalty settings, 0.001 … 1000")],
+  [td("δ"), td("0.0001, a tiny ridge so the system always has a solution (same in all models)")],
+]), { x: 0.6, y: 3.25, w: 7.6, colW: [1.7, 5.9], fontSize: 11.5, rowH: 0.3 });
+card(s, 8.4, 3.25, 4.3, 2.8);
+s.addText("Compared with GBLSTSVM and paper 1", tx({ x: 8.6, y: 3.38, w: 3.9, h: 0.35, fontSize: 15, bold: true, color: C.text2 }));
+s.addText(bullets([
+  "GBLSTSVM = same equations with s_j = 1 and single-point balls deleted. NAF changes only these two things.",
+  "No regulariser c_3 (paper 1 has it). Neighbours by centre distance (paper 1 uses surface gaps).",
+  "A point is classified by the nearer line, as in GBLSTSVM.",
+], { space: 5, math: true }), tx({ x: 8.6, y: 3.8, w: 3.9, h: 2.2, fontSize: 12.5 }));
+takeaway(s, "Two changes to GBLSTSVM: keep every ball, and multiply each ball's error by its NAF weight.");
+s.addNotes("The weight goes into the error term of GBLSTSVM, exactly where the fuzzy weight of paper 1 goes, but here we keep the original GBLSTSVM without the extra regulariser of LS-GBLSTSVM. Each line is still one small linear system. The table explains every symbol. If all weights are one and the single-point balls are deleted, we are back at plain GBLSTSVM. This keeps the second paper about the original GBLSTSVM and clearly different from paper 1, which builds on LS-GBLSTSVM and uses a different, radius-aware weight.");
+
+s = content("Paper 2: NAF-GBLSTSVM", "Paper 2 test setup: three kinds of wrong labels");
+table(s, mt([
+  [th("Noise model"), th("How labels are flipped"), th("What it imitates")],
+  [td("Uniform", { bold: true }), td("q·n training labels flipped at random, shared between the classes in proportion to their size (q = 5, 10, 15, 20, 30%)"), td("Random typing errors; the noise used in the GBLSTSVM paper")],
+  [td("Boundary-targeted", { bold: true }), td("Same number of flips per class, but point i is picked with probability ∝ exp(−δ_i / τ). δ_i = distance to the nearest point of the other class; τ = half the median δ in its class (q = 10, 20, 30%)"), td("Annotators confusing borderline cases: points near the other class are flipped far more often")],
+  [td("Class-dependent", { bold: true }), td("A share q of the majority-class points is relabelled as minority; the minority class is untouched (q = 10, 20, 30%)"), td("One class systematically mislabelled as the other (noise rates ρ_maj = q, ρ_min = 0)")],
+]), { x: 0.6, y: 1.55, w: 12.1, colW: [2.0, 6.0, 4.1], fontSize: 12, rowH: 0.75 });
+setupBox(s, 0.6, 4.6, 12.1, 1.45, [
+  "35 UCI/KEEL datasets; 70/30 stratified splits (10 splits for uniform noise, 5 for the two new noise models); features standardised on the training part; noise only on training labels, test labels always clean.",
+  "Same seven models, grids and two tuning methods as paper 1. NAF adds k ∈ {5, 10} neighbours and γ ∈ {1, 3}: 1,960 settings per split vs 490 for GBLSTSVM. Extra rows: GBLSTSVM with all balls kept (no weight) and FKNN-LSTSVM (the same weight on single points).",
+], "Shared setup");
+takeaway(s, "The two new noise models are paper 2's own experiments; paper 1 only uses uniform noise.");
+s.addNotes("Paper 2 tests three kinds of label noise. Uniform noise is what everyone uses: random labels are flipped. Boundary-targeted noise flips mostly points that are close to the other class, because that is where people make mistakes. Class-dependent noise relabels part of the big class as the small class, which is common in practice, for example when rare cases are over-reported. The formulas are on the slide. Everything else, the datasets, splits, models and settings, is the same as in paper 1, so the results can be compared, but the two new noise models only appear in paper 2.");
+
+// Test E: deletion
+s = content("Paper 2: NAF-GBLSTSVM", "Test E: what deleting single-point balls throws away");
+if (NDIAG) {
+  const KN = { uniform: "Uniform", boundary: "Boundary", asymmetric: "Class-dep." };
+  const rows = [[th("Noise"), th("Level", centre), th("Wrong labels", centre), th("Correct", centre), th("Correct, boundary", centre), th("Correct, interior", centre), th("Correct, minority", centre)]];
+  NDIAG.forEach(r => rows.push([td(KN[r.kind]), td(`${Math.round(r.noise * 100)}%`, centre), ...["deleted_flipped", "deleted_clean", "deleted_clean_boundary", "deleted_clean_interior", "deleted_clean_minority"].map(c => td(r[c] === "" || r[c] === undefined ? "–" : f1(100 * r[c]), centre))]));
+  table(s, rows, { x: 0.6, y: 1.55, w: 7.6, colW: [1.3, 0.8, 1.1, 1.0, 1.2, 1.1, 1.1], fontSize: 11.5, rowH: 0.34 });
+} else running(0.6, 1.55, 7.6, 4.5, "deletion analysis on 35 datasets");
+setupBox(s, 8.4, 1.55, 4.3, 4.5, [
+  "35 datasets, 5 splits; balls built on the noisy training part with 2, 4 and 6 clusters per split, purity 0.985.",
+  "Number = % of that group of training points that ends up alone in a ball (GBLSTSVM deletes these).",
+  "Boundary = the quarter of each class closest to the other class (true labels); interior = the other three quarters.",
+  "Minority = correct points of the rare class.",
+]);
+takeaway(s, "The deletion removes most wrong labels, but also a big share of the correct border and minority points.");
+s.addNotes("This is the first analysis of paper 2, now on all 35 datasets and the three noise models. For every group of training points the table gives the share that GBLSTSVM deletes. The deletion is a noise filter: most of the wrongly labelled points go. But it cannot tell a wrong point from a correct point on the border, so it also deletes many correct border points and many correct points of the rare class.");
+
+// Test F: detection
+s = content("Paper 2: NAF-GBLSTSVM", "Test F: which ball weight spots wrong labels?");
+if (NDIAG) {
+  const KN = { uniform: "Uniform", boundary: "Boundary", asymmetric: "Class-dep." };
+  const cols = [["auc_singleton", "Deletion"], ["auc_T1", "Centre dist."], ["auc_T2", "Entropy"], ["auc_T4", "Overlap"], ["auc_T5", "Density"], ["auc_T7", "NAF"], ["auc_point_knn", "Fuzzy kNN (points)"]];
+  const rows = [[th("Noise"), th("Level", centre), ...cols.map(([, h]) => th(h, centre))]];
+  NDIAG.filter(r => r.noise > 0).forEach(r => rows.push([td(KN[r.kind]), td(`${Math.round(r.noise * 100)}%`, centre), ...cols.map(([c]) => td(f2(r[c]), Object.assign({ bold: c === "auc_T7", color: c === "auc_T7" ? HEX.accent4 : HEX.dk1 }, centre)))]));
+  table(s, rows, { x: 0.6, y: 1.55, w: 7.6, colW: [1.1, 0.7, 0.9, 0.9, 0.8, 0.8, 0.8, 0.7, 0.9], fontSize: 11, rowH: 0.36 });
+} else running(0.6, 1.55, 7.6, 4.5, "detection test on 35 datasets");
+setupBox(s, 8.4, 1.55, 4.3, 4.5, [
+  "Same balls as Test E, but all balls kept; each point gets its ball's weight (0 if its label differs from the ball's).",
+  "AUC = chance that a flipped point gets a lower weight than a correct point; 0.5 = guessing, 1 = perfect.",
+  "Weights: deletion (0/1), distance to class centre (GBFTSVM), 1 − entropy, overlap with other-class balls, density, NAF (k = 10, γ = 1), and the same agreement on single points.",
+]);
+takeaway(s, "Only weights that look at the neighbours catch wrong labels well; a ball's own size, purity or centre distance do not.");
+s.addNotes("The second analysis asks which weight could replace the deletion. A good weight is low for wrongly labelled points. We measure this with the AUC, the chance that a flipped point gets a lower weight than a correct one. The weights from the published fuzzy granular-ball SVMs, such as the distance to the class centre, are weak. The entropy weight is even worse than guessing, because a flipped point sits alone in a pure ball. The neighbour agreement, NAF, is the clear winner.");
+
+// Test G: published-style tuning
+s = content("Paper 2: NAF-GBLSTSVM", "Test G: published-style tuning, uniform noise");
+s.addText("Average accuracy (%), 35 datasets, 10 splits; best in each column in bold", tx({ x: 0.6, y: 1.5, w: 7.6, h: 0.3, fontSize: 13.5, bold: true, color: C.text2 }));
+nafTable(NSUM, "oracle", "accuracy", NZU, 0.6, 1.85, 7.6);
+card(s, 0.6, 4.9, 7.6, 1.15);
+s.addText(bullets([
+  `NAF has the best average rank at every noise level; its mean accuracy ties LS-GBLSTSVM (difference ${nfRng(NPAIR, "oracle", "accuracy", "LS-GBLSTSVM", NZU)}, not significant).`,
+  `Over GBLSTSVM: ${nfRng(NPAIR, "oracle", "accuracy", "GBLSTSVM", NZU)} points (p < 0.001 at every level). Over keeping balls without a weight: ${nfRng(NPAIR, "oracle", "accuracy", "GB-keep", NZU)}.`,
+], { space: 4 }), tx({ x: 0.8, y: 5.0, w: 7.2, h: 1.0, fontSize: 12.5 }));
+setupBox(s, 8.4, 1.5, 4.3, 4.55, [
+  "Every setting is trained on the training part and scored on the test part; the best test score per split is kept (optimistic for all models).",
+  "c_1, c_2 (or C) in 0.001…1000; TSVM C_1, C_2 in 2^{−5}…2^{5}; LS-GBLSTSVM c_3 = c_4 in 0.001…1000; 2–6 clusters per split; class weight off/on.",
+  "NAF adds k ∈ {5, 10}, γ ∈ {1, 3}.",
+  "Avg rank: mean over datasets and noise levels (1 = best).",
+]);
+takeaway(s, "With the papers' tuning, the simple NAF fix is ranked first, level with LS-GBLSTSVM and clearly above GBLSTSVM.");
+s.addNotes("Under the tuning style of the published papers, NAF has the best average rank at every noise level. Its mean accuracy is the same as LS-GBLSTSVM's, and it is clearly ahead of the original GBLSTSVM, by about one and a half points, at every noise level. Keeping the balls without a weight already helps, and the weight adds a bit more than half a point to a point and a half on top.");
+
+// Test H: fair CV
+s = content("Paper 2: NAF-GBLSTSVM", "Test H: fair cross-validation, uniform noise");
+s.addText("Accuracy (%)", tx({ x: 0.6, y: 1.5, w: 6.0, h: 0.3, fontSize: 13.5, bold: true, color: C.text2 }));
+nafTable(NSUM, "cv", "accuracy", NZU, 0.6, 1.85, 6.0, { mw: 1.9, fs: 10.5, rowH: 0.33 });
+s.addText("Balanced accuracy (%)", tx({ x: 6.75, y: 1.5, w: 6.0, h: 0.3, fontSize: 13.5, bold: true, color: C.text2 }));
+nafTable(NSUM, "cv", "balanced_accuracy", NZU, 6.75, 1.85, 6.0, { mw: 1.9, fs: 10.5, rowH: 0.33 });
+card(s, 0.6, 4.75, 12.1, 1.3);
+s.addText(bullets([
+  `NAF vs GBLSTSVM: accuracy ${nfRng(NPAIR, "cv", "accuracy", "GBLSTSVM", NZU)} (significant at 20% and 30%), balanced accuracy ${nfRng(NPAIR, "cv", "balanced_accuracy", "GBLSTSVM", NZU)} (significant at 0, 5, 15, 20, 30%).`,
+  `But SVM, TSVM, LSTSVM and LS-GBLSTSVM are ahead of NAF on clean and mildly noisy data (accuracy vs LS-GBLSTSVM ${nfRng(NPAIR, "cv", "accuracy", "LS-GBLSTSVM", NZU)}). Settings chosen by 5-fold CV on the training part; same grids as Test G.`,
+], { space: 4 }), tx({ x: 0.8, y: 4.85, w: 11.7, h: 1.15, fontSize: 12.5 }));
+takeaway(s, "With honest tuning, NAF fixes GBLSTSVM's weak spots (rare class, high noise) but does not beat the point-based models.");
+s.addNotes("With fair cross-validation the picture is more modest. NAF clearly improves the original GBLSTSVM on balanced accuracy, which is the score that cares about the rare class, and on accuracy at high noise. But on clean or lightly noisy data, plain SVM, TSVM, LSTSVM and LS-GBLSTSVM are better. Paper 2 says this openly; it is part of its message.");
+
+// Test I: protocol flips the ranking
+s = content("Paper 2: NAF-GBLSTSVM", "Test I: the tuning method flips the ranking");
+{
+  const nz4 = [0, 0.1, 0.2, 0.3];
+  const CFG = { SVM: 14, TSVM: 242, GBSVM: 70, LSTSVM: 98, GBLSTSVM: 490, "LS-GBLSTSVM": 490, [NAF]: 1960 };
+  const rows = [[th("Model"), th("Settings", centre), ...nz4.map(n => th(`${Math.round(n * 100)}%: gain · rank`, centre))]];
+  NMODELS.forEach(([m, label]) => rows.push([td(label, { bold: m === NAF }), td(String(CFG[m]), centre), ...nz4.map(n => {
+    const g = nfCell(NSUM, "oracle", "accuracy", n, m).mean - nfCell(NSUM, "cv", "accuracy", n, m).mean;
+    return td(`${f1(g)} · ${f1(nfCell(NSUM, "oracle", "accuracy", n, m).avg_rank)}→${f1(nfCell(NSUM, "cv", "accuracy", n, m).avg_rank)}`, centre);
+  })]));
+  table(s, rows, { x: 0.6, y: 1.55, w: 8.2, colW: [2.2, 0.9, 1.275, 1.275, 1.275, 1.275], fontSize: 11.5, rowH: 0.4 });
+}
+setupBox(s, 9.0, 1.55, 3.7, 4.5, [
+  "Same runs as Tests G and H (35 datasets, 10 splits, uniform noise, accuracy).",
+  "Gain = published-style accuracy minus fair-CV accuracy (points).",
+  "Rank: average rank among the 7 models, published-style → fair CV (1 = best).",
+  "Settings = combinations searched per split.",
+]);
+takeaway(s, "GBLSTSVM ranks above SVM, TSVM and LSTSVM with the papers' tuning, and below all three with fair CV, at every noise level.");
+s.addNotes("This slide is the core evaluation finding of paper 2. Every model scores higher when the test set is used to pick its settings, but the granular-ball models gain more. They have more settings to choose from, for example the number of clusters per split. As a result GBLSTSVM looks better than SVM, TSVM and LSTSVM under the published tuning, and worse than all three under fair cross-validation, at every noise level. NAF drops from about rank two to about rank four. So a claim that a granular-ball model beats a point-based one depends on how the settings were chosen.");
+
+// Test J: new noise types
+s = content("Paper 2: NAF-GBLSTSVM", "Test J: boundary-targeted and class-dependent noise");
+if (NB || NA) {
+  const nz3 = [0.1, 0.2, 0.3];
+  const rows = [[th("Model"), ...["Boundary", "Class-dep."].flatMap(k => ["test-tuned", "fair CV"].map(p => th(`${k}, ${p}`, centre)))]];
+  NMODELS.forEach(([m, label]) => rows.push([td(label, { bold: m === NAF }), ...[NB, NA].flatMap(src => ["oracle", "cv"].map(p => {
+    if (!src) return td("running", centre);
+    const v = nz3.map(n => nfCell(src, p, "accuracy", n, m)).filter(Boolean);
+    return v.length ? td(v.map(c => f1(c.mean)).join(" / "), Object.assign({ bold: m === NAF, color: m === NAF ? HEX.accent4 : HEX.dk1 }, centre)) : td("–", centre);
+  }))]));
+  table(s, rows, { x: 0.6, y: 1.55, w: 12.1, colW: [2.5, 2.4, 2.4, 2.4, 2.4], fontSize: 11.5, rowH: 0.42 });
+} else running(0.6, 1.55, 12.1, 3.4, "boundary-targeted and class-dependent noise runs");
+setupBox(s, 0.6, 5.0, 12.1, 1.05, [
+  "Average accuracy (%) at 10 / 20 / 30% noise, 35 datasets, 5 splits. Noise models as on the setup slide; models, grids and tuning methods as in Tests G and H.",
+]);
+takeaway(s, "New in paper 2: does the NAF fix still help when the wrong labels sit at the border or come from one class?");
+s.addNotes("The last test repeats the comparison with the two new kinds of label noise. Each cell gives the average accuracy at ten, twenty and thirty percent noise, under the published tuning and under fair cross-validation.");
+
+// verdict
+s = content("Paper 2: NAF-GBLSTSVM", "Paper 2: honest verdict and next steps");
+three(s, [
+  ["✓", "What paper 2 can claim", "The deletion step is a blunt noise filter (Test E). Only neighbour-based weights spot wrong labels (Test F). The tuning method flips the GB vs point-based ranking (Test I). NAF fixes GBLSTSVM's rare-class and high-noise weakness with two changes and no extra training cost.", C.accent1],
+  ["✗", "What it cannot claim", "That NAF is a new fuzzy function (SDAP-GBRVFL has the same count). That NAF beats SVM / LSTSVM / LS-GBLSTSVM under fair CV on clean data. That NAF beats RF-GBLSTSVM (paper 1 is stronger; we do not put RF in paper 2's tables).", C.accent2],
+  ["→", "Next", "Finish the runs for the new noise types and the deletion analysis, write those sections, compile the draft, then decide with your supervisor whether paper 2 goes first (it motivates paper 1) and which journals.", C.accent5],
+], { h: 4.3, fs: 14 });
+takeaway(s, "Paper 2 is an analysis paper with a simple fix; paper 1 is the method paper. Each cites the other.");
+s.addNotes("To sum up paper 2. It can honestly claim three analysis results and a simple, cheap fix to GBLSTSVM. It cannot claim a new fuzzy function, because the neighbour count already exists in the granular-ball RVFL paper, and it cannot claim to beat the point-based models under fair tuning. We also keep the radius-aware model out of paper 2's tables, so the two papers do not report the same comparison.");
 
 // ===================================================================================== 16. References
 s = content("References", "References");

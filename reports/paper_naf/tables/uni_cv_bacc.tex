@@ -1,0 +1,26 @@
+\begin{table}[!t]
+\centering
+\caption{Uniform label noise, cross-validated tuning: average balanced accuracy (BACC, \%) and average rank over 35 datasets.}
+\label{tab:uni-cv-bacc}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llccccccc}
+\toprule
+ & Noise & SVM & TSVM & GBSVM & LSTSVM & GBLSTSVM & LS-GBLSTSVM & \textbf{NAF-GBLSTSVM} \\
+\midrule
+Average BACC & 0\% & \textbf{81.01} & 80.32 & 66.99 & 80.45 & 74.17 & 76.93 & 76.62 \\
+ & 5\% & \textbf{79.79} & 78.68 & 69.85 & 79.20 & 75.11 & 77.83 & 76.70 \\
+ & 10\% & \textbf{78.75} & 77.87 & 69.24 & 77.93 & 74.15 & 76.48 & 75.43 \\
+ & 15\% & \textbf{76.85} & 75.46 & 67.44 & 76.37 & 72.33 & 74.59 & 74.22 \\
+ & 20\% & \textbf{75.21} & 74.53 & 65.56 & 74.32 & 69.99 & 72.85 & 72.77 \\
+ & 30\% & \textbf{69.72} & 68.56 & 59.65 & 68.69 & 63.68 & 67.96 & 68.43 \\
+\midrule
+Average rank & 0\% & \textbf{2.29} & 2.47 & 6.29 & 2.64 & 5.54 & 4.43 & 4.34 \\
+ & 5\% & \textbf{2.53} & 3.37 & 5.89 & 2.81 & 5.31 & 3.57 & 4.51 \\
+ & 10\% & \textbf{2.60} & 2.94 & 5.79 & 2.76 & 5.11 & 3.97 & 4.83 \\
+ & 15\% & \textbf{2.57} & 3.60 & 5.71 & 2.66 & 5.17 & 4.09 & 4.20 \\
+ & 20\% & \textbf{2.43} & 2.77 & 5.97 & 2.99 & 5.49 & 4.11 & 4.24 \\
+ & 30\% & \textbf{2.97} & 3.17 & 5.71 & 3.43 & 5.23 & 4.00 & 3.49 \\
+\bottomrule
+\end{tabular}}
+\end{table}

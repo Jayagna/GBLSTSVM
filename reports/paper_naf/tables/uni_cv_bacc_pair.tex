@@ -1,0 +1,21 @@
+\begin{table}[!t]
+\centering
+\caption{NAF-GBLSTSVM against each other model, uniform noise, cross-validated tuning: mean difference in BACC (points; positive = NAF-GBLSTSVM better), [win, tie, loss] over the 35 datasets and, in parentheses, the $p$-value of the Wilcoxon signed-rank test.}
+\label{tab:uni-cv-bacc-pair}
+\footnotesize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccc}
+\toprule
+Compared model & 0\% & 5\% & 10\% & 15\% & 20\% & 30\% \\
+\midrule
+SVM & \shortstack{-4.38 [5, 0, 30]\\($<$0.001)} & \shortstack{-3.09 [9, 0, 26]\\($<$0.001)} & \shortstack{-3.31 [6, 0, 29]\\($<$0.001)} & \shortstack{-2.63 [10, 0, 25]\\($<$0.001)} & \shortstack{-2.45 [9, 0, 26]\\($<$0.001)} & \shortstack{-1.29 [14, 0, 21]\\(0.201)} \\[4pt]
+TSVM & \shortstack{-3.70 [6, 0, 29]\\($<$0.001)} & \shortstack{-1.98 [9, 0, 26]\\($<$0.001)} & \shortstack{-2.44 [7, 0, 28]\\($<$0.001)} & \shortstack{-1.24 [13, 0, 22]\\(0.025)} & \shortstack{-1.77 [7, 0, 28]\\($<$0.001)} & \shortstack{-0.13 [14, 0, 21]\\(0.201)} \\[4pt]
+GBSVM & \shortstack{+9.63 [31, 0, 4]\\($<$0.001)} & \shortstack{+6.85 [26, 0, 9]\\($<$0.001)} & \shortstack{+6.19 [26, 0, 9]\\(0.001)} & \shortstack{+6.78 [25, 0, 10]\\($<$0.001)} & \shortstack{+7.21 [28, 0, 7]\\($<$0.001)} & \shortstack{+8.78 [28, 0, 7]\\($<$0.001)} \\[4pt]
+LSTSVM & \shortstack{-3.83 [4, 0, 31]\\($<$0.001)} & \shortstack{-2.50 [8, 0, 27]\\($<$0.001)} & \shortstack{-2.50 [4, 0, 31]\\($<$0.001)} & \shortstack{-2.15 [8, 0, 27]\\($<$0.001)} & \shortstack{-1.55 [8, 1, 26]\\($<$0.001)} & \shortstack{-0.26 [17, 0, 18]\\(0.461)} \\[4pt]
+GBLSTSVM & \shortstack{+2.45 [30, 0, 5]\\($<$0.001)} & \shortstack{+1.59 [24, 0, 11]\\(0.035)} & \shortstack{+1.28 [19, 0, 16]\\(0.145)} & \shortstack{+1.89 [23, 0, 12]\\(0.026)} & \shortstack{+2.78 [27, 0, 8]\\($<$0.001)} & \shortstack{+4.74 [30, 0, 5]\\($<$0.001)} \\[4pt]
+LS-GBLSTSVM & \shortstack{-0.31 [17, 0, 18]\\(0.974)} & \shortstack{-1.14 [11, 0, 24]\\(0.036)} & \shortstack{-1.05 [14, 0, 21]\\(0.201)} & \shortstack{-0.37 [19, 0, 16]\\(0.831)} & \shortstack{-0.08 [17, 0, 18]\\(0.781)} & \shortstack{+0.46 [20, 0, 15]\\(0.578)} \\[4pt]
+GBLSTSVM, all balls kept & \shortstack{-0.26 [14, 0, 21]\\(0.481)} & \shortstack{+0.81 [21, 0, 14]\\(0.287)} & \shortstack{+0.16 [18, 0, 17]\\(0.831)} & \shortstack{+0.87 [23, 0, 12]\\(0.074)} & \shortstack{+0.94 [21, 0, 14]\\(0.112)} & \shortstack{+2.73 [27, 0, 8]\\($<$0.001)} \\[4pt]
+FKNN-LSTSVM & -- & -- & -- & -- & -- & -- \\[4pt]
+\bottomrule
+\end{tabular}}
+\end{table}
