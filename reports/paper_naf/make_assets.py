@@ -287,6 +287,29 @@ def per_dataset_table(per, protocol, noise, fname, caption, label):
     write(fname, lines)
 
 
+def fig_sensitivity():
+    rows = read(RES / "sensitivity_naf" / "summary.csv")
+    ks = sorted({int(r["k"]) for r in rows})
+    gs = sorted({float(r["gamma"]) for r in rows})
+    fig, axes = plt.subplots(1, 2, figsize=(8.6, 3.2))
+    for ax, nz in zip(axes, (0.0, 0.2)):
+        M = np.array([[float(next(r for r in rows if float(r["noise"]) == nz and int(r["k"]) == k and float(r["gamma"]) == g)["balanced_accuracy"]) for g in gs] for k in ks])
+        print("sensitivity", nz, M.min().round(2), M.max().round(2))
+        im = ax.imshow(M, cmap="Purples", vmin=M.min() - 1.5, vmax=M.max() + 0.5, aspect="auto")
+        for i in range(len(ks)):
+            for j in range(len(gs)):
+                ax.text(j, i, f"{M[i, j]:.1f}", ha="center", va="center", fontsize=8)
+        ax.set_xticks(range(len(gs)), [f"{g:g}" for g in gs])
+        ax.set_yticks(range(len(ks)), ks)
+        ax.set_xlabel(r"sharpness $\gamma$")
+        ax.set_ylabel("neighbours $k$")
+        ax.set_title(f"{round(nz * 100)}% label noise (BACC, %)", fontsize=10)
+        fig.colorbar(im, ax=ax, fraction=0.046)
+    fig.tight_layout()
+    fig.savefig(F / "sensitivity.pdf")
+    plt.close(fig)
+
+
 def main():
     T.mkdir(exist_ok=True)
     F.mkdir(exist_ok=True)
@@ -321,6 +344,16 @@ def main():
                 pair_table(p, prot, "accuracy", (0.1, 0.2, 0.3), f"{kind}_{prot}_pair.tex",
                            rf"NAF-GBLSTSVM against each other model, {'boundary-targeted' if kind == 'boundary' else 'class-dependent'} noise, {pname}: mean difference in ACC, [win, tie, loss] and Wilcoxon $p$-value over 35 datasets.",
                            f"tab:{kind}-{prot}-pair", [m for m in MAIN if m != OURS] + ["GB-keep", "FKNN-LSTSVM"])
+    kdir = RES / "paper_tables_naf_kernel"
+    if (kdir / "summary.csv").exists():
+        ker = read(kdir / "summary.csv")
+        if any(r["model"] == OURS for r in ker):
+            NK = (0.0, 0.1, 0.2)
+            score_table(ker, "oracle", "accuracy", NK, "ker_oracle_acc.tex", r"Gaussian kernel, test-set tuning: average ACC (\%) and average rank over 35 datasets (5 splits).", "tab:ker-oracle")
+            score_table(ker, "cv", "accuracy", NK, "ker_cv_acc.tex", r"Gaussian kernel, cross-validated tuning: average ACC (\%) and average rank over 35 datasets (5 splits).", "tab:ker-cv-acc")
+            score_table(ker, "cv", "balanced_accuracy", NK, "ker_cv_bacc.tex", r"Gaussian kernel, cross-validated tuning: average BACC (\%) and average rank over 35 datasets (5 splits).", "tab:ker-cv-bacc")
+    if (RES / "sensitivity_naf" / "summary.csv").exists():
+        fig_sensitivity()
     diag = load_diag()
     if diag:
         deletion_table(diag)

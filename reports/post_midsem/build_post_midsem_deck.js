@@ -1212,7 +1212,7 @@ s = content(BK, "A second paper: keep+T7, now called NAF-GBLSTSVM", "Direction, 
 triple([
   ["1", "The request", "Write two papers: RF-GBLSTSVM (unchanged) and one on keep+T7 (all balls kept + neighbour-agreement weight on the original GBLSTSVM). Name chosen: NAF-GBLSTSVM, Neighbour-Agreement Fuzzy GBLSTSVM (alternatives KA-FGBLSTSVM, NV-GBLSTSVM).", C.accent3],
   ["2", "The risk", "Same base model and datasets; the RF paper already contains the deletion analysis and keep+T7 as its 'plain neighbour count' row; T7 itself is in SDAP-GBRVFL. Two 'new model beats all' papers could be judged duplicate publication.", C.accent2],
-  ["3", "The plan (recommended)", "Paper 2 = analysis paper: what deletion removes under 3 noise models, which weights spot wrong labels, how the tuning method flips the ranking, NAF as the simple fix. RF paper trimmed to the method, cites paper 2. Decision card sent; RF draft untouched until answered.", C.accent1],
+  ["3", "Decision", "Recommended an analysis paper; you chose a second METHOD paper in the RF style instead, and asked to remove keep+T7 from the RF paper (done: the plain-count sentence and figure bar). Paper 2 gets its own experiments; each paper cites the other.", C.accent1],
 ]);
 takeaway(s, "New experiments for paper 2 only: boundary-targeted and class-dependent label noise, deletion analysis on all 35 datasets.");
 s.addNotes("On 26 November the plan grew to two papers. The second one is about keep plus T7, now named NAF-GBLSTSVM. Because the two papers share so much, we proposed that the second be an analysis paper with its own new experiments, so that each paper has a separate contribution.");
