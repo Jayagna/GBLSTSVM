@@ -90,7 +90,8 @@ def main():
     orc = {"accuracy": "oracle_accuracy", "balanced_accuracy": "oracle_balanced_accuracy"}
     cvf = {"accuracy": "cv_accuracy", "balanced_accuracy": "cv_balanced_accuracy"}
     if args.kernel:
-        data = {"oracle": load(res / "kernel", orc), "cv": load(res / "kernel", cvf)}
+        data = {"oracle": merge(load(res / "kernel", orc), load(res / "kernel_naf", orc)),
+                "cv": merge(load(res / "kernel", cvf), load(res / "kernel_naf", cvf))}
     else:
         data = linear_data(res)
     out = Path(args.out)

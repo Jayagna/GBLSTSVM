@@ -22,7 +22,7 @@ import numpy as np
 from sklearn.model_selection import StratifiedKFold
 
 import run_baselines as rb
-from run_baselines import ROOT, ba_acc, build_ball_sets, lsgb_scores
+from run_baselines import ROOT, ba_acc, build_ball_sets, lsfam_scores, lsgb_scores
 from run_fuzzy_cv import DEFAULT_DATASETS, member
 
 import sys
@@ -34,6 +34,9 @@ K_NN = [3, 5, 10, 15, 20]
 GAMMA = [0.5, 1.0, 2.0, 3.0, 5.0]
 PARAMS = [(k, g) for k in K_NN for g in GAMMA]
 GAP = member("gapvote")
+AGREE = member("agreement")
+MODEL = {"rf": (GAP, lsgb_scores), "naf": (AGREE, lsfam_scores)}  # set by --model
+ACTIVE = MODEL["rf"]
 
 
 def scores(train, k_values, X):
@@ -43,13 +46,16 @@ def scores(train, k_values, X):
         bs = build_ball_sets(train, k).get("gb_all")
         if bs is None:
             continue
-        for cfg, (s,) in lsgb_scores(bs, k, [X], {p: GAP(bs, p) for p in PARAMS}).items():
+        weight, fit = ACTIVE
+        for cfg, (s,) in fit(bs, k, [X], {p: weight(bs, p) for p in PARAMS}).items():
             out[cfg[-1]][cfg[:-1]] = s
     return out
 
 
 def run_one(task):
-    path, noise, repeats, k_values, out_dir = task
+    path, noise, repeats, k_values, out_dir, model = task
+    global ACTIVE
+    ACTIVE = MODEL[model]
     path = Path(path)
     out_file = Path(out_dir) / f"{path.stem}__noise{noise:g}.json"
     if out_file.exists():
@@ -89,9 +95,10 @@ def main():
     ap.add_argument("--k-values", nargs="+", type=int, default=[2, 4, 6])
     ap.add_argument("--out", default=str(ROOT / "results" / "sensitivity"))
     ap.add_argument("--jobs", type=int, default=os.cpu_count() or 1)
+    ap.add_argument("--model", choices=sorted(MODEL), default="rf", help="rf: RF-GBLSTSVM; naf: NAF-GBLSTSVM (GBLSTSVM + kept balls + neighbour agreement)")
     args = ap.parse_args()
     files = {p.stem: p for p in discover_datasets(str(ROOT / "Data"))}
-    tasks = [(str(files[d]), nz, list(range(args.repeats)), args.k_values, args.out) for nz in args.noise for d in args.datasets]
+    tasks = [(str(files[d]), nz, list(range(args.repeats)), args.k_values, args.out, args.model) for nz in args.noise for d in args.datasets]
     with Pool(args.jobs) as pool:
         for f in pool.imap_unordered(run_one, tasks):
             print("done", Path(f).name, flush=True)
